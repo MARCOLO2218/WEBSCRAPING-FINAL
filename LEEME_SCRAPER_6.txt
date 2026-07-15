@@ -1,0 +1,25 @@
+SCRAPER 6 - VERSION LIMPIA
+
+Esta version se creo desde ENTREGA_FINAL_NUEVA_PC, pero con filtro fuerte antes de guardar CSV y PostgreSQL.
+
+FILTRO APLICADO
+
+1. FACENCO se permite aunque no tenga precio, porque es la fuente propia.
+2. Competidores solo se guardan si:
+   - El producto esta relacionado con cama.
+   - Tiene precio en Q / GTQ.
+   - No contiene $, USD, dolar, dolares.
+3. Se excluyen laptops, celulares, televisores, electrodomesticos, audio, consolas, juguetes, etc.
+
+PASOS EN PC NUEVA
+
+1. Instalar Node.js LTS.
+2. Abrir esta carpeta.
+3. Ejecutar 01_INSTALAR_DEPENDENCIAS_DEV_PROD.bat.
+4. Ejecutar 02_EJECUTAR_DEV.bat para DEV.
+5. Ejecutar 03_EJECUTAR_PROD.bat para PROD.
+
+IMPORTANTE
+
+Si quieres limpiar data vieja de PostgreSQL, hazlo desde pgAdmin antes de correr esta version.
+Esta version evita que entre data mala nueva, pero no borra registros antiguos de la base por si solos.

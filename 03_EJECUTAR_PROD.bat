@@ -1,0 +1,4 @@
+@echo off
+cd /d "%~dp0WEBSCRAPER PROD"
+call EJECUTAR_SISTEMA_COMPLETO.bat
+

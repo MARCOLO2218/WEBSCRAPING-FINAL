@@ -1,0 +1,195 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Catalogo Comercial Comparativo</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <h1>Catalogo Comercial Comparativo</h1>
+          <p>Analisis de precios, disponibilidad y competencia para cubos comerciales.</p>
+        </div>
+        <div class="topbar-actions">
+          <span id="weekBadge" class="badge">Semana -</span>
+          <span id="runBadge" class="badge muted">Run ID -</span>
+          <span id="countBadge" class="badge muted">0 productos</span>
+          <button id="runScraperButton" class="button secondary" type="button">Ejecutar scraper y actualizar</button>
+          <a id="exportButton" class="button" href="/output/comparacion_colchones.csv">Descargar CSV</a>
+        </div>
+      </header>
+      <div id="statusBar" class="status-bar">Listo para consultar. Ejecuta el scraper desde esta pantalla cuando necesites nueva data.</div>
+
+      <section class="content-grid">
+        <aside class="filters">
+          <div class="filter-header">
+            <h2>Filtros</h2>
+            <button id="clearFilters" type="button">Limpiar</button>
+          </div>
+
+          <div class="help-box">
+            La diferencia compara contra productos FACENCO equivalentes. Si no hay referencia comparable, muestra Sin referencia.
+          </div>
+
+          <label>
+            Buscar
+            <input id="searchInput" type="search" placeholder="Producto, tienda o marca" />
+          </label>
+
+          <label>
+            Semana
+            <select id="weekFilter">
+              <option value="">Todas</option>
+            </select>
+          </label>
+
+          <label>
+            Tienda
+            <select id="storeFilter">
+              <option value="">Todas</option>
+            </select>
+          </label>
+
+          <label>
+            Marca
+            <select id="brandFilter">
+              <option value="">Todas</option>
+            </select>
+          </label>
+
+          <label>
+            Categoria
+            <select id="categoryFilter">
+              <option value="">Todas</option>
+            </select>
+          </label>
+
+          <label>
+            Disponibilidad
+            <select id="availabilityFilter">
+              <option value="">Todas</option>
+            </select>
+          </label>
+
+          <label class="check-row">
+            <input id="offersOnly" type="checkbox" />
+            Solo ofertas
+          </label>
+
+          <label class="check-row">
+            <input id="compareFacenco" type="checkbox" checked />
+            Comparar contra FACENCO
+          </label>
+        </aside>
+
+        <section class="workspace">
+          <section class="metrics" aria-label="Resumen">
+            <article>
+              <span>Precio promedio</span>
+              <strong id="avgPrice">-</strong>
+            </article>
+            <article>
+              <span>Mas barato</span>
+              <strong id="cheaperCount">0</strong>
+            </article>
+            <article>
+              <span>Mas caro</span>
+              <strong id="expensiveCount">0</strong>
+            </article>
+            <article>
+              <span>Tiendas comparadas</span>
+              <strong id="storeCount">0</strong>
+            </article>
+          </section>
+
+          <section class="table-panel">
+            <div class="panel-title">
+              <h2>Productos comparados</h2>
+              <span id="paginationSummary">Pagina 1</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Semana</th>
+                    <th>Producto</th>
+                    <th>Tienda</th>
+                    <th>Marca</th>
+                    <th>Categoria</th>
+                    <th>Precio regular</th>
+                    <th>Precio oferta</th>
+                    <th>Disponibilidad</th>
+                    <th>Diferencia vs FACENCO</th>
+                  </tr>
+                </thead>
+                <tbody id="productsBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination-bar" id="paginationBar">
+              <div>
+                <label>
+                  Mostrar
+                  <select id="pageSizeSelect">
+                    <option value="50">50</option>
+                    <option value="100" selected>100</option>
+                    <option value="250">250</option>
+                    <option value="500">500</option>
+                  </select>
+                </label>
+              </div>
+              <div class="pagination-actions">
+                <button id="prevPageButton" type="button">Anterior</button>
+                <span id="pageInfo">Pagina 1 de 1</span>
+                <button id="nextPageButton" type="button">Siguiente</button>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <aside class="detail-panel">
+          <div class="image-box" id="detailImage">Imagen</div>
+          <h2 id="detailProduct">Selecciona un producto</h2>
+          <p id="detailStore" class="detail-muted">Sin seleccion</p>
+
+          <dl>
+            <div>
+              <dt>Precio</dt>
+              <dd id="detailPrice">-</dd>
+            </div>
+            <div>
+              <dt>Diferencia</dt>
+              <dd id="detailDiff">-</dd>
+            </div>
+            <div>
+              <dt>Disponibilidad</dt>
+              <dd id="detailAvailability">-</dd>
+            </div>
+            <div>
+              <dt>Fecha scraping</dt>
+              <dd id="detailDate">-</dd>
+            </div>
+          </dl>
+
+          <div class="detail-section">
+            <h3>Descripcion</h3>
+            <p id="detailDescription">-</p>
+          </div>
+
+          <div class="detail-section">
+            <h3>Trazabilidad</h3>
+            <p><strong>Registro UUID</strong><br /><span id="detailUuid">-</span></p>
+            <p><strong>Run UUID</strong><br /><span id="detailRunUuid">-</span></p>
+          </div>
+
+          <a id="detailUrl" class="button full" href="#" target="_blank" rel="noreferrer">Abrir URL fuente</a>
+        </aside>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
+

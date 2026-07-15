@@ -1,0 +1,23 @@
+{
+  "name": "facenco-energy-scraper",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node node_modules/typescript/bin/tsc && node dist/scrape-facenco-energy.js",
+    "catalog": "node node_modules/typescript/bin/tsc && node dist/catalog-server.js",
+    "build": "tsc",
+    "scrape": "npm run build && node dist/scrape-facenco-energy.js"
+  },
+  "dependencies": {
+    "@types/pg": "^8.20.0",
+    "dotenv": "^17.4.2",
+    "exceljs": "^4.4.0",
+    "pg": "^8.22.0",
+    "playwright": "^1.55.0",
+    "typescript": "^5.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.0"
+  }
+}

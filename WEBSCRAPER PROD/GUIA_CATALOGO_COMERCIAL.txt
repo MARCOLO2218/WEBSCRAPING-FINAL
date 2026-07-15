@@ -1,0 +1,41 @@
+GUIA - CATALOGO COMERCIAL COMPARATIVO
+
+1. Configurar base de datos
+   Abrir .env y validar:
+   PGHOST
+   PGDATABASE
+   PGUSER
+   PGPASSWORD
+   PGSCHEMA
+
+2. Crear estructura en PostgreSQL
+   En pgAdmin ejecutar:
+   database_init.sql
+
+3. Abrir sistema completo
+   Ejecutar:
+   EJECUTAR_SISTEMA_COMPLETO.bat
+
+4. URL del catalogo
+   http://localhost:3030
+
+5. Generar data desde la pagina
+   Dentro del catalogo usar el boton:
+   Ejecutar scraper y actualizar
+
+6. Descargar CSV para cubos
+   Dentro del catalogo usar el boton:
+   Descargar CSV
+   Ese archivo es:
+   output\comparacion_colchones.csv
+
+7. Logica de semana
+   semana_run inicia en 1 si la base esta vacia.
+   Si se ejecuta varias veces entre lunes y domingo, mantiene la misma semana.
+   Al llegar el siguiente lunes, sube a la siguiente semana.
+
+8. Trazabilidad
+   run_id identifica cada corrida.
+   semana_run identifica la semana comercial.
+   run_uuid identifica tecnicamente cada corrida.
+   registro_uuid identifica cada producto insertado.
