@@ -33,6 +33,10 @@ type DbProduct = {
   disponibilidad: string | null;
   precio_regular: string | null;
   precio_oferta: string | null;
+  precio_regular_min?: number | null;
+  precio_regular_max?: number | null;
+  precio_oferta_min?: number | null;
+  precio_oferta_max?: number | null;
   descuento: string | null;
   cuotas: string | null;
   url_producto: string | null;
@@ -68,9 +72,23 @@ function getDbPool(): Pool {
 
 function parsePrice(value: string | null): number | null {
   if (!value) return null;
-  const cleaned = value.replace(/[^\d.,-]/g, '').replace(/,/g, '');
-  const parsed = Number(cleaned);
-  return Number.isFinite(parsed) ? parsed : null;
+  const matches = value.match(/(?:Q|GTQ)?\s*\d[\d,]*(?:\.\d+)?/gi) || [];
+  const numbers = matches
+    .map((match) => Number(match.replace(/Q|GTQ/gi, '').replace(/\s/g, '').replace(/,/g, '').replace(/[^\d.-]/g, '')))
+    .filter((price) => Number.isFinite(price))
+    .sort((a, b) => a - b);
+  return numbers.length ? numbers[0] : null;
+}
+
+function firstNumber(...values: Array<number | string | null | undefined>): number | null {
+  for (const value of values) {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string') {
+      const parsed = parsePrice(value);
+      if (parsed !== null) return parsed;
+    }
+  }
+  return null;
 }
 
 function cleanCell(value: unknown): string | null {
@@ -146,6 +164,10 @@ async function loadFacencoPriceRows(templateRows: DbProduct[]): Promise<DbProduc
       disponibilidad: getCellText(row, headerMap, 'disponibilidad') || 'Listado en archivo FACENCO',
       precio_regular: regular,
       precio_oferta: offer,
+      precio_regular_min: firstNumber(regular),
+      precio_regular_max: firstNumber(regular),
+      precio_oferta_min: firstNumber(offer),
+      precio_oferta_max: firstNumber(offer),
       descuento: null,
       cuotas: null,
       url_producto: null,
@@ -189,6 +211,10 @@ function mergeFacencoExcelRows(dbRows: DbProduct[], excelRows: DbProduct[]): DbP
       disponibilidad: excelRow.disponibilidad || row.disponibilidad,
       precio_regular: excelRow.precio_regular || row.precio_regular,
       precio_oferta: excelRow.precio_oferta || row.precio_oferta,
+      precio_regular_min: excelRow.precio_regular_min ?? row.precio_regular_min,
+      precio_regular_max: excelRow.precio_regular_max ?? row.precio_regular_max,
+      precio_oferta_min: excelRow.precio_oferta_min ?? row.precio_oferta_min,
+      precio_oferta_max: excelRow.precio_oferta_max ?? row.precio_oferta_max,
       descripcion: excelRow.descripcion || row.descripcion,
       titulo: excelRow.titulo || row.titulo,
       registro_uuid: excelRow.registro_uuid || row.registro_uuid,
@@ -218,7 +244,7 @@ function withPriceComparison(rows: DbProduct[]): CatalogProduct[] {
   for (const row of rows) {
     if (normalizeText(row.sitio_fuente) !== 'facenco') continue;
     const key = normalizeText(row.producto || row.titulo);
-    const price = parsePrice(row.precio_oferta || row.precio_regular);
+    const price = firstNumber(row.precio_oferta_min, row.precio_regular_min, row.precio_oferta, row.precio_regular);
     if (key && price !== null) {
       facencoPrices.set(key, price);
     }
@@ -226,7 +252,7 @@ function withPriceComparison(rows: DbProduct[]): CatalogProduct[] {
 
   return rows.map((row) => {
     const key = normalizeText(row.producto || row.titulo);
-    const price = parsePrice(row.precio_oferta || row.precio_regular);
+    const price = firstNumber(row.precio_oferta_min, row.precio_regular_min, row.precio_oferta, row.precio_regular);
     const facencoPrice = key ? facencoPrices.get(key) : undefined;
     const difference = price !== null && facencoPrice !== undefined ? price - facencoPrice : null;
 
@@ -304,6 +330,10 @@ function toCsv(rows: CatalogProduct[]): string {
     'producto',
     'precio_regular',
     'precio_oferta',
+    'precio_regular_min',
+    'precio_regular_max',
+    'precio_oferta_min',
+    'precio_oferta_max',
     'diferencia_facenco',
     'etiqueta_diferencia',
     'disponibilidad',
@@ -568,4 +598,6 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Catalogo Comercial Comparativo listo en http://localhost:${PORT}`);
 });
+
+
 

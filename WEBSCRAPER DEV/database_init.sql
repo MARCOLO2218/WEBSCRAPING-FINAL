@@ -1,4 +1,4 @@
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+﻿CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE SCHEMA IF NOT EXISTS catalogo;
 
@@ -95,3 +95,4 @@ FROM (
     LIMIT 1000
 ) ultimos
 ORDER BY id ASC;
+

@@ -150,6 +150,39 @@ function toDbNullable(value: string | null | undefined): string | null {
   return emptyMarkers.has(cleaned.toLowerCase()) ? null : cleaned;
 }
 
+type PriceRange = {
+  min: number | null;
+  max: number | null;
+};
+
+function parseMoneyToken(value: string): number | null {
+  const cleaned = value
+    .replace(/Q|GTQ/gi, '')
+    .replace(/\s/g, '')
+    .replace(/,/g, '')
+    .replace(/[^\d.-]/g, '');
+
+  if (!cleaned || cleaned === '-' || cleaned === '.') return null;
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parsePriceRange(value: string | null | undefined): PriceRange {
+  const text = cleanText(value);
+  if (!text || ['-', 'n/a', 'na', 'null', 'undefined'].includes(text.toLowerCase())) {
+    return { min: null, max: null };
+  }
+
+  const matches = text.match(/(?:Q|GTQ)?\s*\d[\d,]*(?:\.\d+)?/gi) || [];
+  const numbers = matches
+    .map(parseMoneyToken)
+    .filter((price): price is number => price !== null)
+    .sort((a, b) => a - b);
+
+  if (numbers.length === 0) return { min: null, max: null };
+  return { min: numbers[0], max: numbers[numbers.length - 1] };
+}
+
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
@@ -291,6 +324,10 @@ async function ensurePostgresTables(client: PoolClient, schema: string): Promise
   await client.query(`ALTER TABLE ${schema}.productos_catalogo ADD COLUMN IF NOT EXISTS run_uuid UUID`);
   await client.query(`ALTER TABLE ${schema}.productos_catalogo ADD COLUMN IF NOT EXISTS semana_run INTEGER`);
   await client.query(`ALTER TABLE ${schema}.productos_catalogo ADD COLUMN IF NOT EXISTS semana_inicio DATE`);
+  await client.query(`ALTER TABLE ${schema}.productos_catalogo ADD COLUMN IF NOT EXISTS precio_regular_min NUMERIC(12,2)`);
+  await client.query(`ALTER TABLE ${schema}.productos_catalogo ADD COLUMN IF NOT EXISTS precio_regular_max NUMERIC(12,2)`);
+  await client.query(`ALTER TABLE ${schema}.productos_catalogo ADD COLUMN IF NOT EXISTS precio_oferta_min NUMERIC(12,2)`);
+  await client.query(`ALTER TABLE ${schema}.productos_catalogo ADD COLUMN IF NOT EXISTS precio_oferta_max NUMERIC(12,2)`);
   await client.query(`DROP INDEX IF EXISTS ${schema}.ux_productos_catalogo_url_dia`);
   await client.query(`DROP INDEX IF EXISTS ${schema}.ux_scraping_runs_semana_run`);
   await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS ux_scraping_runs_run_uuid ON ${schema}.scraping_runs (run_uuid)`);
@@ -1442,6 +1479,7 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+
 
 
 

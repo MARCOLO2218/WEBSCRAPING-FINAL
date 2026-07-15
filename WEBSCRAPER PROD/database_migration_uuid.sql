@@ -1,4 +1,4 @@
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+﻿CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 ALTER TABLE catalogo.productos_catalogo
 ADD COLUMN IF NOT EXISTS registro_uuid UUID;
@@ -124,3 +124,4 @@ FROM (
     LIMIT 1000
 ) ultimos
 ORDER BY id ASC;
+
