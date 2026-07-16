@@ -27,6 +27,7 @@ const MAX_GT_SOURCE_URL = 'https://www.max.com.gt/camas-y-colchones/c';
 const ELEKTRA_GT_SOURCE_URL = 'https://www.elektra.com.gt/muebles-y-colchones/colchones/catgm1010101';
 const WALMART_GT_SOURCE_URL = 'https://www.walmart.com.gt/search?q=colchon';
 const CEMACO_GT_SOURCE_URL = 'https://www.cemaco.com/search?q=colchon';
+const SIMAN_GT_SOURCE_URL = 'https://www.siman.com/guatemala/search?q=colchon';
 // Cambia aqui la carpeta o el nombre de los archivos generados.
 const OUTPUT_FILE = resolve('output/comparacion_colchones.csv');
 const OUTPUT_XLSX_FILE = resolve('output/comparacion_colchones.xlsx');
@@ -957,16 +958,16 @@ async function extractCardProducts(
       if (fallback) {
         return fallback;
       }
-      if (/colch[oó]n|colchon|mattress/i.test(name)) {
+      if (/colch[oÃ³]n|colchon|mattress/i.test(name)) {
         return 'Colchones';
       }
-      if (/cama|base/i.test(name)) {
+      if (/cama|base|box spring/i.test(name)) {
         return 'Camas';
       }
       if (/almohada|pillow/i.test(name)) {
         return 'Almohadas';
       }
-      if (/protector|frazada|edred[oó]n|comforter/i.test(name)) {
+      if (/protector|funda|s[aÃ¡]bana|frazada|edred[oÃ³]n|comforter/i.test(name)) {
         return 'Ropa de cama';
       }
       return '';
@@ -980,47 +981,69 @@ async function extractCardProducts(
       const src = image.currentSrc || image.src || image.getAttribute('data-src') || image.getAttribute('src') || srcsetFirst;
       return src && !src.startsWith('data:') ? absolute(src) : '';
     };
+    const buildRow = (root: Element, title: string, anchor: HTMLAnchorElement | null, image: HTMLImageElement | null): CsvProduct => {
+      const rootText = clean(root.textContent);
+      const category = productCategory(title, firstText(root, config.categorySelector));
+      const regularPrice = firstText(root, config.regularPriceSelector);
+      const salePrice = firstText(root, config.salePriceSelector)
+        || firstText(root, config.priceSelector)
+        || clean(rootText.match(/(?:Q|GTQ)\s*[\d,]+(?:\.\d+)?(?:\s*-\s*(?:Q|GTQ)?\s*[\d,]+(?:\.\d+)?)?/i)?.[0]);
+      const discount = firstText(root, config.discountSelector);
+      const installment = firstText(root, config.installmentSelector);
+      const line = firstText(root, config.lineSelector);
 
-    const rows = Array.from(document.querySelectorAll<HTMLElement>(config.cardSelector))
+      return {
+        source_site: config.sourceSite,
+        brand: config.brand,
+        line,
+        category,
+        product_name: title,
+        availability: 'Listado en tienda online',
+        regular_price: regularPrice,
+        sale_price: salePrice,
+        discount,
+        installment,
+        product_url: anchor?.href ? absolute(anchor.href) : '',
+        source_url: sourceUrl,
+        headline: '',
+        description: '',
+        warranty: '',
+        benefits: '',
+        image_url: imageUrl(image),
+        image_alt: clean(image?.getAttribute('alt')),
+        scraped_at: '',
+      };
+    };
+
+    const cardRows = Array.from(document.querySelectorAll<HTMLElement>(config.cardSelector))
       .map((card) => {
-        const title = firstText(card, config.titleSelector);
+        const title = firstText(card, config.titleSelector)
+          || clean(card.getAttribute('aria-label'))
+          || clean(card.querySelector<HTMLAnchorElement>('a[title]')?.getAttribute('title'))
+          || clean(card.querySelector<HTMLImageElement>('img[alt]')?.getAttribute('alt'));
         const anchor = card.querySelector<HTMLAnchorElement>(config.anchorSelector ?? 'a[href]');
         const image = card.querySelector<HTMLImageElement>(config.imageSelector ?? 'img');
-        const category = productCategory(title, firstText(card, config.categorySelector));
-        const regularPrice = firstText(card, config.regularPriceSelector);
-        const salePrice = firstText(card, config.salePriceSelector) || firstText(card, config.priceSelector);
-        const discount = firstText(card, config.discountSelector);
-        const installment = firstText(card, config.installmentSelector);
-        const line = firstText(card, config.lineSelector);
+        return buildRow(card, title, anchor, image);
+      })
+      .filter((product) => product.product_name && product.product_url);
 
-        return {
-          source_site: config.sourceSite,
-          brand: config.brand,
-          line,
-          category,
-          product_name: title,
-          availability: 'Listado en tienda online',
-          regular_price: regularPrice,
-          sale_price: salePrice,
-          discount,
-          installment,
-          product_url: anchor?.href ? absolute(anchor.href) : '',
-          source_url: sourceUrl,
-          headline: '',
-          description: '',
-          warranty: '',
-          benefits: '',
-          image_url: imageUrl(image),
-          image_alt: clean(image?.getAttribute('alt')),
-          scraped_at: '',
-        };
+    const linkRows = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href]'))
+      .map((anchor) => {
+        const container = anchor.closest('article, li, [class*="product"], [class*="Product"], [data-testid*="product"], [data-testid*="Product"], div') ?? anchor;
+        const image = container.querySelector<HTMLImageElement>('img') ?? anchor.querySelector<HTMLImageElement>('img');
+        const title = clean(anchor.getAttribute('title'))
+          || clean(anchor.textContent)
+          || clean(image?.getAttribute('alt'))
+          || clean(container.querySelector('h1,h2,h3,h4,[class*="name"],[class*="Name"],[class*="title"],[class*="Title"]')?.textContent);
+        return buildRow(container, title, anchor, image);
       })
       .filter((product) => product.product_name && product.product_url);
 
     const unique = new Map<string, CsvProduct>();
-    for (const row of rows) {
-      if (!unique.has(row.product_url)) {
-        unique.set(row.product_url, row);
+    for (const row of [...cardRows, ...linkRows]) {
+      const key = row.product_url || `${row.source_site}|${row.product_name}`;
+      if (!unique.has(key)) {
+        unique.set(key, row);
       }
     }
 
@@ -1280,10 +1303,25 @@ function hasQuetzalPrice(row: CsvProduct): boolean {
   return /(^|\s|[^A-Za-z])Q\s?\d|GTQ|Quetzal/i.test(priceText);
 }
 
-function filterGuatemalaQuetzalRows(rows: CsvProduct[]): CsvProduct[] {
-  return rows.filter((row) => hasQuetzalPrice(row) && hasRelevantBedProduct(row));
-}
+function filterGuatemalaQuetzalRows(rows: CsvProduct[], sourceSite = 'Tienda'): CsvProduct[] {
+  const withQuetzal = rows.filter((row) => hasQuetzalPrice(row));
+  const withBedProduct = rows.filter((row) => hasRelevantBedProduct(row));
+  const kept = rows.filter((row) => hasQuetzalPrice(row) && hasRelevantBedProduct(row));
 
+  console.log(
+    `Diagnostico ${sourceSite}: encontrados=${rows.length}, con_precio_Q=${withQuetzal.length}, relacionados_cama=${withBedProduct.length}, guardados=${kept.length}`,
+  );
+
+  if (rows.length > 0 && kept.length === 0) {
+    const sample = rows
+      .slice(0, 5)
+      .map((row) => cleanText(`${row.product_name} | precio: ${row.sale_price || row.regular_price || 'sin precio'} | url: ${row.product_url}`))
+      .join(' || ');
+    console.log(`Muestra descartada ${sourceSite}: ${sample}`);
+  }
+
+  return kept;
+}
 async function scrapeGenericGuatemalaStore(
   page: Page,
   scrapedAt: string,
@@ -1325,7 +1363,7 @@ async function scrapeGenericGuatemalaStore(
     installmentSelector: '.installment, .cuotas, [class*="installment"], [class*="cuota"]',
   });
 
-  return filterGuatemalaQuetzalRows(rows).map((row) => ({
+  return filterGuatemalaQuetzalRows(rows, sourceSite).map((row) => ({
     ...row,
     scraped_at: scrapedAt,
   }));
@@ -1351,6 +1389,9 @@ async function scrapeCemacoGt(page: Page, scrapedAt: string): Promise<CsvProduct
   return scrapeGenericGuatemalaStore(page, scrapedAt, CEMACO_GT_SOURCE_URL, 'Cemaco Guatemala', 'Cemaco');
 }
 
+async function scrapeSimanGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
+  return scrapeGenericGuatemalaStore(page, scrapedAt, SIMAN_GT_SOURCE_URL, 'Siman Guatemala', 'Siman');
+}
 function hasDollarPrice(row: CsvProduct): boolean {
   const priceText = normalizeCatalogText([
     row.regular_price,
@@ -1422,6 +1463,7 @@ async function main(): Promise<void> {
       { name: 'Elektra Guatemala', run: (storePage) => scrapeElektraGt(storePage, scrapedAt) },
       { name: 'Walmart Guatemala', run: (storePage) => scrapeWalmartGt(storePage, scrapedAt) },
       { name: 'Cemaco Guatemala', run: (storePage) => scrapeCemacoGt(storePage, scrapedAt) },
+      { name: 'Siman Guatemala', run: (storePage) => scrapeSimanGt(storePage, scrapedAt) },
     ];
 
     const rows: CsvProduct[] = [];
@@ -1479,6 +1521,7 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+
 
 
 
