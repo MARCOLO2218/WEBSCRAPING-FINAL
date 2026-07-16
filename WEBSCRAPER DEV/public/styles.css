@@ -55,19 +55,27 @@ select {
 .brand-block {
   align-items: center;
   display: flex;
-  gap: 14px;
-  min-width: 280px;
+  gap: 16px;
+  min-width: 320px;
 }
 
 .brand-logo {
+  background: #ffffff;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
+  box-shadow: 0 8px 18px rgba(15, 32, 46, 0.08);
   display: block;
   flex: 0 0 auto;
-  height: 54px;
+  height: 72px;
   object-fit: contain;
-  padding: 4px;
-  width: 54px;
+  padding: 8px;
+  width: 72px;
+}
+
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 h1,
@@ -529,6 +537,18 @@ dd {
     display: block;
   }
 
+
+  .brand-block {
+    justify-content: center;
+    min-width: 0;
+    text-align: center;
+  }
+
+  .brand-logo {
+    height: 64px;
+    width: 64px;
+  }
+
   .topbar-actions,
   .filters,
   .workspace,
@@ -591,4 +611,5 @@ dd {
   font-size: 12px;
   font-weight: 700;
 }
+
 
