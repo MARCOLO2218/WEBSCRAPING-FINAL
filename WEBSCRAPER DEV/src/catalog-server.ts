@@ -19,6 +19,8 @@ const FACENCO_PRICE_FILE = resolve('data/precios_facenco.xlsx');
 const LOG_DIR = resolve('logs');
 const SCRAPER_LOG = resolve(LOG_DIR, 'ultimo_scraper.log');
 let scraperRunning = false;
+let scraperQueueSize = 0;
+let scraperQueue: Promise<void> = Promise.resolve();
 
 type DbProduct = {
   id: string;
@@ -446,16 +448,7 @@ async function proxyImage(sourceUrl: string | null, res: import('node:http').Ser
   res.end(body);
 }
 
-function runScraper(): Promise<{ ok: boolean; output: string }> {
-  if (scraperRunning) {
-    return Promise.resolve({
-      ok: false,
-      output: 'El scraper ya se esta ejecutando. Espera a que termine antes de iniciar otra corrida.',
-    });
-  }
-
-  scraperRunning = true;
-
+function runScraperProcess(): Promise<{ ok: boolean; output: string }> {
   return new Promise((resolveRun) => {
     const child = spawn(process.execPath, ['dist/scrape-facenco-energy.js'], {
       cwd: process.cwd(),
@@ -474,7 +467,6 @@ function runScraper(): Promise<{ ok: boolean; output: string }> {
     });
 
     child.on('close', (code) => {
-      scraperRunning = false;
       const ok = code === 0;
       void writeScraperLog(output);
       resolveRun({
@@ -484,7 +476,6 @@ function runScraper(): Promise<{ ok: boolean; output: string }> {
     });
 
     child.on('error', (error) => {
-      scraperRunning = false;
       void writeScraperLog(error.message);
       resolveRun({
         ok: false,
@@ -492,6 +483,36 @@ function runScraper(): Promise<{ ok: boolean; output: string }> {
       });
     });
   });
+}
+
+function runScraper(): Promise<{ ok: boolean; output: string }> {
+  const queuePosition = scraperQueueSize + (scraperRunning ? 1 : 0);
+  const queuedMessage = queuePosition > 0
+    ? `Solicitud recibida. Hay ${queuePosition} ejecucion(es) antes en cola.`
+    : '';
+
+  scraperQueueSize += 1;
+
+  const queuedRun = scraperQueue.then(async () => {
+    scraperRunning = true;
+    try {
+      const result = await runScraperProcess();
+      return {
+        ...result,
+        output: queuedMessage ? `${queuedMessage}\n${result.output}` : result.output,
+      };
+    } finally {
+      scraperRunning = false;
+      scraperQueueSize = Math.max(0, scraperQueueSize - 1);
+    }
+  });
+
+  scraperQueue = queuedRun.then(
+    () => undefined,
+    () => undefined
+  );
+
+  return queuedRun;
 }
 
 function serveStatic(pathname: string, res: import('node:http').ServerResponse): void {
@@ -547,7 +568,7 @@ const server = createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/scraper-status') {
-      await sendJson(res, { running: scraperRunning });
+      await sendJson(res, { running: scraperRunning, queueSize: scraperQueueSize });
       return;
     }
 
@@ -598,6 +619,7 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Catalogo Comercial Comparativo listo en http://localhost:${PORT}`);
 });
+
 
 
 
