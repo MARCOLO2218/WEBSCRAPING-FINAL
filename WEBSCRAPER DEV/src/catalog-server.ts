@@ -35,6 +35,21 @@ const scraperJobQueue: ScraperJob[] = [];
 let scraperQueueProcessing = false;
 let currentScraperJob: ScraperJob | null = null;
 const MAX_SCRAPER_JOB_HISTORY = 50;
+type ScraperJob = {
+  id: string;
+  status: 'queued' | 'running' | 'done' | 'error';
+  createdAt: string;
+  startedAt?: string;
+  finishedAt?: string;
+  ok?: boolean;
+  output?: string;
+};
+
+const scraperJobs = new Map<string, ScraperJob>();
+const scraperJobQueue: ScraperJob[] = [];
+let scraperQueueProcessing = false;
+let currentScraperJob: ScraperJob | null = null;
+const MAX_SCRAPER_JOB_HISTORY = 50;
 type DbProduct = {
   id: string;
   run_id: string | null;
@@ -678,6 +693,7 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Catalogo Comercial Comparativo listo en http://localhost:${PORT}`);
 });
+
 
 
 
