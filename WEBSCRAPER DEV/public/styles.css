@@ -1,17 +1,23 @@
 ﻿:root {
-  --bg: #f4f6f8;
+  --bg: #f4f7fb;
   --surface: #ffffff;
-  --surface-strong: #f9fafb;
-  --line: #d9e0e7;
-  --text: #17212b;
-  --muted: #667381;
-  --green: #0f7a53;
-  --green-soft: #e6f4ee;
+  --surface-strong: #f8fbff;
+  --line: #d6e1ec;
+  --text: #102448;
+  --muted: #64758a;
+  --facenco-navy: #062f5f;
+  --facenco-navy-strong: #03264f;
+  --facenco-blue: #5ec7ed;
+  --facenco-blue-soft: #e7f7fd;
+  --facenco-orange: #ff8a2a;
+  --facenco-orange-soft: #fff1e5;
+  --green: #062f5f;
+  --green-soft: #e7f7fd;
   --red: #b42318;
   --red-soft: #fff0ed;
-  --gray-soft: #eef2f5;
-  --blue: #31546f;
-  --shadow: 0 12px 30px rgba(15, 32, 46, 0.08);
+  --gray-soft: #eef3f8;
+  --blue: #062f5f;
+  --shadow: 0 12px 30px rgba(6, 47, 95, 0.10);
 }
 
 * {
@@ -612,4 +618,85 @@ dd {
   font-weight: 700;
 }
 
+body {
+  background:
+    linear-gradient(180deg, rgba(6, 47, 95, 0.06), rgba(244, 247, 251, 0) 260px),
+    var(--bg);
+}
+
+.topbar {
+  border-top: 4px solid var(--facenco-navy);
+}
+
+.topbar h1 {
+  color: var(--facenco-navy);
+}
+
+.brand-logo {
+  border-color: rgba(94, 199, 237, 0.45);
+  box-shadow: 0 10px 22px rgba(6, 47, 95, 0.14);
+}
+
+.badge {
+  background: var(--facenco-blue-soft);
+  color: var(--facenco-navy);
+}
+
+.badge.muted {
+  background: var(--gray-soft);
+  color: var(--facenco-navy);
+}
+
+.button {
+  background: var(--facenco-navy);
+  border-color: var(--facenco-navy);
+}
+
+.button:hover {
+  background: var(--facenco-navy-strong);
+}
+
+.button.secondary {
+  background: #ffffff;
+  border-color: var(--facenco-navy);
+  color: var(--facenco-navy);
+}
+
+.button.secondary:hover {
+  background: var(--facenco-blue-soft);
+}
+
+.help-box,
+.status-bar[data-type="ok"] {
+  background: var(--facenco-blue-soft);
+  border-color: rgba(94, 199, 237, 0.45);
+  color: var(--facenco-navy);
+}
+
+.status-bar[data-type="running"] {
+  background: var(--facenco-orange-soft);
+  border-color: rgba(255, 138, 42, 0.45);
+  color: #8a4300;
+}
+
+.filters,
+.panel,
+.detail-panel {
+  border-top: 3px solid rgba(94, 199, 237, 0.55);
+}
+
+tbody tr.selected,
+tbody tr:hover {
+  background: #eef9fd;
+}
+
+.difference-cheaper {
+  background: var(--facenco-blue-soft);
+  color: var(--facenco-navy);
+}
+
+.difference-expensive {
+  background: var(--facenco-orange-soft);
+  color: #8a4300;
+}
 
