@@ -51,6 +51,25 @@ select {
   padding: 16px 18px;
 }
 
+
+.brand-block {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  min-width: 280px;
+}
+
+.brand-logo {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: block;
+  flex: 0 0 auto;
+  height: 54px;
+  object-fit: contain;
+  padding: 4px;
+  width: 54px;
+}
+
 h1,
 h2,
 h3,
@@ -572,3 +591,4 @@ dd {
   font-size: 12px;
   font-weight: 700;
 }
+
