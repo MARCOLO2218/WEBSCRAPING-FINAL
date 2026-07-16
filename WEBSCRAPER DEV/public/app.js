@@ -6,6 +6,9 @@
   pageSize: 100,
 };
 
+let scraperStatusTimer = null;
+let localScraperRequestRunning = false;
+
 const elements = {
   productsBody: document.querySelector('#productsBody'),
   searchInput: document.querySelector('#searchInput'),
@@ -312,6 +315,47 @@ function setStatus(message, type = 'info') {
   elements.statusBar.dataset.type = type;
 }
 
+function queueMessage(status) {
+  const queueSize = Number(status?.queueSize || 0);
+  if (queueSize > 1) {
+    return `Scraper en ejecucion. Hay ${queueSize - 1} solicitud(es) esperando turno. La pagina se actualizara cuando termine.`;
+  }
+  if (status?.running || queueSize === 1) {
+    return 'Scraper en ejecucion. Este proceso puede tardar varios minutos. La pagina se actualizara cuando termine.';
+  }
+  return '';
+}
+
+async function getScraperStatus() {
+  const response = await fetch('/api/scraper-status', { cache: 'no-store' });
+  if (!response.ok) throw new Error('No se pudo consultar el estado del scraper.');
+  return response.json();
+}
+
+function stopScraperStatusPolling() {
+  if (scraperStatusTimer) {
+    clearInterval(scraperStatusTimer);
+    scraperStatusTimer = null;
+  }
+}
+
+function startScraperStatusPolling() {
+  stopScraperStatusPolling();
+  scraperStatusTimer = setInterval(async () => {
+    try {
+      const status = await getScraperStatus();
+      const message = queueMessage(status);
+      if (message) {
+        setStatus(message, 'running');
+        elements.runScraperButton.textContent = status.queueSize > 1 ? 'Solicitud en cola...' : 'Ejecutando scraper...';
+      } else if (!localScraperRequestRunning) {
+        stopScraperStatusPolling();
+      }
+    } catch (error) {
+      console.warn(error);
+    }
+  }, 5000);
+}
 function extractRunMessage(output) {
   const lines = String(output || '').split(/\r?\n/).filter(Boolean);
   const runLine = lines.find((line) => line.includes('Run ID de esta consulta'));
@@ -345,10 +389,23 @@ function extractErrorMessage(output) {
 
 async function runScraperAndRefresh() {
   elements.runScraperButton.disabled = true;
-  elements.runScraperButton.textContent = 'Ejecutando scraper...';
-  setStatus('Ejecutando scraper. Este proceso puede tardar unos minutos.', 'running');
+  elements.runScraperButton.textContent = 'Preparando solicitud...';
+  localScraperRequestRunning = true;
 
   try {
+    const currentStatus = await getScraperStatus().catch(() => null);
+    const currentMessage = queueMessage(currentStatus);
+
+    if (currentMessage) {
+      setStatus(`${currentMessage} Tu solicitud quedara en cola.`, 'running');
+      elements.runScraperButton.textContent = 'Solicitud en cola...';
+    } else {
+      setStatus('Ejecutando scraper. Este proceso puede tardar varios minutos.', 'running');
+      elements.runScraperButton.textContent = 'Ejecutando scraper...';
+    }
+
+    startScraperStatusPolling();
+
     const response = await fetch('/api/run-scraper', { method: 'POST' });
     const result = await response.json();
 
@@ -357,16 +414,18 @@ async function runScraperAndRefresh() {
     }
 
     await loadProducts();
+void initializeScraperStatus();
     setStatus(extractRunMessage(result.output) || 'Scraper finalizado correctamente. Catalogo actualizado.', 'ok');
   } catch (error) {
     console.error(error);
     setStatus(`Error: ${error.message}`, 'error');
   } finally {
+    localScraperRequestRunning = false;
+    stopScraperStatusPolling();
     elements.runScraperButton.disabled = false;
     elements.runScraperButton.textContent = 'Ejecutar scraper y actualizar';
   }
 }
-
 for (const element of [
   elements.searchInput,
   elements.weekFilter,
@@ -409,8 +468,22 @@ elements.nextPageButton.addEventListener('click', () => {
   render();
 });
 
+async function initializeScraperStatus() {
+  try {
+    const status = await getScraperStatus();
+    const message = queueMessage(status);
+    if (message) {
+      setStatus(message, 'running');
+      startScraperStatusPolling();
+    }
+  } catch (error) {
+    console.warn(error);
+  }
+}
 elements.runScraperButton.addEventListener('click', runScraperAndRefresh);
 loadProducts();
+void initializeScraperStatus();
+
 
 
 
