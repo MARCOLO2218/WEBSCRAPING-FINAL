@@ -310,6 +310,10 @@ async function loadProducts() {
   }
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function setStatus(message, type = 'info') {
   elements.statusBar.textContent = message;
   elements.statusBar.dataset.type = type;
@@ -387,6 +391,32 @@ function extractErrorMessage(output) {
   return knownError || 'No se pudo ejecutar el scraper. Revisa logs\\catalogo_servidor_error.log para detalle tecnico.';
 }
 
+
+async function waitForScraperJob(jobId) {
+  while (true) {
+    const response = await fetch(`/api/scraper-job?id=${encodeURIComponent(jobId)}`, { cache: 'no-store' });
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+      throw new Error(result.error || 'No se pudo consultar el estado de la solicitud.');
+    }
+
+    const job = result.job;
+    if (job.status === 'queued') {
+      setStatus(`Solicitud en cola. Posicion ${job.queuePosition}. La pagina se actualizara cuando llegue su turno.`, 'running');
+      elements.runScraperButton.textContent = 'Solicitud en cola...';
+    } else if (job.status === 'running') {
+      setStatus('Scraper en ejecucion. Este proceso puede tardar varios minutos. La pagina se actualizara cuando termine.', 'running');
+      elements.runScraperButton.textContent = 'Ejecutando scraper...';
+    } else if (job.status === 'done') {
+      return job;
+    } else if (job.status === 'error') {
+      throw new Error(extractErrorMessage(job.output));
+    }
+
+    await sleep(5000);
+  }
+}
 async function runScraperAndRefresh() {
   elements.runScraperButton.disabled = true;
   elements.runScraperButton.textContent = 'Preparando solicitud...';
@@ -414,7 +444,6 @@ async function runScraperAndRefresh() {
     }
 
     await loadProducts();
-void initializeScraperStatus();
     setStatus(extractRunMessage(result.output) || 'Scraper finalizado correctamente. Catalogo actualizado.', 'ok');
   } catch (error) {
     console.error(error);
@@ -483,6 +512,7 @@ async function initializeScraperStatus() {
 elements.runScraperButton.addEventListener('click', runScraperAndRefresh);
 loadProducts();
 void initializeScraperStatus();
+
 
 
 

@@ -19,9 +19,22 @@ const FACENCO_PRICE_FILE = resolve('data/precios_facenco.xlsx');
 const LOG_DIR = resolve('logs');
 const SCRAPER_LOG = resolve(LOG_DIR, 'ultimo_scraper.log');
 let scraperRunning = false;
-let scraperQueueSize = 0;
-let scraperQueue: Promise<void> = Promise.resolve();
 
+type ScraperJob = {
+  id: string;
+  status: 'queued' | 'running' | 'done' | 'error';
+  createdAt: string;
+  startedAt?: string;
+  finishedAt?: string;
+  ok?: boolean;
+  output?: string;
+};
+
+const scraperJobs = new Map<string, ScraperJob>();
+const scraperJobQueue: ScraperJob[] = [];
+let scraperQueueProcessing = false;
+let currentScraperJob: ScraperJob | null = null;
+const MAX_SCRAPER_JOB_HISTORY = 50;
 type DbProduct = {
   id: string;
   run_id: string | null;
@@ -485,34 +498,68 @@ function runScraperProcess(): Promise<{ ok: boolean; output: string }> {
   });
 }
 
-function runScraper(): Promise<{ ok: boolean; output: string }> {
-  const queuePosition = scraperQueueSize + (scraperRunning ? 1 : 0);
-  const queuedMessage = queuePosition > 0
-    ? `Solicitud recibida. Hay ${queuePosition} ejecucion(es) antes en cola.`
-    : '';
+function createJobId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
 
-  scraperQueueSize += 1;
+function cleanupScraperJobs(): void {
+  const finished = [...scraperJobs.values()]
+    .filter((job) => job.status === 'done' || job.status === 'error')
+    .sort((a, b) => String(b.finishedAt || b.createdAt).localeCompare(String(a.finishedAt || a.createdAt)));
 
-  const queuedRun = scraperQueue.then(async () => {
-    scraperRunning = true;
-    try {
+  for (const job of finished.slice(MAX_SCRAPER_JOB_HISTORY)) {
+    scraperJobs.delete(job.id);
+  }
+}
+
+function publicJob(job: ScraperJob): ScraperJob & { queuePosition: number } {
+  const queueIndex = scraperJobQueue.findIndex((item) => item.id === job.id);
+  return {
+    ...job,
+    queuePosition: job.status === 'queued' && queueIndex >= 0 ? queueIndex + 1 : 0,
+  };
+}
+
+function processScraperQueue(): void {
+  if (scraperQueueProcessing) return;
+  scraperQueueProcessing = true;
+
+  void (async () => {
+    while (scraperJobQueue.length) {
+      const job = scraperJobQueue.shift();
+      if (!job) continue;
+
+      currentScraperJob = job;
+      scraperRunning = true;
+      job.status = 'running';
+      job.startedAt = new Date().toISOString();
+
       const result = await runScraperProcess();
-      return {
-        ...result,
-        output: queuedMessage ? `${queuedMessage}\n${result.output}` : result.output,
-      };
-    } finally {
+      job.ok = result.ok;
+      job.output = result.output;
+      job.status = result.ok ? 'done' : 'error';
+      job.finishedAt = new Date().toISOString();
+
+      currentScraperJob = null;
       scraperRunning = false;
-      scraperQueueSize = Math.max(0, scraperQueueSize - 1);
+      cleanupScraperJobs();
     }
-  });
 
-  scraperQueue = queuedRun.then(
-    () => undefined,
-    () => undefined
-  );
+    scraperQueueProcessing = false;
+  })();
+}
 
-  return queuedRun;
+function enqueueScraperJob(): ScraperJob & { queuePosition: number } {
+  const job: ScraperJob = {
+    id: createJobId(),
+    status: 'queued',
+    createdAt: new Date().toISOString(),
+  };
+
+  scraperJobs.set(job.id, job);
+  scraperJobQueue.push(job);
+  processScraperQueue();
+  return publicJob(job);
 }
 
 function serveStatic(pathname: string, res: import('node:http').ServerResponse): void {
@@ -561,14 +608,26 @@ const server = createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/run-scraper' && req.method === 'POST') {
-      const result = await runScraper();
-      res.writeHead(result.ok ? 200 : 500, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify(result));
+      const job = enqueueScraperJob();
+      res.writeHead(202, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, accepted: true, job }));
+      return;
+    }
+
+    if (url.pathname === '/api/scraper-job') {
+      const id = url.searchParams.get('id') || '';
+      const job = scraperJobs.get(id);
+      if (!job) {
+        res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: false, error: 'No se encontro la solicitud del scraper.' }));
+        return;
+      }
+      await sendJson(res, { ok: true, job: publicJob(job) });
       return;
     }
 
     if (url.pathname === '/api/scraper-status') {
-      await sendJson(res, { running: scraperRunning, queueSize: scraperQueueSize });
+      await sendJson(res, { running: scraperRunning, queueSize: scraperJobQueue.length + (currentScraperJob ? 1 : 0), currentJobId: currentScraperJob?.id || null });
       return;
     }
 
@@ -619,6 +678,8 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Catalogo Comercial Comparativo listo en http://localhost:${PORT}`);
 });
+
+
 
 
 
