@@ -345,28 +345,41 @@ function extractErrorMessage(output) {
 
 async function runScraperAndRefresh() {
   elements.runScraperButton.disabled = true;
-  elements.runScraperButton.textContent = 'Ejecutando scraper...';
-  setStatus('Ejecutando scraper. Este proceso puede tardar unos minutos.', 'running');
+  elements.runScraperButton.textContent = 'Preparando solicitud...';
+  localScraperRequestRunning = true;
 
   try {
     const response = await fetch('/api/run-scraper', { method: 'POST' });
     const result = await response.json();
 
-    if (!response.ok || !result.ok) {
-      throw new Error(extractErrorMessage(result.output));
+    if (!response.ok || !result.ok || !result.job) {
+      throw new Error(extractErrorMessage(result.output || result.error || 'No se pudo iniciar el scraper.'));
     }
 
+    const job = result.job;
+    if (job.queuePosition > 1) {
+      setStatus(`Solicitud en cola. Posicion ${job.queuePosition}. La pagina se actualizara cuando llegue su turno.`, 'running');
+      elements.runScraperButton.textContent = 'Solicitud en cola...';
+    } else {
+      setStatus('Scraper en ejecucion. Este proceso puede tardar varios minutos. La pagina se actualizara cuando termine.', 'running');
+      elements.runScraperButton.textContent = 'Ejecutando scraper...';
+    }
+
+    startScraperStatusPolling();
+    const finishedJob = await waitForScraperJob(job.id);
+
     await loadProducts();
-    setStatus(extractRunMessage(result.output) || 'Scraper finalizado correctamente. Catalogo actualizado.', 'ok');
+    setStatus(extractRunMessage(finishedJob.output) || 'Scraper finalizado correctamente. Catalogo actualizado.', 'ok');
   } catch (error) {
     console.error(error);
     setStatus(`Error: ${error.message}`, 'error');
   } finally {
+    localScraperRequestRunning = false;
+    stopScraperStatusPolling();
     elements.runScraperButton.disabled = false;
     elements.runScraperButton.textContent = 'Ejecutar scraper y actualizar';
   }
 }
-
 for (const element of [
   elements.searchInput,
   elements.weekFilter,
@@ -411,6 +424,7 @@ elements.nextPageButton.addEventListener('click', () => {
 
 elements.runScraperButton.addEventListener('click', runScraperAndRefresh);
 loadProducts();
+
 
 
 
