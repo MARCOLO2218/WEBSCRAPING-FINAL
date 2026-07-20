@@ -6,6 +6,9 @@
   pageSize: 100,
 };
 
+let scraperStatusTimer = null;
+let localScraperRequestRunning = false;
+
 const elements = {
   productsBody: document.querySelector('#productsBody'),
   searchInput: document.querySelector('#searchInput'),
@@ -307,11 +310,56 @@ async function loadProducts() {
   }
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function setStatus(message, type = 'info') {
   elements.statusBar.textContent = message;
   elements.statusBar.dataset.type = type;
 }
 
+function queueMessage(status) {
+  const queueSize = Number(status?.queueSize || 0);
+  if (queueSize > 1) {
+    return `Scraper en ejecucion. Hay ${queueSize - 1} solicitud(es) esperando turno. La pagina se actualizara cuando termine.`;
+  }
+  if (status?.running || queueSize === 1) {
+    return 'Scraper en ejecucion. Este proceso puede tardar varios minutos. La pagina se actualizara cuando termine.';
+  }
+  return '';
+}
+
+async function getScraperStatus() {
+  const response = await fetch('/api/scraper-status', { cache: 'no-store' });
+  if (!response.ok) throw new Error('No se pudo consultar el estado del scraper.');
+  return response.json();
+}
+
+function stopScraperStatusPolling() {
+  if (scraperStatusTimer) {
+    clearInterval(scraperStatusTimer);
+    scraperStatusTimer = null;
+  }
+}
+
+function startScraperStatusPolling() {
+  stopScraperStatusPolling();
+  scraperStatusTimer = setInterval(async () => {
+    try {
+      const status = await getScraperStatus();
+      const message = queueMessage(status);
+      if (message) {
+        setStatus(message, 'running');
+        elements.runScraperButton.textContent = status.queueSize > 1 ? 'Solicitud en cola...' : 'Ejecutando scraper...';
+      } else if (!localScraperRequestRunning) {
+        stopScraperStatusPolling();
+      }
+    } catch (error) {
+      console.warn(error);
+    }
+  }, 5000);
+}
 function extractRunMessage(output) {
   const lines = String(output || '').split(/\r?\n/).filter(Boolean);
   const runLine = lines.find((line) => line.includes('Run ID de esta consulta'));
@@ -343,6 +391,32 @@ function extractErrorMessage(output) {
   return knownError || 'No se pudo ejecutar el scraper. Revisa logs\\catalogo_servidor_error.log para detalle tecnico.';
 }
 
+
+async function waitForScraperJob(jobId) {
+  while (true) {
+    const response = await fetch(`/api/scraper-job?id=${encodeURIComponent(jobId)}`, { cache: 'no-store' });
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+      throw new Error(result.error || 'No se pudo consultar el estado de la solicitud.');
+    }
+
+    const job = result.job;
+    if (job.status === 'queued') {
+      setStatus(`Solicitud en cola. Posicion ${job.queuePosition}. La pagina se actualizara cuando llegue su turno.`, 'running');
+      elements.runScraperButton.textContent = 'Solicitud en cola...';
+    } else if (job.status === 'running') {
+      setStatus('Scraper en ejecucion. Este proceso puede tardar varios minutos. La pagina se actualizara cuando termine.', 'running');
+      elements.runScraperButton.textContent = 'Ejecutando scraper...';
+    } else if (job.status === 'done') {
+      return job;
+    } else if (job.status === 'error') {
+      throw new Error(extractErrorMessage(job.output));
+    }
+
+    await sleep(5000);
+  }
+}
 async function runScraperAndRefresh() {
   elements.runScraperButton.disabled = true;
   elements.runScraperButton.textContent = 'Preparando solicitud...';
@@ -422,8 +496,24 @@ elements.nextPageButton.addEventListener('click', () => {
   render();
 });
 
+async function initializeScraperStatus() {
+  try {
+    const status = await getScraperStatus();
+    const message = queueMessage(status);
+    if (message) {
+      setStatus(message, 'running');
+      startScraperStatusPolling();
+    }
+  } catch (error) {
+    console.warn(error);
+  }
+}
 elements.runScraperButton.addEventListener('click', runScraperAndRefresh);
 loadProducts();
+void initializeScraperStatus();
+
+
+
 
 
 

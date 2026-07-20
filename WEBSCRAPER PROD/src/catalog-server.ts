@@ -20,6 +20,22 @@ const LOG_DIR = resolve('logs');
 const SCRAPER_LOG = resolve(LOG_DIR, 'ultimo_scraper.log');
 let scraperRunning = false;
 
+type ScraperJob = {
+  id: string;
+  status: 'queued' | 'running' | 'done' | 'error';
+  createdAt: string;
+  startedAt?: string;
+  finishedAt?: string;
+  ok?: boolean;
+  output?: string;
+};
+
+const scraperJobs = new Map<string, ScraperJob>();
+const scraperJobQueue: ScraperJob[] = [];
+let scraperQueueProcessing = false;
+let currentScraperJob: ScraperJob | null = null;
+const MAX_SCRAPER_JOB_HISTORY = 50;
+
 type DbProduct = {
   id: string;
   run_id: string | null;
@@ -446,16 +462,7 @@ async function proxyImage(sourceUrl: string | null, res: import('node:http').Ser
   res.end(body);
 }
 
-function runScraper(): Promise<{ ok: boolean; output: string }> {
-  if (scraperRunning) {
-    return Promise.resolve({
-      ok: false,
-      output: 'El scraper ya se esta ejecutando. Espera a que termine antes de iniciar otra corrida.',
-    });
-  }
-
-  scraperRunning = true;
-
+function runScraperProcess(): Promise<{ ok: boolean; output: string }> {
   return new Promise((resolveRun) => {
     const child = spawn(process.execPath, ['dist/scrape-facenco-energy.js'], {
       cwd: process.cwd(),
@@ -474,7 +481,6 @@ function runScraper(): Promise<{ ok: boolean; output: string }> {
     });
 
     child.on('close', (code) => {
-      scraperRunning = false;
       const ok = code === 0;
       void writeScraperLog(output);
       resolveRun({
@@ -484,7 +490,6 @@ function runScraper(): Promise<{ ok: boolean; output: string }> {
     });
 
     child.on('error', (error) => {
-      scraperRunning = false;
       void writeScraperLog(error.message);
       resolveRun({
         ok: false,
@@ -492,6 +497,70 @@ function runScraper(): Promise<{ ok: boolean; output: string }> {
       });
     });
   });
+}
+
+function createJobId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function cleanupScraperJobs(): void {
+  const finished = [...scraperJobs.values()]
+    .filter((job) => job.status === 'done' || job.status === 'error')
+    .sort((a, b) => String(b.finishedAt || b.createdAt).localeCompare(String(a.finishedAt || a.createdAt)));
+
+  for (const job of finished.slice(MAX_SCRAPER_JOB_HISTORY)) {
+    scraperJobs.delete(job.id);
+  }
+}
+
+function publicJob(job: ScraperJob): ScraperJob & { queuePosition: number } {
+  const queueIndex = scraperJobQueue.findIndex((item) => item.id === job.id);
+  return {
+    ...job,
+    queuePosition: job.status === 'queued' && queueIndex >= 0 ? queueIndex + 1 : 0,
+  };
+}
+
+function processScraperQueue(): void {
+  if (scraperQueueProcessing) return;
+  scraperQueueProcessing = true;
+
+  void (async () => {
+    while (scraperJobQueue.length) {
+      const job = scraperJobQueue.shift();
+      if (!job) continue;
+
+      currentScraperJob = job;
+      scraperRunning = true;
+      job.status = 'running';
+      job.startedAt = new Date().toISOString();
+
+      const result = await runScraperProcess();
+      job.ok = result.ok;
+      job.output = result.output;
+      job.status = result.ok ? 'done' : 'error';
+      job.finishedAt = new Date().toISOString();
+
+      currentScraperJob = null;
+      scraperRunning = false;
+      cleanupScraperJobs();
+    }
+
+    scraperQueueProcessing = false;
+  })();
+}
+
+function enqueueScraperJob(): ScraperJob & { queuePosition: number } {
+  const job: ScraperJob = {
+    id: createJobId(),
+    status: 'queued',
+    createdAt: new Date().toISOString(),
+  };
+
+  scraperJobs.set(job.id, job);
+  scraperJobQueue.push(job);
+  processScraperQueue();
+  return publicJob(job);
 }
 
 function serveStatic(pathname: string, res: import('node:http').ServerResponse): void {
@@ -540,14 +609,26 @@ const server = createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/run-scraper' && req.method === 'POST') {
-      const result = await runScraper();
-      res.writeHead(result.ok ? 200 : 500, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify(result));
+      const job = enqueueScraperJob();
+      res.writeHead(202, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, accepted: true, job }));
+      return;
+    }
+
+    if (url.pathname === '/api/scraper-job') {
+      const id = url.searchParams.get('id') || '';
+      const job = scraperJobs.get(id);
+      if (!job) {
+        res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: false, error: 'No se encontro la solicitud del scraper.' }));
+        return;
+      }
+      await sendJson(res, { ok: true, job: publicJob(job) });
       return;
     }
 
     if (url.pathname === '/api/scraper-status') {
-      await sendJson(res, { running: scraperRunning });
+      await sendJson(res, { running: scraperRunning, queueSize: scraperJobQueue.length + (currentScraperJob ? 1 : 0), currentJobId: currentScraperJob?.id || null });
       return;
     }
 
@@ -598,6 +679,10 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Catalogo Comercial Comparativo listo en http://localhost:${PORT}`);
 });
+
+
+
+
 
 
 
