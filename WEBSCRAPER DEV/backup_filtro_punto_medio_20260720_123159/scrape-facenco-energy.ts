@@ -1271,62 +1271,31 @@ function isLikelyCatalogNoise(row: CsvProduct): boolean {
 }
 
 function hasRelevantBedProduct(row: CsvProduct): boolean {
-  const productText = normalizeCatalogText([
+  const haystack = normalizeCatalogText([
     row.product_name,
     row.category,
     row.line,
     row.headline,
     row.description,
+    row.product_url,
+    row.source_url,
     row.image_alt,
   ].filter(Boolean).join(' '));
 
-  const urlText = normalizeCatalogText([
-    row.product_url,
-    row.source_url,
-  ].filter(Boolean).join(' '));
-
-  const sourceText = normalizeCatalogText([
-    row.source_site,
-    row.brand,
-  ].filter(Boolean).join(' '));
-
-  const fullText = `${productText} ${urlText} ${sourceText}`.trim();
-  if (!fullText) {
+  if (!haystack) {
     return false;
   }
 
-  const hardExcludeText = productText || fullText;
-  if (BED_PRODUCT_EXCLUDE_WORDS.some((word) => hardExcludeText.includes(normalizeCatalogText(word)))) {
+  if (BED_PRODUCT_EXCLUDE_WORDS.some((word) => haystack.includes(normalizeCatalogText(word)))) {
     return false;
   }
 
-  const hasProductKeyword = BED_PRODUCT_INCLUDE_WORDS.some((word) => productText.includes(normalizeCatalogText(word)));
-  const hasUrlKeyword = BED_PRODUCT_STRONG_INCLUDE_WORDS.some((word) => urlText.includes(normalizeCatalogText(word)));
-  const trustedStore = [
-    'facenco',
-    'olympia',
-    'colchoneria',
-    'sleep gallery',
-    'mattress',
-    'beds & dreams',
-    'furniture city',
-    'la curacao',
-    'max guatemala',
-    'elektra guatemala',
-    'walmart guatemala',
-    'cemaco guatemala',
-    'siman guatemala',
-  ].some((store) => sourceText.includes(store));
-
-  if (hasProductKeyword) {
-    return true;
+  const hasIncludedWord = BED_PRODUCT_INCLUDE_WORDS.some((word) => haystack.includes(normalizeCatalogText(word)));
+  if (!hasIncludedWord) {
+    return false;
   }
 
-  if (trustedStore && hasUrlKeyword) {
-    return true;
-  }
-
-  return false;
+  return !isLikelyCatalogNoise(row);
 }
 
 function hasQuetzalPrice(row: CsvProduct): boolean {
@@ -1677,7 +1646,6 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
-
 
 
 
