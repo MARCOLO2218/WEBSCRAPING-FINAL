@@ -1350,12 +1350,9 @@ async function scrapeGenericGuatemalaStore(
       '.vtex-product-summary-2-x-container',
       '.vtex-search-result-3-x-galleryItem',
       '[class*="galleryItem"]',
-      '.vtex-search-result-3-x-galleryItem',
-      '[class*="galleryItem"]',
       '[class*="vtex-product-summary"]',
       '[class*="product-summary"]',
       '[data-testid*="product"]',
-      '[class*="ProductSummary"]',
       '[class*="ProductSummary"]',
       'article',
     ].join(', '),
@@ -1367,7 +1364,6 @@ async function scrapeGenericGuatemalaStore(
       '.vtex-product-summary-2-x-productBrand',
       '[class*="productBrand"]',
       '[class*="productName"]',
-      '[class*="nameContainer"]',
       '[class*="nameContainer"]',
       '[data-testid="product-title"]',
       'h2',
@@ -1407,12 +1403,12 @@ async function scrapeWalmartGt(page: Page, scrapedAt: string): Promise<CsvProduc
   const maxPages = 8;
 
   for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
-    const pageUrl = WALMART_GT_SOURCE_URL.replace(/page=\d+/, 'page=' + pageNumber);
-    console.log('Walmart Guatemala: leyendo pagina ' + pageNumber + '...');
+    const pageUrl = WALMART_GT_SOURCE_URL.replace(/page=\d+/, page= + pageNumber);
+    console.log(Walmart Guatemala: leyendo pagina ...);
     const rows = await scrapeGenericGuatemalaStore(page, scrapedAt, pageUrl, 'Walmart Guatemala', 'Walmart');
 
     for (const row of rows) {
-      rowsByUrl.set(row.product_url || (row.product_name + '-' + pageNumber), row);
+      rowsByUrl.set(row.product_url || ${row.product_name}-, row);
     }
 
     if (rows.length === 0 && pageNumber > 1) {
@@ -1421,10 +1417,9 @@ async function scrapeWalmartGt(page: Page, scrapedAt: string): Promise<CsvProduc
   }
 
   const rows = Array.from(rowsByUrl.values());
-  console.log('Walmart Guatemala: total guardado despues de paginar=' + rows.length);
+  console.log(Walmart Guatemala: total guardado despues de paginar=);
   return rows;
 }
-
 
 async function scrapeCemacoGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
   return scrapeGenericGuatemalaStore(page, scrapedAt, CEMACO_GT_SOURCE_URL, 'Cemaco Guatemala', 'Cemaco');
@@ -1562,7 +1557,6 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
-
 
 
 

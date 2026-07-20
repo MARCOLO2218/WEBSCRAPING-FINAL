@@ -25,7 +25,7 @@ const FURNITURE_CITY_SOURCE_URL = 'https://www.furniturecity.com.gt/mattress-col
 const LA_CURACAO_SOURCE_URL = 'https://www.lacuracaonline.com/guatemala/c/muebles/camas-y-colchones';
 const MAX_GT_SOURCE_URL = 'https://www.max.com.gt/camas-y-colchones/c';
 const ELEKTRA_GT_SOURCE_URL = 'https://www.elektra.com.gt/muebles-y-colchones/colchones/catgm1010101';
-const WALMART_GT_SOURCE_URL = 'https://www.walmart.com.gt/cama?_q=cama&fuzzy=0&initialMap=accesscontrollist,ft&initialQuery=walmartgtwm4414/cama&map=brand,brand,brand,brand,brand,brand,brand,brand,brand,brand,ft&operator=and&page=1&query=/belezza/camas-florida/facenco/indufoam/kangaroo/lucca/olympia/sealy/sienna/simmons/cama&searchState';
+const WALMART_GT_SOURCE_URL = 'https://www.walmart.com.gt/cama?_q=cama&fuzzy=0&initialMap=accesscontrollist,ft&initialQuery=walmartgtwm4414/cama&map=brand,brand,brand,brand,brand,brand,brand,brand,brand,brand,ft&operator=and&page=5&query=/belezza/camas-florida/facenco/indufoam/kangaroo/lucca/olympia/sealy/sienna/simmons/cama&searchState';
 const CEMACO_GT_SOURCE_URL = 'https://www.cemaco.com/search?q=colchon';
 const SIMAN_GT_SOURCE_URL = 'https://www.siman.com/guatemala/search?q=colchon';
 // Cambia aqui la carpeta o el nombre de los archivos generados.
@@ -1061,7 +1061,7 @@ async function scrapeSleepGallery(page: Page, scrapedAt: string): Promise<CsvPro
     categorySelector: '.sg-card-cat',
     lineSelector: '.sg-badge-comfort',
     anchorSelector: 'a.sg-card-btn, a.sg-card-img-wrap, a[href]',
-    imageSelector: 'img.vtex-product-summary-2-x-image, img',
+    imageSelector: 'img',
     regularPriceSelector: '.sg-price-old',
     salePriceSelector: '.sg-price-new',
     priceSelector: '.sg-card-price',
@@ -1083,7 +1083,7 @@ async function scrapeMattress(page: Page, scrapedAt: string): Promise<CsvProduct
     titleSelector: '.woocommerce-loop-product__title',
     categorySelector: '.product-category, .posted_in',
     anchorSelector: 'a.woocommerce-LoopProduct-link, a[href]',
-    imageSelector: 'img.vtex-product-summary-2-x-image, img',
+    imageSelector: 'img',
     regularPriceSelector: 'del .woocommerce-Price-amount, del',
     salePriceSelector: 'ins .woocommerce-Price-amount, ins',
     priceSelector: '.price',
@@ -1105,7 +1105,7 @@ async function scrapeBedsDreams(page: Page, scrapedAt: string): Promise<CsvProdu
     titleSelector: '.product-card__name',
     categorySelector: '.product-card__type, .product-card__vendor',
     anchorSelector: '.product-card__name[href], a[href]',
-    imageSelector: 'img.vtex-product-summary-2-x-image, img',
+    imageSelector: 'img',
     regularPriceSelector: '.product-card__regular-price, s',
     salePriceSelector: '.product-card__price',
     priceSelector: '.product-card__price',
@@ -1176,7 +1176,7 @@ async function scrapeFurnitureCity(page: Page, scrapedAt: string): Promise<CsvPr
       titleSelector: '.woocommerce-loop-product__title, .product-title',
       categorySelector: '.product-cat',
       anchorSelector: '.woocommerce-LoopProduct-link, a[href]',
-      imageSelector: 'img.vtex-product-summary-2-x-image, img',
+      imageSelector: 'img',
       regularPriceSelector: 'del .woocommerce-Price-amount, del',
       salePriceSelector: 'ins .woocommerce-Price-amount, ins',
       priceSelector: '.price',
@@ -1324,7 +1324,7 @@ function filterGuatemalaQuetzalRows(rows: CsvProduct[], sourceSite = 'Tienda'): 
 }
 
 async function autoScrollCatalogPage(page: Page): Promise<void> {
-  for (let i = 0; i < 10; i += 1) {
+  for (let i = 0; i < 8; i += 1) {
     await page.mouse.wheel(0, 1400);
     await page.waitForTimeout(900);
   }
@@ -1348,15 +1348,9 @@ async function scrapeGenericGuatemalaStore(
       '.product-card',
       '.product',
       '.vtex-product-summary-2-x-container',
-      '.vtex-search-result-3-x-galleryItem',
-      '[class*="galleryItem"]',
-      '.vtex-search-result-3-x-galleryItem',
-      '[class*="galleryItem"]',
       '[class*="vtex-product-summary"]',
       '[class*="product-summary"]',
       '[data-testid*="product"]',
-      '[class*="ProductSummary"]',
-      '[class*="ProductSummary"]',
       'article',
     ].join(', '),
     titleSelector: [
@@ -1367,19 +1361,17 @@ async function scrapeGenericGuatemalaStore(
       '.vtex-product-summary-2-x-productBrand',
       '[class*="productBrand"]',
       '[class*="productName"]',
-      '[class*="nameContainer"]',
-      '[class*="nameContainer"]',
       '[data-testid="product-title"]',
       'h2',
       'h3',
       'a[title]',
     ].join(', '),
     categorySelector: '.category, .product-category, .breadcrumb, [class*="category"]',
-    anchorSelector: 'a.vtex-product-summary-2-x-clearLink, a[href]',
-    imageSelector: 'img.vtex-product-summary-2-x-image, img',
-    regularPriceSelector: '.old-price, .was-price, del, .price-old, [class*="oldPrice"], [class*="listPrice"], [class*="ListPrice"], [class*="list-price"]',
-    salePriceSelector: '.special-price, .sale-price, ins, .price-final_price, [class*="sellingPrice"], [class*="SellingPrice"], [class*="salePrice"], [class*="currencyContainer"]',
-    priceSelector: '.price, .price-box, .product-price, [class*="sellingPrice"], [class*="SellingPrice"], [class*="currencyContainer"], [class*="price"], [class*="Price"], [data-testid*="price"]',
+    anchorSelector: 'a[href]',
+    imageSelector: 'img',
+    regularPriceSelector: '.old-price, .was-price, del, .price-old, [class*="oldPrice"], [class*="listPrice"]',
+    salePriceSelector: '.special-price, .sale-price, ins, .price-final_price, [class*="sellingPrice"], [class*="salePrice"]',
+    priceSelector: '.price, .price-box, .product-price, [class*="price"], [data-testid*="price"]',
     discountSelector: '.discount, .badge, .label, .tag, [class*="discount"], [class*="promo"]',
     installmentSelector: '.installment, .cuotas, [class*="installment"], [class*="cuota"]',
   });
@@ -1403,28 +1395,8 @@ async function scrapeElektraGt(page: Page, scrapedAt: string): Promise<CsvProduc
 }
 
 async function scrapeWalmartGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
-  const rowsByUrl = new Map<string, CsvProduct>();
-  const maxPages = 8;
-
-  for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
-    const pageUrl = WALMART_GT_SOURCE_URL.replace(/page=\d+/, 'page=' + pageNumber);
-    console.log('Walmart Guatemala: leyendo pagina ' + pageNumber + '...');
-    const rows = await scrapeGenericGuatemalaStore(page, scrapedAt, pageUrl, 'Walmart Guatemala', 'Walmart');
-
-    for (const row of rows) {
-      rowsByUrl.set(row.product_url || (row.product_name + '-' + pageNumber), row);
-    }
-
-    if (rows.length === 0 && pageNumber > 1) {
-      break;
-    }
-  }
-
-  const rows = Array.from(rowsByUrl.values());
-  console.log('Walmart Guatemala: total guardado despues de paginar=' + rows.length);
-  return rows;
+  return scrapeGenericGuatemalaStore(page, scrapedAt, WALMART_GT_SOURCE_URL, 'Walmart Guatemala', 'Walmart');
 }
-
 
 async function scrapeCemacoGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
   return scrapeGenericGuatemalaStore(page, scrapedAt, CEMACO_GT_SOURCE_URL, 'Cemaco Guatemala', 'Cemaco');
@@ -1562,8 +1534,6 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
-
-
 
 
 
