@@ -386,15 +386,8 @@ function startScraperStatusPolling() {
       if (message) {
         catalogReloadedAfterSharedScraper = false;
         setStatus(message, 'running');
-
-        if (!localScraperRequestRunning) {
-          elements.runScraperButton.disabled = true;
-          elements.runScraperButton.textContent = status.queueSize > 1 ? 'Solicitud en cola...' : 'Ejecutando scraper...';
-        }
-        return;
-      }
-
-      if (localScraperRequestRunning) {
+        elements.runScraperButton.disabled = true;
+        elements.runScraperButton.textContent = status.queueSize > 1 ? 'Solicitud en cola...' : 'Ejecutando scraper...';
         return;
       }
 
@@ -444,7 +437,7 @@ function extractErrorMessage(output) {
 
 
 async function waitForScraperJob(jobId) {
-  let missingChecks = 0;
+  let idleChecks = 0;
 
   while (true) {
     let job = null;
@@ -459,35 +452,34 @@ async function waitForScraperJob(jobId) {
     }
 
     if (job?.status === 'queued') {
-      const position = Number(job.queuePosition || 1);
-      setStatus(`Solicitud en cola. Posicion ${position}. Se ejecutara en el orden recibido.`, 'running');
-      elements.runScraperButton.textContent = `En cola (${position})...`;
-      missingChecks = 0;
+      setStatus(`Solicitud en cola. Posicion ${job.queuePosition}. La pagina se actualizara cuando llegue su turno.`, 'running');
+      elements.runScraperButton.textContent = 'Solicitud en cola...';
+      idleChecks = 0;
     } else if (job?.status === 'running') {
-      setStatus(`Ejecutando esta solicitud (${job.id}). Este proceso puede tardar varios minutos.`, 'running');
+      setStatus('Scraper en ejecucion. Este proceso puede tardar varios minutos. La pagina se actualizara cuando termine.', 'running');
       elements.runScraperButton.textContent = 'Ejecutando scraper...';
-      missingChecks = 0;
+      idleChecks = 0;
     } else if (job?.status === 'done') {
       return job;
     } else if (job?.status === 'error') {
       throw new Error(extractErrorMessage(job.output));
-    } else {
-      const status = await getScraperStatus().catch(() => null);
+    }
 
-      if (status?.lastJob?.id === jobId && status.lastJob.status === 'done') {
-        return status.lastJob;
-      }
-
-      if (status?.lastJob?.id === jobId && status.lastJob.status === 'error') {
+    const status = await getScraperStatus().catch(() => null);
+    if (status?.lastJob?.id === jobId && (status.lastJob.status === 'done' || status.lastJob.status === 'error')) {
+      if (status.lastJob.status === 'error') {
         throw new Error(extractErrorMessage(status.lastJob.output));
       }
+      return status.lastJob;
+    }
 
-      missingChecks += 1;
-      setStatus(`Validando estado de la solicitud. Intento ${missingChecks}.`, 'running');
-
-      if (missingChecks >= 20) {
-        throw new Error('No se pudo confirmar el cierre de esta solicitud. Actualiza la pagina para consultar el ultimo catalogo.');
+    if (status && !status.running && Number(status.queueSize || 0) === 0) {
+      idleChecks += 1;
+      if (idleChecks >= 2) {
+        return status.lastJob || job || { status: 'done', output: '' };
       }
+    } else {
+      idleChecks = 0;
     }
 
     await sleep(3000);
@@ -587,7 +579,6 @@ async function initializeScraperStatus() {
 elements.runScraperButton.addEventListener('click', runScraperAndRefresh);
 loadProducts();
 void initializeScraperStatus();
-
 
 
 
