@@ -315,25 +315,6 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function resetScraperButton() {
-  localScraperRequestRunning = false;
-  elements.runScraperButton.disabled = false;
-  elements.runScraperButton.textContent = 'Ejecutar scraper y actualizar';
-}
-
-async function fetchJsonWithTimeout(url, options = {}, timeoutMs = 15000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(url, { ...options, signal: controller.signal });
-    const data = await response.json().catch(() => ({}));
-    return { response, data };
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 function setStatus(message, type = 'info') {
   elements.statusBar.textContent = message;
   elements.statusBar.dataset.type = type;
@@ -364,9 +345,9 @@ function queueMessage(status) {
 }
 
 async function getScraperStatus() {
-  const { response, data } = await fetchJsonWithTimeout('/api/scraper-status', { cache: 'no-store' }, 10000);
+  const response = await fetch('/api/scraper-status', { cache: 'no-store' });
   if (!response.ok) throw new Error('No se pudo consultar el estado del scraper.');
-  return data;
+  return response.json();
 }
 
 function stopScraperStatusPolling() {
@@ -382,7 +363,6 @@ function startScraperStatusPolling() {
     try {
       const status = await getScraperStatus();
       const message = queueMessage(status);
-
       if (message) {
         catalogReloadedAfterSharedScraper = false;
         setStatus(message, 'running');
@@ -394,11 +374,16 @@ function startScraperStatusPolling() {
       if (!catalogReloadedAfterSharedScraper) {
         catalogReloadedAfterSharedScraper = true;
         await loadProducts();
-        setStatus('Scraper finalizado. Catalogo actualizado.', 'ok');
+        if (!localScraperRequestRunning) {
+          setStatus('Scraper finalizado. Catalogo actualizado.', 'ok');
+        }
       }
 
-      stopScraperStatusPolling();
-      resetScraperButton();
+      if (!localScraperRequestRunning) {
+        stopScraperStatusPolling();
+        elements.runScraperButton.disabled = false;
+        elements.runScraperButton.textContent = 'Ejecutar scraper y actualizar';
+      }
     } catch (error) {
       console.warn(error);
     }
@@ -440,17 +425,20 @@ async function waitForScraperJob(jobId) {
   let idleChecks = 0;
 
   while (true) {
-    let job = null;
+    let result = null;
 
     try {
-      const { response, data } = await fetchJsonWithTimeout(`/api/scraper-job?id=${encodeURIComponent(jobId)}`, { cache: 'no-store' }, 10000);
-      if (response.ok && data.ok) {
-        job = data.job;
+      const response = await fetch(`/api/scraper-job?id=${encodeURIComponent(jobId)}`, { cache: 'no-store' });
+      result = await response.json();
+
+      if (!response.ok || !result.ok) {
+        result = null;
       }
     } catch (error) {
       console.warn(error);
     }
 
+    const job = result?.job;
     if (job?.status === 'queued') {
       setStatus(`Solicitud en cola. Posicion ${job.queuePosition}. La pagina se actualizara cuando llegue su turno.`, 'running');
       elements.runScraperButton.textContent = 'Solicitud en cola...';
@@ -466,17 +454,10 @@ async function waitForScraperJob(jobId) {
     }
 
     const status = await getScraperStatus().catch(() => null);
-    if (status?.lastJob?.id === jobId && (status.lastJob.status === 'done' || status.lastJob.status === 'error')) {
-      if (status.lastJob.status === 'error') {
-        throw new Error(extractErrorMessage(status.lastJob.output));
-      }
-      return status.lastJob;
-    }
-
     if (status && !status.running && Number(status.queueSize || 0) === 0) {
       idleChecks += 1;
       if (idleChecks >= 2) {
-        return status.lastJob || job || { status: 'done', output: '' };
+        return job || { status: 'done', output: '' };
       }
     } else {
       idleChecks = 0;
@@ -491,7 +472,8 @@ async function runScraperAndRefresh() {
   localScraperRequestRunning = true;
 
   try {
-    const { response, data: result } = await fetchJsonWithTimeout('/api/run-scraper', { method: 'POST' }, 15000);
+    const response = await fetch('/api/run-scraper', { method: 'POST' });
+    const result = await response.json();
 
     if (!response.ok || !result.ok || !result.job) {
       throw new Error(extractErrorMessage(result.output || result.error || 'No se pudo iniciar el scraper.'));
@@ -515,8 +497,10 @@ async function runScraperAndRefresh() {
     console.error(error);
     setStatus(`Error: ${error.message}`, 'error');
   } finally {
+    localScraperRequestRunning = false;
     stopScraperStatusPolling();
-    resetScraperButton();
+    elements.runScraperButton.disabled = false;
+    elements.runScraperButton.textContent = 'Ejecutar scraper y actualizar';
   }
 }
 for (const element of [
@@ -579,7 +563,6 @@ async function initializeScraperStatus() {
 elements.runScraperButton.addEventListener('click', runScraperAndRefresh);
 loadProducts();
 void initializeScraperStatus();
-
 
 
 
