@@ -8,7 +8,6 @@
 
 let scraperStatusTimer = null;
 let localScraperRequestRunning = false;
-let catalogReloadedAfterSharedScraper = false;
 
 const elements = {
   productsBody: document.querySelector('#productsBody'),
@@ -320,19 +319,6 @@ function setStatus(message, type = 'info') {
   elements.statusBar.dataset.type = type;
 }
 
-function scrollProductsToStart() {
-  const tablePanel = document.querySelector('.table-panel');
-  const tableWrap = document.querySelector('.table-wrap');
-
-  if (tableWrap) {
-    tableWrap.scrollLeft = 0;
-  }
-
-  if (tablePanel) {
-    tablePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-}
-
 function queueMessage(status) {
   const queueSize = Number(status?.queueSize || 0);
   if (queueSize > 1) {
@@ -364,30 +350,15 @@ function startScraperStatusPolling() {
       const status = await getScraperStatus();
       const message = queueMessage(status);
       if (message) {
-        catalogReloadedAfterSharedScraper = false;
         setStatus(message, 'running');
-        elements.runScraperButton.disabled = true;
         elements.runScraperButton.textContent = status.queueSize > 1 ? 'Solicitud en cola...' : 'Ejecutando scraper...';
-        return;
-      }
-
-      if (!catalogReloadedAfterSharedScraper) {
-        catalogReloadedAfterSharedScraper = true;
-        await loadProducts();
-        if (!localScraperRequestRunning) {
-          setStatus('Scraper finalizado. Catalogo actualizado.', 'ok');
-        }
-      }
-
-      if (!localScraperRequestRunning) {
+      } else if (!localScraperRequestRunning) {
         stopScraperStatusPolling();
-        elements.runScraperButton.disabled = false;
-        elements.runScraperButton.textContent = 'Ejecutar scraper y actualizar';
       }
     } catch (error) {
       console.warn(error);
     }
-  }, 3000);
+  }, 5000);
 }
 function extractRunMessage(output) {
   const lines = String(output || '').split(/\r?\n/).filter(Boolean);
@@ -422,48 +393,28 @@ function extractErrorMessage(output) {
 
 
 async function waitForScraperJob(jobId) {
-  let idleChecks = 0;
-
   while (true) {
-    let result = null;
+    const response = await fetch(`/api/scraper-job?id=${encodeURIComponent(jobId)}`, { cache: 'no-store' });
+    const result = await response.json();
 
-    try {
-      const response = await fetch(`/api/scraper-job?id=${encodeURIComponent(jobId)}`, { cache: 'no-store' });
-      result = await response.json();
-
-      if (!response.ok || !result.ok) {
-        result = null;
-      }
-    } catch (error) {
-      console.warn(error);
+    if (!response.ok || !result.ok) {
+      throw new Error(result.error || 'No se pudo consultar el estado de la solicitud.');
     }
 
-    const job = result?.job;
-    if (job?.status === 'queued') {
+    const job = result.job;
+    if (job.status === 'queued') {
       setStatus(`Solicitud en cola. Posicion ${job.queuePosition}. La pagina se actualizara cuando llegue su turno.`, 'running');
       elements.runScraperButton.textContent = 'Solicitud en cola...';
-      idleChecks = 0;
-    } else if (job?.status === 'running') {
+    } else if (job.status === 'running') {
       setStatus('Scraper en ejecucion. Este proceso puede tardar varios minutos. La pagina se actualizara cuando termine.', 'running');
       elements.runScraperButton.textContent = 'Ejecutando scraper...';
-      idleChecks = 0;
-    } else if (job?.status === 'done') {
+    } else if (job.status === 'done') {
       return job;
-    } else if (job?.status === 'error') {
+    } else if (job.status === 'error') {
       throw new Error(extractErrorMessage(job.output));
     }
 
-    const status = await getScraperStatus().catch(() => null);
-    if (status && !status.running && Number(status.queueSize || 0) === 0) {
-      idleChecks += 1;
-      if (idleChecks >= 2) {
-        return job || { status: 'done', output: '' };
-      }
-    } else {
-      idleChecks = 0;
-    }
-
-    await sleep(3000);
+    await sleep(5000);
   }
 }
 async function runScraperAndRefresh() {
@@ -529,23 +480,20 @@ elements.clearFilters.addEventListener('click', () => {
   applyFilters();
 });
 
-function moveToPage(page) {
-  state.currentPage = page;
-  render();
-  scrollProductsToStart();
-}
-
 elements.pageSizeSelect.addEventListener('change', () => {
   state.pageSize = Number(elements.pageSizeSelect.value || 100);
-  moveToPage(1);
+  state.currentPage = 1;
+  render();
 });
 
 elements.prevPageButton.addEventListener('click', () => {
-  moveToPage(state.currentPage - 1);
+  state.currentPage -= 1;
+  render();
 });
 
 elements.nextPageButton.addEventListener('click', () => {
-  moveToPage(state.currentPage + 1);
+  state.currentPage += 1;
+  render();
 });
 
 async function initializeScraperStatus() {
@@ -563,7 +511,6 @@ async function initializeScraperStatus() {
 elements.runScraperButton.addEventListener('click', runScraperAndRefresh);
 loadProducts();
 void initializeScraperStatus();
-
 
 
 
