@@ -1,0 +1,7 @@
+C:\Users\USER\source\repos\acumulador\git 23\bin\Debug\git 23.exe.config
+C:\Users\USER\source\repos\acumulador\git 23\bin\Debug\git 23.exe
+C:\Users\USER\source\repos\acumulador\git 23\bin\Debug\git 23.pdb
+C:\Users\USER\source\repos\acumulador\git 23\obj\Debug\git 23.csproj.AssemblyReference.cache
+C:\Users\USER\source\repos\acumulador\git 23\obj\Debug\git 23.csproj.CoreCompileInputs.cache
+C:\Users\USER\source\repos\acumulador\git 23\obj\Debug\git 23.exe
+C:\Users\USER\source\repos\acumulador\git 23\obj\Debug\git 23.pdb

@@ -1,0 +1,7 @@
+C:\Users\USER\source\repos\Ejercicio con do\git 28\bin\Debug\git 28.exe.config
+C:\Users\USER\source\repos\Ejercicio con do\git 28\bin\Debug\git 28.exe
+C:\Users\USER\source\repos\Ejercicio con do\git 28\bin\Debug\git 28.pdb
+C:\Users\USER\source\repos\Ejercicio con do\git 28\obj\Debug\git 28.csproj.AssemblyReference.cache
+C:\Users\USER\source\repos\Ejercicio con do\git 28\obj\Debug\git 28.csproj.CoreCompileInputs.cache
+C:\Users\USER\source\repos\Ejercicio con do\git 28\obj\Debug\git 28.exe
+C:\Users\USER\source\repos\Ejercicio con do\git 28\obj\Debug\git 28.pdb

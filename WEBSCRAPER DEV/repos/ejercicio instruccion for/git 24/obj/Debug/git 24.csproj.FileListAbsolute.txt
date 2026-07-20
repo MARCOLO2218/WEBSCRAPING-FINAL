@@ -1,0 +1,7 @@
+C:\Users\USER\source\repos\ejercicio instruccion for\git 24\bin\Debug\git 24.exe.config
+C:\Users\USER\source\repos\ejercicio instruccion for\git 24\bin\Debug\git 24.exe
+C:\Users\USER\source\repos\ejercicio instruccion for\git 24\bin\Debug\git 24.pdb
+C:\Users\USER\source\repos\ejercicio instruccion for\git 24\obj\Debug\git 24.csproj.AssemblyReference.cache
+C:\Users\USER\source\repos\ejercicio instruccion for\git 24\obj\Debug\git 24.csproj.CoreCompileInputs.cache
+C:\Users\USER\source\repos\ejercicio instruccion for\git 24\obj\Debug\git 24.exe
+C:\Users\USER\source\repos\ejercicio instruccion for\git 24\obj\Debug\git 24.pdb

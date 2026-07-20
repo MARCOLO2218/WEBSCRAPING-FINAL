@@ -1,0 +1,7 @@
+C:\Users\USER\source\repos\ejercicio con while\git 26\bin\Debug\git 26.exe.config
+C:\Users\USER\source\repos\ejercicio con while\git 26\bin\Debug\git 26.exe
+C:\Users\USER\source\repos\ejercicio con while\git 26\bin\Debug\git 26.pdb
+C:\Users\USER\source\repos\ejercicio con while\git 26\obj\Debug\git 26.csproj.AssemblyReference.cache
+C:\Users\USER\source\repos\ejercicio con while\git 26\obj\Debug\git 26.csproj.CoreCompileInputs.cache
+C:\Users\USER\source\repos\ejercicio con while\git 26\obj\Debug\git 26.exe
+C:\Users\USER\source\repos\ejercicio con while\git 26\obj\Debug\git 26.pdb

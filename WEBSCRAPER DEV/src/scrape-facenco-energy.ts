@@ -25,7 +25,7 @@ const FURNITURE_CITY_SOURCE_URL = 'https://www.furniturecity.com.gt/mattress-col
 const LA_CURACAO_SOURCE_URL = 'https://www.lacuracaonline.com/guatemala/c/muebles/camas-y-colchones';
 const MAX_GT_SOURCE_URL = 'https://www.max.com.gt/camas-y-colchones/c';
 const ELEKTRA_GT_SOURCE_URL = 'https://www.elektra.com.gt/muebles-y-colchones/colchones/catgm1010101';
-const WALMART_GT_SOURCE_URL = 'https://www.walmart.com.gt/search?q=colchon';
+const WALMART_GT_SOURCE_URL = 'https://www.walmart.com.gt/cama?_q=cama&fuzzy=0&initialMap=accesscontrollist,ft&initialQuery=walmartgtwm4414/cama&map=brand,brand,brand,brand,brand,brand,brand,brand,brand,brand,ft&operator=and&page=5&query=/belezza/camas-florida/facenco/indufoam/kangaroo/lucca/olympia/sealy/sienna/simmons/cama&searchState';
 const CEMACO_GT_SOURCE_URL = 'https://www.cemaco.com/search?q=colchon';
 const SIMAN_GT_SOURCE_URL = 'https://www.siman.com/guatemala/search?q=colchon';
 // Cambia aqui la carpeta o el nombre de los archivos generados.
@@ -1322,6 +1322,14 @@ function filterGuatemalaQuetzalRows(rows: CsvProduct[], sourceSite = 'Tienda'): 
 
   return kept;
 }
+
+async function autoScrollCatalogPage(page: Page): Promise<void> {
+  for (let i = 0; i < 8; i += 1) {
+    await page.mouse.wheel(0, 1400);
+    await page.waitForTimeout(900);
+  }
+  await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => undefined);
+}
 async function scrapeGenericGuatemalaStore(
   page: Page,
   scrapedAt: string,
@@ -1330,6 +1338,7 @@ async function scrapeGenericGuatemalaStore(
   brand: string,
 ): Promise<CsvProduct[]> {
   await goto(page, sourceUrl);
+  await autoScrollCatalogPage(page);
   const rows = await extractCardProducts(page, sourceUrl, {
     sourceSite,
     brand,
@@ -1339,6 +1348,8 @@ async function scrapeGenericGuatemalaStore(
       '.product-card',
       '.product',
       '.vtex-product-summary-2-x-container',
+      '[class*="vtex-product-summary"]',
+      '[class*="product-summary"]',
       '[data-testid*="product"]',
       'article',
     ].join(', '),
@@ -1348,6 +1359,8 @@ async function scrapeGenericGuatemalaStore(
       '.product-title',
       '.product-card__name',
       '.vtex-product-summary-2-x-productBrand',
+      '[class*="productBrand"]',
+      '[class*="productName"]',
       '[data-testid="product-title"]',
       'h2',
       'h3',
@@ -1521,6 +1534,7 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+
 
 
 
