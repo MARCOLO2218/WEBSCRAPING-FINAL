@@ -34,6 +34,7 @@ const scraperJobs = new Map<string, ScraperJob>();
 const scraperJobQueue: ScraperJob[] = [];
 let scraperQueueProcessing = false;
 let currentScraperJob: ScraperJob | null = null;
+let lastFinishedScraperJob: ScraperJob | null = null;
 const MAX_SCRAPER_JOB_HISTORY = 50;
 
 type DbProduct = {
@@ -540,6 +541,7 @@ function processScraperQueue(): void {
       job.output = result.output;
       job.status = result.ok ? 'done' : 'error';
       job.finishedAt = new Date().toISOString();
+      lastFinishedScraperJob = job;
 
       currentScraperJob = null;
       scraperRunning = false;
@@ -561,6 +563,13 @@ function enqueueScraperJob(): ScraperJob & { queuePosition: number } {
   scraperJobQueue.push(job);
   processScraperQueue();
   return publicJob(job);
+}
+
+function queueSnapshot(): Array<ScraperJob & { queuePosition: number }> {
+  return [
+    ...(currentScraperJob ? [publicJob(currentScraperJob)] : []),
+    ...scraperJobQueue.map((job) => publicJob(job)),
+  ];
 }
 
 function serveStatic(pathname: string, res: import('node:http').ServerResponse): void {
@@ -628,7 +637,15 @@ const server = createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/scraper-status') {
-      await sendJson(res, { running: scraperRunning, queueSize: scraperJobQueue.length + (currentScraperJob ? 1 : 0), currentJobId: currentScraperJob?.id || null });
+      await sendJson(res, {
+        running: scraperRunning,
+        queueSize: scraperJobQueue.length + (currentScraperJob ? 1 : 0),
+        currentJobId: currentScraperJob?.id || null,
+        currentJob: currentScraperJob ? publicJob(currentScraperJob) : null,
+        queuedJobs: scraperJobQueue.map((job) => publicJob(job)),
+        jobsInOrder: queueSnapshot(),
+        lastJob: lastFinishedScraperJob ? publicJob(lastFinishedScraperJob) : null,
+      });
       return;
     }
 
@@ -679,6 +696,8 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Catalogo Comercial Comparativo listo en http://localhost:${PORT}`);
 });
+
+
 
 
 

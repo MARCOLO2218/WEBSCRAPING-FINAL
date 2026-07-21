@@ -8,6 +8,9 @@
 
 let scraperStatusTimer = null;
 let localScraperRequestRunning = false;
+let catalogReloadedAfterSharedScraper = false;
+let activeJobWaitRunning = false;
+const ACTIVE_SCRAPER_JOB_KEY = 'facenco_active_scraper_job_id';
 
 const elements = {
   productsBody: document.querySelector('#productsBody'),
@@ -314,9 +317,66 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function getStoredScraperJobId() {
+  try {
+    return window.localStorage.getItem(ACTIVE_SCRAPER_JOB_KEY);
+  } catch (error) {
+    console.warn(error);
+    return null;
+  }
+}
+
+function setStoredScraperJobId(jobId) {
+  try {
+    window.localStorage.setItem(ACTIVE_SCRAPER_JOB_KEY, jobId);
+  } catch (error) {
+    console.warn(error);
+  }
+}
+
+function clearStoredScraperJobId() {
+  try {
+    window.localStorage.removeItem(ACTIVE_SCRAPER_JOB_KEY);
+  } catch (error) {
+    console.warn(error);
+  }
+}
+
+function resetScraperButton() {
+  localScraperRequestRunning = false;
+  elements.runScraperButton.disabled = false;
+  elements.runScraperButton.textContent = 'Ejecutar scraper y actualizar';
+}
+
+async function fetchJsonWithTimeout(url, options = {}, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    const data = await response.json().catch(() => ({}));
+    return { response, data };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function setStatus(message, type = 'info') {
   elements.statusBar.textContent = message;
   elements.statusBar.dataset.type = type;
+}
+
+function scrollProductsToStart() {
+  const tablePanel = document.querySelector('.table-panel');
+  const tableWrap = document.querySelector('.table-wrap');
+
+  if (tableWrap) {
+    tableWrap.scrollLeft = 0;
+  }
+
+  if (tablePanel) {
+    tablePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 function queueMessage(status) {
@@ -331,9 +391,9 @@ function queueMessage(status) {
 }
 
 async function getScraperStatus() {
-  const response = await fetch('/api/scraper-status', { cache: 'no-store' });
+  const { response, data } = await fetchJsonWithTimeout('/api/scraper-status', { cache: 'no-store' }, 10000);
   if (!response.ok) throw new Error('No se pudo consultar el estado del scraper.');
-  return response.json();
+  return data;
 }
 
 function stopScraperStatusPolling() {
@@ -347,18 +407,67 @@ function startScraperStatusPolling() {
   stopScraperStatusPolling();
   scraperStatusTimer = setInterval(async () => {
     try {
+      const storedJobId = getStoredScraperJobId();
+
+      if (storedJobId && !activeJobWaitRunning) {
+        activeJobWaitRunning = true;
+        localScraperRequestRunning = true;
+        elements.runScraperButton.disabled = true;
+        elements.runScraperButton.textContent = 'Esperando mi solicitud...';
+        setStatus(`Solicitud propia en seguimiento (${storedJobId}). Si actualizaste la pagina, el sistema retomara el estado automaticamente.`, 'running');
+
+        waitForScraperJob(storedJobId)
+          .then(async (finishedJob) => {
+            await loadProducts();
+            setStatus(extractRunMessage(finishedJob.output) || 'Scraper finalizado correctamente. Catalogo actualizado.', 'ok');
+          })
+          .catch((error) => {
+            console.error(error);
+            setStatus(`Error: ${error.message}`, 'error');
+          })
+          .finally(() => {
+            clearStoredScraperJobId();
+            activeJobWaitRunning = false;
+            stopScraperStatusPolling();
+            resetScraperButton();
+          });
+        return;
+      }
+
       const status = await getScraperStatus();
       const message = queueMessage(status);
+
       if (message) {
-        setStatus(message, 'running');
-        elements.runScraperButton.textContent = status.queueSize > 1 ? 'Solicitud en cola...' : 'Ejecutando scraper...';
-      } else if (!localScraperRequestRunning) {
-        stopScraperStatusPolling();
+        catalogReloadedAfterSharedScraper = false;
+
+        if (localScraperRequestRunning) {
+          setStatus(message, 'running');
+          elements.runScraperButton.disabled = true;
+          elements.runScraperButton.textContent = status.queueSize > 1 ? 'Solicitud en cola...' : 'Ejecutando scraper...';
+        } else {
+          setStatus(`${message} Puedes enviar otra solicitud si necesitas correrlo de nuevo; quedara en cola.`, 'running');
+          elements.runScraperButton.disabled = false;
+          elements.runScraperButton.textContent = 'Ejecutar scraper y actualizar';
+        }
+        return;
       }
+
+      if (localScraperRequestRunning) {
+        return;
+      }
+
+      if (!catalogReloadedAfterSharedScraper) {
+        catalogReloadedAfterSharedScraper = true;
+        await loadProducts();
+        setStatus('Scraper finalizado. Catalogo actualizado.', 'ok');
+      }
+
+      stopScraperStatusPolling();
+      resetScraperButton();
     } catch (error) {
       console.warn(error);
     }
-  }, 5000);
+  }, 3000);
 }
 function extractRunMessage(output) {
   const lines = String(output || '').split(/\r?\n/).filter(Boolean);
@@ -393,28 +502,53 @@ function extractErrorMessage(output) {
 
 
 async function waitForScraperJob(jobId) {
+  let missingChecks = 0;
+
   while (true) {
-    const response = await fetch(`/api/scraper-job?id=${encodeURIComponent(jobId)}`, { cache: 'no-store' });
-    const result = await response.json();
+    let job = null;
 
-    if (!response.ok || !result.ok) {
-      throw new Error(result.error || 'No se pudo consultar el estado de la solicitud.');
+    try {
+      const { response, data } = await fetchJsonWithTimeout(`/api/scraper-job?id=${encodeURIComponent(jobId)}`, { cache: 'no-store' }, 10000);
+      if (response.ok && data.ok) {
+        job = data.job;
+      }
+    } catch (error) {
+      console.warn(error);
     }
 
-    const job = result.job;
-    if (job.status === 'queued') {
-      setStatus(`Solicitud en cola. Posicion ${job.queuePosition}. La pagina se actualizara cuando llegue su turno.`, 'running');
-      elements.runScraperButton.textContent = 'Solicitud en cola...';
-    } else if (job.status === 'running') {
-      setStatus('Scraper en ejecucion. Este proceso puede tardar varios minutos. La pagina se actualizara cuando termine.', 'running');
+    if (job?.status === 'queued') {
+      const position = Number(job.queuePosition || 1);
+      setStatus(`Solicitud en cola. Posicion ${position}. Se ejecutara en el orden recibido.`, 'running');
+      elements.runScraperButton.textContent = `En cola (${position})...`;
+      missingChecks = 0;
+    } else if (job?.status === 'running') {
+      setStatus(`Ejecutando esta solicitud (${job.id}). Este proceso puede tardar varios minutos.`, 'running');
       elements.runScraperButton.textContent = 'Ejecutando scraper...';
-    } else if (job.status === 'done') {
+      missingChecks = 0;
+    } else if (job?.status === 'done') {
       return job;
-    } else if (job.status === 'error') {
+    } else if (job?.status === 'error') {
       throw new Error(extractErrorMessage(job.output));
+    } else {
+      const status = await getScraperStatus().catch(() => null);
+
+      if (status?.lastJob?.id === jobId && status.lastJob.status === 'done') {
+        return status.lastJob;
+      }
+
+      if (status?.lastJob?.id === jobId && status.lastJob.status === 'error') {
+        throw new Error(extractErrorMessage(status.lastJob.output));
+      }
+
+      missingChecks += 1;
+      setStatus(`Validando estado de la solicitud. Intento ${missingChecks}.`, 'running');
+
+      if (missingChecks >= 20) {
+        throw new Error('No se pudo confirmar el cierre de esta solicitud. Actualiza la pagina para consultar el ultimo catalogo.');
+      }
     }
 
-    await sleep(5000);
+    await sleep(3000);
   }
 }
 async function runScraperAndRefresh() {
@@ -423,14 +557,14 @@ async function runScraperAndRefresh() {
   localScraperRequestRunning = true;
 
   try {
-    const response = await fetch('/api/run-scraper', { method: 'POST' });
-    const result = await response.json();
+    const { response, data: result } = await fetchJsonWithTimeout('/api/run-scraper', { method: 'POST' }, 15000);
 
     if (!response.ok || !result.ok || !result.job) {
       throw new Error(extractErrorMessage(result.output || result.error || 'No se pudo iniciar el scraper.'));
     }
 
     const job = result.job;
+    setStoredScraperJobId(job.id);
     if (job.queuePosition > 1) {
       setStatus(`Solicitud en cola. Posicion ${job.queuePosition}. La pagina se actualizara cuando llegue su turno.`, 'running');
       elements.runScraperButton.textContent = 'Solicitud en cola...';
@@ -448,10 +582,9 @@ async function runScraperAndRefresh() {
     console.error(error);
     setStatus(`Error: ${error.message}`, 'error');
   } finally {
-    localScraperRequestRunning = false;
+    clearStoredScraperJobId();
     stopScraperStatusPolling();
-    elements.runScraperButton.disabled = false;
-    elements.runScraperButton.textContent = 'Ejecutar scraper y actualizar';
+    resetScraperButton();
   }
 }
 for (const element of [
@@ -480,20 +613,23 @@ elements.clearFilters.addEventListener('click', () => {
   applyFilters();
 });
 
+function moveToPage(page) {
+  state.currentPage = page;
+  render();
+  scrollProductsToStart();
+}
+
 elements.pageSizeSelect.addEventListener('change', () => {
   state.pageSize = Number(elements.pageSizeSelect.value || 100);
-  state.currentPage = 1;
-  render();
+  moveToPage(1);
 });
 
 elements.prevPageButton.addEventListener('click', () => {
-  state.currentPage -= 1;
-  render();
+  moveToPage(state.currentPage - 1);
 });
 
 elements.nextPageButton.addEventListener('click', () => {
-  state.currentPage += 1;
-  render();
+  moveToPage(state.currentPage + 1);
 });
 
 async function initializeScraperStatus() {
@@ -511,6 +647,10 @@ async function initializeScraperStatus() {
 elements.runScraperButton.addEventListener('click', runScraperAndRefresh);
 loadProducts();
 void initializeScraperStatus();
+
+
+
+
 
 
 

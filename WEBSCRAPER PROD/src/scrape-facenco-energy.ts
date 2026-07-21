@@ -32,6 +32,35 @@ const SIMAN_GT_SOURCE_URL = 'https://www.siman.com/guatemala/search?q=colchon';
 const OUTPUT_FILE = resolve('output/comparacion_colchones.csv');
 const OUTPUT_XLSX_FILE = resolve('output/comparacion_colchones.xlsx');
 
+// Control de calidad por tienda.
+// Si una tienda normalmente trae mas productos, cambia aqui su minimo esperado.
+// Si una tienda trae menos que este minimo, el scraper avisa pero no se detiene.
+const STORE_QUALITY_RULES: Record<string, { minFinalProducts: number }> = {
+  FACENCO: { minFinalProducts: 10 },
+  'Camas Olympia Online GT': { minFinalProducts: 25 },
+  'La Colchoneria Guatemala': { minFinalProducts: 20 },
+  'Sleep Gallery Guatemala': { minFinalProducts: 35 },
+  'Mattress Guatemala': { minFinalProducts: 25 },
+  'Beds & Dreams': { minFinalProducts: 30 },
+  'Furniture City Guatemala': { minFinalProducts: 30 },
+  'La Curacao Guatemala': { minFinalProducts: 15 },
+  'MAX Guatemala': { minFinalProducts: 5 },
+  'Elektra Guatemala': { minFinalProducts: 5 },
+  'Walmart Guatemala': { minFinalProducts: 10 },
+  'Cemaco Guatemala': { minFinalProducts: 5 },
+  'Siman Guatemala': { minFinalProducts: 10 },
+};
+
+function buildStoreQualityWarning(storeName: string, finalCount: number, rawCount: number): string | null {
+  const rule = STORE_QUALITY_RULES[storeName];
+  if (!rule || finalCount >= rule.minFinalProducts) {
+    return null;
+  }
+
+  const rawText = rawCount !== finalCount ? ` (antes del filtro: ${rawCount})` : '';
+  return `${storeName} genero ${finalCount} productos finales${rawText}; minimo esperado ${rule.minFinalProducts}. Puede ser carga incompleta o cambio de estructura. Recomendacion: correr nuevamente y revisar logs si se repite.`;
+}
+
 type CatalogProduct = {
   productName: string;
   productUrl: string;
@@ -1642,11 +1671,17 @@ async function main(): Promise<void> {
     }
 
     const filteredRows = filterFinalCatalogRows(rows);
+    const qualityWarnings: string[] = [];
     console.log('Diagnostico final por tienda despues de filtros:');
     for (const store of storeScrapers) {
       const beforeCount = rows.filter((row) => row.source_site === store.name).length;
       const afterCount = filteredRows.filter((row) => row.source_site === store.name).length;
       console.log('FINAL ' + store.name + ': antes=' + beforeCount + ', despues=' + afterCount);
+      const qualityWarning = buildStoreQualityWarning(store.name, afterCount, beforeCount);
+      if (qualityWarning) {
+        qualityWarnings.push(qualityWarning);
+        console.log('ADVERTENCIA: ' + qualityWarning);
+      }
     }
 
     if (filteredRows.length === 0) {
@@ -1660,10 +1695,11 @@ async function main(): Promise<void> {
 
     console.log(`Productos extraidos antes de filtro: ${rows.length}`);
     console.log(`Productos guardados despues de filtro: ${filteredRows.length}`);
-    if (failures.length > 0) {
-      console.log(`Tiendas con advertencia: ${failures.length}`);
-      for (const failure of failures) {
-        console.log(`ADVERTENCIA: ${failure}`);
+    const allWarnings = [...failures, ...qualityWarnings];
+    if (allWarnings.length > 0) {
+      console.log(`Tiendas con advertencia: ${allWarnings.length}`);
+      for (const warning of allWarnings) {
+        console.log(`ADVERTENCIA: ${warning}`);
       }
     }
     console.log(`CSV generado: ${OUTPUT_FILE}`);
@@ -1677,6 +1713,7 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+
 
 
 
