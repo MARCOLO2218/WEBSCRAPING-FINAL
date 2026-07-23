@@ -32,6 +32,35 @@ const SIMAN_GT_SOURCE_URL = 'https://www.siman.com/guatemala/search?q=colchon';
 const OUTPUT_FILE = resolve('output/comparacion_colchones.csv');
 const OUTPUT_XLSX_FILE = resolve('output/comparacion_colchones.xlsx');
 
+// Control de calidad por tienda.
+// Si una tienda normalmente trae mas productos, cambia aqui su minimo esperado.
+// Si una tienda trae menos que este minimo, el scraper avisa pero no se detiene.
+const STORE_QUALITY_RULES: Record<string, { minFinalProducts: number }> = {
+  FACENCO: { minFinalProducts: 10 },
+  'Camas Olympia Online GT': { minFinalProducts: 25 },
+  'La Colchoneria Guatemala': { minFinalProducts: 20 },
+  'Sleep Gallery Guatemala': { minFinalProducts: 35 },
+  'Mattress Guatemala': { minFinalProducts: 25 },
+  'Beds & Dreams': { minFinalProducts: 30 },
+  'Furniture City Guatemala': { minFinalProducts: 30 },
+  'La Curacao Guatemala': { minFinalProducts: 15 },
+  'MAX Guatemala': { minFinalProducts: 5 },
+  'Elektra Guatemala': { minFinalProducts: 5 },
+  'Walmart Guatemala': { minFinalProducts: 10 },
+  'Cemaco Guatemala': { minFinalProducts: 5 },
+  'Siman Guatemala': { minFinalProducts: 10 },
+};
+
+function buildStoreQualityWarning(storeName: string, finalCount: number, rawCount: number): string | null {
+  const rule = STORE_QUALITY_RULES[storeName];
+  if (!rule || finalCount >= rule.minFinalProducts) {
+    return null;
+  }
+
+  const rawText = rawCount !== finalCount ? ` (antes del filtro: ${rawCount})` : '';
+  return `${storeName} genero ${finalCount} productos finales${rawText}; minimo esperado ${rule.minFinalProducts}. Puede ser carga incompleta o cambio de estructura. Recomendacion: correr nuevamente y revisar logs si se repite.`;
+}
+
 type CatalogProduct = {
   productName: string;
   productUrl: string;
@@ -1271,31 +1300,62 @@ function isLikelyCatalogNoise(row: CsvProduct): boolean {
 }
 
 function hasRelevantBedProduct(row: CsvProduct): boolean {
-  const haystack = normalizeCatalogText([
+  const productText = normalizeCatalogText([
     row.product_name,
     row.category,
     row.line,
     row.headline,
     row.description,
-    row.product_url,
-    row.source_url,
     row.image_alt,
   ].filter(Boolean).join(' '));
 
-  if (!haystack) {
+  const urlText = normalizeCatalogText([
+    row.product_url,
+    row.source_url,
+  ].filter(Boolean).join(' '));
+
+  const sourceText = normalizeCatalogText([
+    row.source_site,
+    row.brand,
+  ].filter(Boolean).join(' '));
+
+  const fullText = `${productText} ${urlText} ${sourceText}`.trim();
+  if (!fullText) {
     return false;
   }
 
-  if (BED_PRODUCT_EXCLUDE_WORDS.some((word) => haystack.includes(normalizeCatalogText(word)))) {
+  const hardExcludeText = productText || fullText;
+  if (BED_PRODUCT_EXCLUDE_WORDS.some((word) => hardExcludeText.includes(normalizeCatalogText(word)))) {
     return false;
   }
 
-  const hasIncludedWord = BED_PRODUCT_INCLUDE_WORDS.some((word) => haystack.includes(normalizeCatalogText(word)));
-  if (!hasIncludedWord) {
-    return false;
+  const hasProductKeyword = BED_PRODUCT_INCLUDE_WORDS.some((word) => productText.includes(normalizeCatalogText(word)));
+  const hasUrlKeyword = BED_PRODUCT_STRONG_INCLUDE_WORDS.some((word) => urlText.includes(normalizeCatalogText(word)));
+  const trustedStore = [
+    'facenco',
+    'olympia',
+    'colchoneria',
+    'sleep gallery',
+    'mattress',
+    'beds & dreams',
+    'furniture city',
+    'la curacao',
+    'max guatemala',
+    'elektra guatemala',
+    'walmart guatemala',
+    'cemaco guatemala',
+    'siman guatemala',
+  ].some((store) => sourceText.includes(store));
+
+  if (hasProductKeyword) {
+    return true;
   }
 
-  return !isLikelyCatalogNoise(row);
+  if (trustedStore && hasUrlKeyword) {
+    return true;
+  }
+
+  return false;
 }
 
 function hasQuetzalPrice(row: CsvProduct): boolean {
@@ -1588,34 +1648,78 @@ async function main(): Promise<void> {
     const rows: CsvProduct[] = [];
     const failures: string[] = [];
 
-    for (const store of storeScrapers) {
+    async function runStoreAttempt(store: StoreScraper, attempt: number): Promise<CsvProduct[]> {
       const storePage = await browser.newPage({
         userAgent:
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36',
       });
 
       try {
-        console.log(`Iniciando ${store.name}...`);
+        console.log(`Iniciando ${store.name} intento ${attempt}...`);
         const storeRows = await store.run(storePage);
-        rows.push(...storeRows);
-        console.log(`OK ${store.name}: ${storeRows.length} productos.`);
-      } catch (error) {
-        const technical = errorMessage(error);
-        const message = userFriendlyStoreError(store.name, technical);
-        failures.push(message);
-        console.error(`ADVERTENCIA: ${message}`);
-        console.error(`DETALLE_TECNICO ${store.name}: ${technical}`);
+        const finalRows = filterFinalCatalogRows(storeRows).filter((row) => normalizeCatalogText(row.source_site) === normalizeCatalogText(store.name));
+        console.log(`OK ${store.name} intento ${attempt}: ${storeRows.length} productos leidos, ${finalRows.length} productos utiles.`);
+        return storeRows;
       } finally {
         await storePage.close().catch(() => undefined);
       }
     }
 
+    for (const store of storeScrapers) {
+      let bestRows: CsvProduct[] = [];
+      let bestFinalCount = -1;
+
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        try {
+          const attemptRows = await runStoreAttempt(store, attempt);
+          const attemptFinalCount = filterFinalCatalogRows(attemptRows).filter((row) => normalizeCatalogText(row.source_site) === normalizeCatalogText(store.name)).length;
+
+          if (attemptFinalCount > bestFinalCount) {
+            bestRows = attemptRows;
+            bestFinalCount = attemptFinalCount;
+          }
+
+          if (attemptRows.length > 0) {
+            break;
+          }
+
+          if (attempt < 2) {
+            console.log(`ADVERTENCIA: ${store.name} devolvio 0 productos. Reintentando solo esta tienda.`);
+          }
+        } catch (error) {
+          const technical = errorMessage(error);
+          const message = userFriendlyStoreError(store.name, technical);
+
+          if (attempt < 2) {
+            console.error(`ADVERTENCIA: ${message}`);
+            console.error(`DETALLE_TECNICO ${store.name} intento ${attempt}: ${technical}`);
+            console.log(`Reintentando solo ${store.name} por fallo en el intento ${attempt}.`);
+          } else {
+            failures.push(message);
+            console.error(`ADVERTENCIA: ${message}`);
+            console.error(`DETALLE_TECNICO ${store.name} intento ${attempt}: ${technical}`);
+          }
+        }
+      }
+
+      if (bestRows.length > 0) {
+        rows.push(...bestRows);
+        console.log(`USANDO ${store.name}: ${bestRows.length} productos leidos, ${Math.max(bestFinalCount, 0)} productos utiles.`);
+      }
+    }
+
     const filteredRows = filterFinalCatalogRows(rows);
+    const qualityWarnings: string[] = [];
     console.log('Diagnostico final por tienda despues de filtros:');
     for (const store of storeScrapers) {
-      const beforeCount = rows.filter((row) => row.source_site === store.name).length;
-      const afterCount = filteredRows.filter((row) => row.source_site === store.name).length;
+      const beforeCount = rows.filter((row) => normalizeCatalogText(row.source_site) === normalizeCatalogText(store.name)).length;
+      const afterCount = filteredRows.filter((row) => normalizeCatalogText(row.source_site) === normalizeCatalogText(store.name)).length;
       console.log('FINAL ' + store.name + ': antes=' + beforeCount + ', despues=' + afterCount);
+      const qualityWarning = buildStoreQualityWarning(store.name, afterCount, beforeCount);
+      if (qualityWarning) {
+        qualityWarnings.push(qualityWarning);
+        console.log('ADVERTENCIA: ' + qualityWarning);
+      }
     }
 
     if (filteredRows.length === 0) {
@@ -1629,10 +1733,11 @@ async function main(): Promise<void> {
 
     console.log(`Productos extraidos antes de filtro: ${rows.length}`);
     console.log(`Productos guardados despues de filtro: ${filteredRows.length}`);
-    if (failures.length > 0) {
-      console.log(`Tiendas con advertencia: ${failures.length}`);
-      for (const failure of failures) {
-        console.log(`ADVERTENCIA: ${failure}`);
+    const allWarnings = [...failures, ...qualityWarnings];
+    if (allWarnings.length > 0) {
+      console.log(`Tiendas con advertencia: ${allWarnings.length}`);
+      for (const warning of allWarnings) {
+        console.log(`ADVERTENCIA: ${warning}`);
       }
     }
     console.log(`CSV generado: ${OUTPUT_FILE}`);
@@ -1646,6 +1751,13 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+
+
+
+
+
+
+
 
 
 

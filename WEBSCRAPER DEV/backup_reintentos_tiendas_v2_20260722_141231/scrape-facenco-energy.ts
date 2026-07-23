@@ -32,6 +32,35 @@ const SIMAN_GT_SOURCE_URL = 'https://www.siman.com/guatemala/search?q=colchon';
 const OUTPUT_FILE = resolve('output/comparacion_colchones.csv');
 const OUTPUT_XLSX_FILE = resolve('output/comparacion_colchones.xlsx');
 
+// Control de calidad por tienda.
+// Si una tienda normalmente trae mas productos, cambia aqui su minimo esperado.
+// Si una tienda trae menos que este minimo, el scraper avisa pero no se detiene.
+const STORE_QUALITY_RULES: Record<string, { minFinalProducts: number }> = {
+  FACENCO: { minFinalProducts: 10 },
+  'Camas Olympia Online GT': { minFinalProducts: 25 },
+  'La Colchoneria Guatemala': { minFinalProducts: 20 },
+  'Sleep Gallery Guatemala': { minFinalProducts: 35 },
+  'Mattress Guatemala': { minFinalProducts: 25 },
+  'Beds & Dreams': { minFinalProducts: 30 },
+  'Furniture City Guatemala': { minFinalProducts: 30 },
+  'La Curacao Guatemala': { minFinalProducts: 15 },
+  'MAX Guatemala': { minFinalProducts: 5 },
+  'Elektra Guatemala': { minFinalProducts: 5 },
+  'Walmart Guatemala': { minFinalProducts: 10 },
+  'Cemaco Guatemala': { minFinalProducts: 5 },
+  'Siman Guatemala': { minFinalProducts: 10 },
+};
+
+function buildStoreQualityWarning(storeName: string, finalCount: number, rawCount: number): string | null {
+  const rule = STORE_QUALITY_RULES[storeName];
+  if (!rule || finalCount >= rule.minFinalProducts) {
+    return null;
+  }
+
+  const rawText = rawCount !== finalCount ? ` (antes del filtro: ${rawCount})` : '';
+  return `${storeName} genero ${finalCount} productos finales${rawText}; minimo esperado ${rule.minFinalProducts}. Puede ser carga incompleta o cambio de estructura. Recomendacion: correr nuevamente y revisar logs si se repite.`;
+}
+
 type CatalogProduct = {
   productName: string;
   productUrl: string;
@@ -1271,31 +1300,62 @@ function isLikelyCatalogNoise(row: CsvProduct): boolean {
 }
 
 function hasRelevantBedProduct(row: CsvProduct): boolean {
-  const haystack = normalizeCatalogText([
+  const productText = normalizeCatalogText([
     row.product_name,
     row.category,
     row.line,
     row.headline,
     row.description,
-    row.product_url,
-    row.source_url,
     row.image_alt,
   ].filter(Boolean).join(' '));
 
-  if (!haystack) {
+  const urlText = normalizeCatalogText([
+    row.product_url,
+    row.source_url,
+  ].filter(Boolean).join(' '));
+
+  const sourceText = normalizeCatalogText([
+    row.source_site,
+    row.brand,
+  ].filter(Boolean).join(' '));
+
+  const fullText = `${productText} ${urlText} ${sourceText}`.trim();
+  if (!fullText) {
     return false;
   }
 
-  if (BED_PRODUCT_EXCLUDE_WORDS.some((word) => haystack.includes(normalizeCatalogText(word)))) {
+  const hardExcludeText = productText || fullText;
+  if (BED_PRODUCT_EXCLUDE_WORDS.some((word) => hardExcludeText.includes(normalizeCatalogText(word)))) {
     return false;
   }
 
-  const hasIncludedWord = BED_PRODUCT_INCLUDE_WORDS.some((word) => haystack.includes(normalizeCatalogText(word)));
-  if (!hasIncludedWord) {
-    return false;
+  const hasProductKeyword = BED_PRODUCT_INCLUDE_WORDS.some((word) => productText.includes(normalizeCatalogText(word)));
+  const hasUrlKeyword = BED_PRODUCT_STRONG_INCLUDE_WORDS.some((word) => urlText.includes(normalizeCatalogText(word)));
+  const trustedStore = [
+    'facenco',
+    'olympia',
+    'colchoneria',
+    'sleep gallery',
+    'mattress',
+    'beds & dreams',
+    'furniture city',
+    'la curacao',
+    'max guatemala',
+    'elektra guatemala',
+    'walmart guatemala',
+    'cemaco guatemala',
+    'siman guatemala',
+  ].some((store) => sourceText.includes(store));
+
+  if (hasProductKeyword) {
+    return true;
   }
 
-  return !isLikelyCatalogNoise(row);
+  if (trustedStore && hasUrlKeyword) {
+    return true;
+  }
+
+  return false;
 }
 
 function hasQuetzalPrice(row: CsvProduct): boolean {
@@ -1611,11 +1671,17 @@ async function main(): Promise<void> {
     }
 
     const filteredRows = filterFinalCatalogRows(rows);
+    const qualityWarnings: string[] = [];
     console.log('Diagnostico final por tienda despues de filtros:');
     for (const store of storeScrapers) {
       const beforeCount = rows.filter((row) => row.source_site === store.name).length;
       const afterCount = filteredRows.filter((row) => row.source_site === store.name).length;
       console.log('FINAL ' + store.name + ': antes=' + beforeCount + ', despues=' + afterCount);
+      const qualityWarning = buildStoreQualityWarning(store.name, afterCount, beforeCount);
+      if (qualityWarning) {
+        qualityWarnings.push(qualityWarning);
+        console.log('ADVERTENCIA: ' + qualityWarning);
+      }
     }
 
     if (filteredRows.length === 0) {
@@ -1629,10 +1695,11 @@ async function main(): Promise<void> {
 
     console.log(`Productos extraidos antes de filtro: ${rows.length}`);
     console.log(`Productos guardados despues de filtro: ${filteredRows.length}`);
-    if (failures.length > 0) {
-      console.log(`Tiendas con advertencia: ${failures.length}`);
-      for (const failure of failures) {
-        console.log(`ADVERTENCIA: ${failure}`);
+    const allWarnings = [...failures, ...qualityWarnings];
+    if (allWarnings.length > 0) {
+      console.log(`Tiendas con advertencia: ${allWarnings.length}`);
+      for (const warning of allWarnings) {
+        console.log(`ADVERTENCIA: ${warning}`);
       }
     }
     console.log(`CSV generado: ${OUTPUT_FILE}`);
@@ -1646,6 +1713,9 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+
+
+
 
 
 

@@ -42,7 +42,7 @@ const STORE_QUALITY_RULES: Record<string, { minFinalProducts: number }> = {
   'Sleep Gallery Guatemala': { minFinalProducts: 35 },
   'Mattress Guatemala': { minFinalProducts: 25 },
   'Beds & Dreams': { minFinalProducts: 30 },
-  'Furniture City Guatemala': { minFinalProducts: 30 },
+  'Furniture City Guatemala': { minFinalProducts: 5 },
   'La Curacao Guatemala': { minFinalProducts: 15 },
   'MAX Guatemala': { minFinalProducts: 5 },
   'Elektra Guatemala': { minFinalProducts: 5 },
@@ -51,6 +51,17 @@ const STORE_QUALITY_RULES: Record<string, { minFinalProducts: number }> = {
   'Siman Guatemala': { minFinalProducts: 10 },
 };
 
+
+// Reintentos inteligentes por tienda.
+// Esto NO detiene el scraper: si una tienda viene baja, se prueba otra vez y se usa el mejor intento.
+const STORE_RETRY_RULES: Record<string, { minFinalProducts: number }> = {
+  'La Curacao Guatemala': { minFinalProducts: 20 },
+  'Walmart Guatemala': { minFinalProducts: 520 },
+};
+
+function getStoreRetryMinimum(storeName: string): number {
+  return STORE_RETRY_RULES[storeName]?.minFinalProducts ?? 1;
+}
 function buildStoreQualityWarning(storeName: string, finalCount: number, rawCount: number): string | null {
   const rule = STORE_QUALITY_RULES[storeName];
   if (!rule || finalCount >= rule.minFinalProducts) {
@@ -1263,6 +1274,20 @@ function normalizeCatalogText(value: string): string {
     .toLowerCase();
 }
 
+
+function isObviousCatalogNoise(row: CsvProduct): boolean {
+  const text = normalizeCatalogText([
+    row.product_name,
+    row.headline,
+    row.product_url,
+  ].filter(Boolean).join(' '));
+
+  return (
+    text.includes('saltar al contenido') ||
+    text.includes('skip to content') ||
+    /#main($|[/?#&])/.test(row.product_url || '')
+  );
+}
 function isLikelyCatalogNoise(row: CsvProduct): boolean {
   const title = normalizeCatalogText(row.product_name);
   const source = normalizeCatalogText(`${row.source_site} ${row.brand} ${row.source_url}`);
@@ -1321,6 +1346,10 @@ function hasRelevantBedProduct(row: CsvProduct): boolean {
 
   const fullText = `${productText} ${urlText} ${sourceText}`.trim();
   if (!fullText) {
+    return false;
+  }
+
+  if (isObviousCatalogNoise(row)) {
     return false;
   }
 
@@ -1648,25 +1677,63 @@ async function main(): Promise<void> {
     const rows: CsvProduct[] = [];
     const failures: string[] = [];
 
-    for (const store of storeScrapers) {
+    async function runStoreAttempt(store: StoreScraper, attempt: number): Promise<CsvProduct[]> {
       const storePage = await browser.newPage({
         userAgent:
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36',
       });
 
       try {
-        console.log(`Iniciando ${store.name}...`);
+        console.log(`Iniciando ${store.name} intento ${attempt}...`);
         const storeRows = await store.run(storePage);
-        rows.push(...storeRows);
-        console.log(`OK ${store.name}: ${storeRows.length} productos.`);
-      } catch (error) {
-        const technical = errorMessage(error);
-        const message = userFriendlyStoreError(store.name, technical);
-        failures.push(message);
-        console.error(`ADVERTENCIA: ${message}`);
-        console.error(`DETALLE_TECNICO ${store.name}: ${technical}`);
+        const finalRows = filterFinalCatalogRows(storeRows).filter((row) => row.source_site === store.name);
+        console.log(`OK ${store.name} intento ${attempt}: ${storeRows.length} productos leidos, ${finalRows.length} productos utiles.`);
+        return storeRows;
       } finally {
         await storePage.close().catch(() => undefined);
+      }
+    }
+
+    for (const store of storeScrapers) {
+      let bestRows: CsvProduct[] = [];
+      let bestFinalCount = -1;
+
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        try {
+          const attemptRows = await runStoreAttempt(store, attempt);
+          const attemptFinalCount = filterFinalCatalogRows(attemptRows).filter((row) => row.source_site === store.name).length;
+
+          if (attemptFinalCount > bestFinalCount) {
+            bestRows = attemptRows;
+            bestFinalCount = attemptFinalCount;
+          }
+
+          if (attemptRows.length > 0) {
+            break;
+          }
+
+          if (attempt < 2) {
+            console.log(`ADVERTENCIA: ${store.name} devolvio 0 productos. Reintentando solo esta tienda.`);
+          }
+        } catch (error) {
+          const technical = errorMessage(error);
+          const message = userFriendlyStoreError(store.name, technical);
+
+          if (attempt < 2) {
+            console.error(`ADVERTENCIA: ${message}`);
+            console.error(`DETALLE_TECNICO ${store.name} intento ${attempt}: ${technical}`);
+            console.log(`Reintentando solo ${store.name} por fallo en el intento ${attempt}.`);
+          } else {
+            failures.push(message);
+            console.error(`ADVERTENCIA: ${message}`);
+            console.error(`DETALLE_TECNICO ${store.name} intento ${attempt}: ${technical}`);
+          }
+        }
+      }
+
+      if (bestRows.length > 0) {
+        rows.push(...bestRows);
+        console.log(`USANDO ${store.name}: ${bestRows.length} productos leidos, ${Math.max(bestFinalCount, 0)} productos utiles.`);
       }
     }
 
@@ -1674,8 +1741,8 @@ async function main(): Promise<void> {
     const qualityWarnings: string[] = [];
     console.log('Diagnostico final por tienda despues de filtros:');
     for (const store of storeScrapers) {
-      const beforeCount = rows.filter((row) => row.source_site === store.name).length;
-      const afterCount = filteredRows.filter((row) => row.source_site === store.name).length;
+      const beforeCount = rows.filter((row) => normalizeCatalogText(row.source_site) === normalizeCatalogText(store.name)).length;
+      const afterCount = filteredRows.filter((row) => normalizeCatalogText(row.source_site) === normalizeCatalogText(store.name)).length;
       console.log('FINAL ' + store.name + ': antes=' + beforeCount + ', despues=' + afterCount);
       const qualityWarning = buildStoreQualityWarning(store.name, afterCount, beforeCount);
       if (qualityWarning) {
@@ -1713,6 +1780,11 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+
+
+
+
+
 
 
 

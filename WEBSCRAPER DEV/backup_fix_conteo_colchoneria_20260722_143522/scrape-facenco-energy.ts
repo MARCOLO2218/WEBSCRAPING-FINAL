@@ -25,11 +25,41 @@ const FURNITURE_CITY_SOURCE_URL = 'https://www.furniturecity.com.gt/mattress-col
 const LA_CURACAO_SOURCE_URL = 'https://www.lacuracaonline.com/guatemala/c/muebles/camas-y-colchones';
 const MAX_GT_SOURCE_URL = 'https://www.max.com.gt/camas-y-colchones/c';
 const ELEKTRA_GT_SOURCE_URL = 'https://www.elektra.com.gt/muebles-y-colchones/colchones/catgm1010101';
-const WALMART_GT_SOURCE_URL = 'https://www.walmart.com.gt/search?q=colchon';
+const WALMART_GT_SOURCE_URL = 'https://www.walmart.com.gt/cama?_q=cama&fuzzy=0&initialMap=accesscontrollist,ft&initialQuery=walmartgtwm4414/cama&map=brand,brand,brand,brand,brand,brand,brand,brand,brand,brand,ft&operator=and&page=1&query=/belezza/camas-florida/facenco/indufoam/kangaroo/lucca/olympia/sealy/sienna/simmons/cama&searchState';
 const CEMACO_GT_SOURCE_URL = 'https://www.cemaco.com/search?q=colchon';
+const SIMAN_GT_SOURCE_URL = 'https://www.siman.com/guatemala/search?q=colchon';
 // Cambia aqui la carpeta o el nombre de los archivos generados.
 const OUTPUT_FILE = resolve('output/comparacion_colchones.csv');
 const OUTPUT_XLSX_FILE = resolve('output/comparacion_colchones.xlsx');
+
+// Control de calidad por tienda.
+// Si una tienda normalmente trae mas productos, cambia aqui su minimo esperado.
+// Si una tienda trae menos que este minimo, el scraper avisa pero no se detiene.
+const STORE_QUALITY_RULES: Record<string, { minFinalProducts: number }> = {
+  FACENCO: { minFinalProducts: 10 },
+  'Camas Olympia Online GT': { minFinalProducts: 25 },
+  'La Colchoneria Guatemala': { minFinalProducts: 20 },
+  'Sleep Gallery Guatemala': { minFinalProducts: 35 },
+  'Mattress Guatemala': { minFinalProducts: 25 },
+  'Beds & Dreams': { minFinalProducts: 30 },
+  'Furniture City Guatemala': { minFinalProducts: 30 },
+  'La Curacao Guatemala': { minFinalProducts: 15 },
+  'MAX Guatemala': { minFinalProducts: 5 },
+  'Elektra Guatemala': { minFinalProducts: 5 },
+  'Walmart Guatemala': { minFinalProducts: 10 },
+  'Cemaco Guatemala': { minFinalProducts: 5 },
+  'Siman Guatemala': { minFinalProducts: 10 },
+};
+
+function buildStoreQualityWarning(storeName: string, finalCount: number, rawCount: number): string | null {
+  const rule = STORE_QUALITY_RULES[storeName];
+  if (!rule || finalCount >= rule.minFinalProducts) {
+    return null;
+  }
+
+  const rawText = rawCount !== finalCount ? ` (antes del filtro: ${rawCount})` : '';
+  return `${storeName} genero ${finalCount} productos finales${rawText}; minimo esperado ${rule.minFinalProducts}. Puede ser carga incompleta o cambio de estructura. Recomendacion: correr nuevamente y revisar logs si se repite.`;
+}
 
 type CatalogProduct = {
   productName: string;
@@ -148,6 +178,39 @@ function toDbNullable(value: string | null | undefined): string | null {
   const cleaned = cleanText(value);
   const emptyMarkers = new Set(['', '-', 'n/a', 'na', 'null', 'undefined']);
   return emptyMarkers.has(cleaned.toLowerCase()) ? null : cleaned;
+}
+
+type PriceRange = {
+  min: number | null;
+  max: number | null;
+};
+
+function parseMoneyToken(value: string): number | null {
+  const cleaned = value
+    .replace(/Q|GTQ/gi, '')
+    .replace(/\s/g, '')
+    .replace(/,/g, '')
+    .replace(/[^\d.-]/g, '');
+
+  if (!cleaned || cleaned === '-' || cleaned === '.') return null;
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parsePriceRange(value: string | null | undefined): PriceRange {
+  const text = cleanText(value);
+  if (!text || ['-', 'n/a', 'na', 'null', 'undefined'].includes(text.toLowerCase())) {
+    return { min: null, max: null };
+  }
+
+  const matches = text.match(/(?:Q|GTQ)?\s*\d[\d,]*(?:\.\d+)?/gi) || [];
+  const numbers = matches
+    .map(parseMoneyToken)
+    .filter((price): price is number => price !== null)
+    .sort((a, b) => a - b);
+
+  if (numbers.length === 0) return { min: null, max: null };
+  return { min: numbers[0], max: numbers[numbers.length - 1] };
 }
 
 function errorMessage(error: unknown): string {
@@ -291,6 +354,10 @@ async function ensurePostgresTables(client: PoolClient, schema: string): Promise
   await client.query(`ALTER TABLE ${schema}.productos_catalogo ADD COLUMN IF NOT EXISTS run_uuid UUID`);
   await client.query(`ALTER TABLE ${schema}.productos_catalogo ADD COLUMN IF NOT EXISTS semana_run INTEGER`);
   await client.query(`ALTER TABLE ${schema}.productos_catalogo ADD COLUMN IF NOT EXISTS semana_inicio DATE`);
+  await client.query(`ALTER TABLE ${schema}.productos_catalogo ADD COLUMN IF NOT EXISTS precio_regular_min NUMERIC(12,2)`);
+  await client.query(`ALTER TABLE ${schema}.productos_catalogo ADD COLUMN IF NOT EXISTS precio_regular_max NUMERIC(12,2)`);
+  await client.query(`ALTER TABLE ${schema}.productos_catalogo ADD COLUMN IF NOT EXISTS precio_oferta_min NUMERIC(12,2)`);
+  await client.query(`ALTER TABLE ${schema}.productos_catalogo ADD COLUMN IF NOT EXISTS precio_oferta_max NUMERIC(12,2)`);
   await client.query(`DROP INDEX IF EXISTS ${schema}.ux_productos_catalogo_url_dia`);
   await client.query(`DROP INDEX IF EXISTS ${schema}.ux_scraping_runs_semana_run`);
   await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS ux_scraping_runs_run_uuid ON ${schema}.scraping_runs (run_uuid)`);
@@ -920,16 +987,16 @@ async function extractCardProducts(
       if (fallback) {
         return fallback;
       }
-      if (/colch[oó]n|colchon|mattress/i.test(name)) {
+      if (/colch[oÃ³]n|colchon|mattress/i.test(name)) {
         return 'Colchones';
       }
-      if (/cama|base/i.test(name)) {
+      if (/cama|base|box spring/i.test(name)) {
         return 'Camas';
       }
       if (/almohada|pillow/i.test(name)) {
         return 'Almohadas';
       }
-      if (/protector|frazada|edred[oó]n|comforter/i.test(name)) {
+      if (/protector|funda|s[aÃ¡]bana|frazada|edred[oÃ³]n|comforter/i.test(name)) {
         return 'Ropa de cama';
       }
       return '';
@@ -943,47 +1010,69 @@ async function extractCardProducts(
       const src = image.currentSrc || image.src || image.getAttribute('data-src') || image.getAttribute('src') || srcsetFirst;
       return src && !src.startsWith('data:') ? absolute(src) : '';
     };
+    const buildRow = (root: Element, title: string, anchor: HTMLAnchorElement | null, image: HTMLImageElement | null): CsvProduct => {
+      const rootText = clean(root.textContent);
+      const category = productCategory(title, firstText(root, config.categorySelector));
+      const regularPrice = firstText(root, config.regularPriceSelector);
+      const salePrice = firstText(root, config.salePriceSelector)
+        || firstText(root, config.priceSelector)
+        || clean(rootText.match(/(?:Q|GTQ)\s*[\d,]+(?:\.\d+)?(?:\s*-\s*(?:Q|GTQ)?\s*[\d,]+(?:\.\d+)?)?/i)?.[0]);
+      const discount = firstText(root, config.discountSelector);
+      const installment = firstText(root, config.installmentSelector);
+      const line = firstText(root, config.lineSelector);
 
-    const rows = Array.from(document.querySelectorAll<HTMLElement>(config.cardSelector))
+      return {
+        source_site: config.sourceSite,
+        brand: config.brand,
+        line,
+        category,
+        product_name: title,
+        availability: 'Listado en tienda online',
+        regular_price: regularPrice,
+        sale_price: salePrice,
+        discount,
+        installment,
+        product_url: anchor?.href ? absolute(anchor.href) : '',
+        source_url: sourceUrl,
+        headline: '',
+        description: '',
+        warranty: '',
+        benefits: '',
+        image_url: imageUrl(image),
+        image_alt: clean(image?.getAttribute('alt')),
+        scraped_at: '',
+      };
+    };
+
+    const cardRows = Array.from(document.querySelectorAll<HTMLElement>(config.cardSelector))
       .map((card) => {
-        const title = firstText(card, config.titleSelector);
+        const title = firstText(card, config.titleSelector)
+          || clean(card.getAttribute('aria-label'))
+          || clean(card.querySelector<HTMLAnchorElement>('a[title]')?.getAttribute('title'))
+          || clean(card.querySelector<HTMLImageElement>('img[alt]')?.getAttribute('alt'));
         const anchor = card.querySelector<HTMLAnchorElement>(config.anchorSelector ?? 'a[href]');
         const image = card.querySelector<HTMLImageElement>(config.imageSelector ?? 'img');
-        const category = productCategory(title, firstText(card, config.categorySelector));
-        const regularPrice = firstText(card, config.regularPriceSelector);
-        const salePrice = firstText(card, config.salePriceSelector) || firstText(card, config.priceSelector);
-        const discount = firstText(card, config.discountSelector);
-        const installment = firstText(card, config.installmentSelector);
-        const line = firstText(card, config.lineSelector);
+        return buildRow(card, title, anchor, image);
+      })
+      .filter((product) => product.product_name && product.product_url);
 
-        return {
-          source_site: config.sourceSite,
-          brand: config.brand,
-          line,
-          category,
-          product_name: title,
-          availability: 'Listado en tienda online',
-          regular_price: regularPrice,
-          sale_price: salePrice,
-          discount,
-          installment,
-          product_url: anchor?.href ? absolute(anchor.href) : '',
-          source_url: sourceUrl,
-          headline: '',
-          description: '',
-          warranty: '',
-          benefits: '',
-          image_url: imageUrl(image),
-          image_alt: clean(image?.getAttribute('alt')),
-          scraped_at: '',
-        };
+    const linkRows = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href]'))
+      .map((anchor) => {
+        const container = anchor.closest('article, li, [class*="product"], [class*="Product"], [data-testid*="product"], [data-testid*="Product"], div') ?? anchor;
+        const image = container.querySelector<HTMLImageElement>('img') ?? anchor.querySelector<HTMLImageElement>('img');
+        const title = clean(anchor.getAttribute('title'))
+          || clean(anchor.textContent)
+          || clean(image?.getAttribute('alt'))
+          || clean(container.querySelector('h1,h2,h3,h4,[class*="name"],[class*="Name"],[class*="title"],[class*="Title"]')?.textContent);
+        return buildRow(container, title, anchor, image);
       })
       .filter((product) => product.product_name && product.product_url);
 
     const unique = new Map<string, CsvProduct>();
-    for (const row of rows) {
-      if (!unique.has(row.product_url)) {
-        unique.set(row.product_url, row);
+    for (const row of [...cardRows, ...linkRows]) {
+      const key = row.product_url || `${row.source_site}|${row.product_name}`;
+      if (!unique.has(key)) {
+        unique.set(key, row);
       }
     }
 
@@ -1001,7 +1090,7 @@ async function scrapeSleepGallery(page: Page, scrapedAt: string): Promise<CsvPro
     categorySelector: '.sg-card-cat',
     lineSelector: '.sg-badge-comfort',
     anchorSelector: 'a.sg-card-btn, a.sg-card-img-wrap, a[href]',
-    imageSelector: 'img',
+    imageSelector: 'img.vtex-product-summary-2-x-image, img',
     regularPriceSelector: '.sg-price-old',
     salePriceSelector: '.sg-price-new',
     priceSelector: '.sg-card-price',
@@ -1023,7 +1112,7 @@ async function scrapeMattress(page: Page, scrapedAt: string): Promise<CsvProduct
     titleSelector: '.woocommerce-loop-product__title',
     categorySelector: '.product-category, .posted_in',
     anchorSelector: 'a.woocommerce-LoopProduct-link, a[href]',
-    imageSelector: 'img',
+    imageSelector: 'img.vtex-product-summary-2-x-image, img',
     regularPriceSelector: 'del .woocommerce-Price-amount, del',
     salePriceSelector: 'ins .woocommerce-Price-amount, ins',
     priceSelector: '.price',
@@ -1045,7 +1134,7 @@ async function scrapeBedsDreams(page: Page, scrapedAt: string): Promise<CsvProdu
     titleSelector: '.product-card__name',
     categorySelector: '.product-card__type, .product-card__vendor',
     anchorSelector: '.product-card__name[href], a[href]',
-    imageSelector: 'img',
+    imageSelector: 'img.vtex-product-summary-2-x-image, img',
     regularPriceSelector: '.product-card__regular-price, s',
     salePriceSelector: '.product-card__price',
     priceSelector: '.product-card__price',
@@ -1116,7 +1205,7 @@ async function scrapeFurnitureCity(page: Page, scrapedAt: string): Promise<CsvPr
       titleSelector: '.woocommerce-loop-product__title, .product-title',
       categorySelector: '.product-cat',
       anchorSelector: '.woocommerce-LoopProduct-link, a[href]',
-      imageSelector: 'img',
+      imageSelector: 'img.vtex-product-summary-2-x-image, img',
       regularPriceSelector: 'del .woocommerce-Price-amount, del',
       salePriceSelector: 'ins .woocommerce-Price-amount, ins',
       priceSelector: '.price',
@@ -1137,21 +1226,34 @@ async function scrapeFurnitureCity(page: Page, scrapedAt: string): Promise<CsvPr
 // Filtro comercial FACENCO.
 // Aqui puedes ajustar que productos interesan para el catalogo comparativo.
 const BED_PRODUCT_INCLUDE_WORDS = [
-  'colchon', 'colchón', 'mattress', 'cama', 'bed', 'base', 'box spring', 'boxspring',
-  'almohada', 'pillow', 'protector', 'funda', 'sabana', 'sábana', 'cobertor',
-  'edredon', 'edredón', 'duvet', 'frazada', 'comforter', 'cabecera', 'respaldo',
-  'sofa cama', 'sofá cama', 'sillon cama', 'sillón cama', 'futon', 'futón',
-  'litera', 'sleep', 'dormitorio', 'recamara', 'recámara', 'celaje', 'celajes',
+  'colchon', 'colchÃ³n', 'mattress', 'cama', 'bed', 'base', 'box spring', 'boxspring',
+  'almohada', 'protector', 'funda', 'sabana', 'sÃ¡bana', 'cobertor',
+  'edredon', 'edredÃ³n', 'duvet', 'frazada', 'comforter', 'cabecera', 'respaldo',
+  'sofa cama', 'sofÃ¡ cama', 'sillon cama', 'sillÃ³n cama', 'futon', 'futÃ³n',
+  'litera', 'dormitorio', 'recamara', 'recÃ¡mara', 'celaje', 'celajes',
+];
+
+const BED_PRODUCT_STRONG_INCLUDE_WORDS = [
+  'colchon', 'colchÃ³n', 'mattress', 'cama', 'base', 'box spring', 'boxspring',
+  'almohada', 'protector', 'sabana', 'sÃ¡bana', 'cobertor', 'edredon', 'edredÃ³n',
+  'duvet', 'frazada', 'cabecera', 'respaldo', 'sofa cama', 'sofÃ¡ cama',
+  'sillon cama', 'sillÃ³n cama', 'futon', 'futÃ³n', 'litera',
 ];
 
 const BED_PRODUCT_EXCLUDE_WORDS = [
   'laptop', 'notebook', 'computadora', 'pc gamer', 'monitor', 'teclado', 'mouse',
-  'celular', 'telefono', 'teléfono', 'smartphone', 'tablet', 'ipad', 'iphone',
-  'televisor', 'tv ', 'smart tv', 'pantalla', 'proyector', 'camara', 'cámara',
+  'celular', 'telefono', 'telÃ©fono', 'smartphone', 'tablet', 'ipad', 'iphone',
+  'samsung', 'galaxy', 'xiaomi', 'huawei', 'motorola', 'honor', 'realme', 'infinix',
+  'televisor', 'tv ', 'smart tv', 'pantalla', 'proyector', 'camara', 'cÃ¡mara',
   'refrigeradora', 'refrigerador', 'lavadora', 'secadora', 'estufa', 'cocina',
   'microondas', 'licuadora', 'freidora', 'cafetera', 'batidora', 'audio', 'bocina',
-  'parlante', 'audifono', 'audífono', 'consola', 'playstation', 'xbox', 'nintendo',
+  'parlante', 'audifono', 'audÃ­fono', 'consola', 'playstation', 'xbox', 'nintendo',
   'impresora', 'router', 'ups', 'bicicleta', 'moto', 'llanta', 'juguete',
+  'maybelline', 'maquillaje', 'labial', 'rimel', 'rÃ­mel', 'mascara', 'mÃ¡scara',
+  'face studio', 'sun kisser', 'rubor', 'base liquida', 'base lÃ­quida', 'cosmetico',
+  'cosmÃ©tico', 'perfume', 'crema facial', 'shampoo', 'acondicionador',
+  'paw patrol', 'figura de accion', 'figura de acciÃ³n', 'helicoptero', 'helicÃ³ptero',
+  'rescue', 'search', 'muÃ±eca', 'muneca', 'carro juguete', 'lego', 'barbie',
 ];
 
 function normalizeCatalogText(value: string): string {
@@ -1161,28 +1263,99 @@ function normalizeCatalogText(value: string): string {
     .toLowerCase();
 }
 
+function isLikelyCatalogNoise(row: CsvProduct): boolean {
+  const title = normalizeCatalogText(row.product_name);
+  const source = normalizeCatalogText(`${row.source_site} ${row.brand} ${row.source_url}`);
+
+  const trustedBedStores = [
+    'facenco',
+    'olympia',
+    'colchoneria',
+    'sleep gallery',
+    'mattress',
+    'beds & dreams',
+    'furniture city',
+    'la curacao',
+    'max guatemala',
+    'elektra guatemala',
+    'walmart guatemala',
+    'cemaco guatemala',
+    'siman guatemala',
+  ];
+
+  const isTrustedBedStore = trustedBedStores.some((store) => source.includes(store));
+  if (isTrustedBedStore) {
+    return false;
+  }
+
+  const hasStrongWord = BED_PRODUCT_STRONG_INCLUDE_WORDS.some((word) =>
+    title.includes(normalizeCatalogText(word)),
+  );
+
+  if (hasStrongWord) {
+    return false;
+  }
+
+  return true;
+}
+
 function hasRelevantBedProduct(row: CsvProduct): boolean {
-  const haystack = normalizeCatalogText([
+  const productText = normalizeCatalogText([
     row.product_name,
     row.category,
     row.line,
     row.headline,
     row.description,
-    row.product_url,
-    row.source_url,
     row.image_alt,
   ].filter(Boolean).join(' '));
 
-  if (!haystack) {
+  const urlText = normalizeCatalogText([
+    row.product_url,
+    row.source_url,
+  ].filter(Boolean).join(' '));
+
+  const sourceText = normalizeCatalogText([
+    row.source_site,
+    row.brand,
+  ].filter(Boolean).join(' '));
+
+  const fullText = `${productText} ${urlText} ${sourceText}`.trim();
+  if (!fullText) {
     return false;
   }
 
-  const hasIncludedWord = BED_PRODUCT_INCLUDE_WORDS.some((word) => haystack.includes(normalizeCatalogText(word)));
-  if (!hasIncludedWord) {
+  const hardExcludeText = productText || fullText;
+  if (BED_PRODUCT_EXCLUDE_WORDS.some((word) => hardExcludeText.includes(normalizeCatalogText(word)))) {
     return false;
   }
 
-  return !BED_PRODUCT_EXCLUDE_WORDS.some((word) => haystack.includes(normalizeCatalogText(word)));
+  const hasProductKeyword = BED_PRODUCT_INCLUDE_WORDS.some((word) => productText.includes(normalizeCatalogText(word)));
+  const hasUrlKeyword = BED_PRODUCT_STRONG_INCLUDE_WORDS.some((word) => urlText.includes(normalizeCatalogText(word)));
+  const trustedStore = [
+    'facenco',
+    'olympia',
+    'colchoneria',
+    'sleep gallery',
+    'mattress',
+    'beds & dreams',
+    'furniture city',
+    'la curacao',
+    'max guatemala',
+    'elektra guatemala',
+    'walmart guatemala',
+    'cemaco guatemala',
+    'siman guatemala',
+  ].some((store) => sourceText.includes(store));
+
+  if (hasProductKeyword) {
+    return true;
+  }
+
+  if (trustedStore && hasUrlKeyword) {
+    return true;
+  }
+
+  return false;
 }
 
 function hasQuetzalPrice(row: CsvProduct): boolean {
@@ -1196,10 +1369,33 @@ function hasQuetzalPrice(row: CsvProduct): boolean {
   return /(^|\s|[^A-Za-z])Q\s?\d|GTQ|Quetzal/i.test(priceText);
 }
 
-function filterGuatemalaQuetzalRows(rows: CsvProduct[]): CsvProduct[] {
-  return rows.filter((row) => hasQuetzalPrice(row) && hasRelevantBedProduct(row));
+function filterGuatemalaQuetzalRows(rows: CsvProduct[], sourceSite = 'Tienda'): CsvProduct[] {
+  const withQuetzal = rows.filter((row) => hasQuetzalPrice(row));
+  const withBedProduct = rows.filter((row) => hasRelevantBedProduct(row));
+  const kept = rows.filter((row) => hasQuetzalPrice(row) && hasRelevantBedProduct(row));
+
+  console.log(
+    `Diagnostico ${sourceSite}: encontrados=${rows.length}, con_precio_Q=${withQuetzal.length}, relacionados_cama=${withBedProduct.length}, guardados=${kept.length}`,
+  );
+
+  if (rows.length > 0 && kept.length === 0) {
+    const sample = rows
+      .slice(0, 5)
+      .map((row) => cleanText(`${row.product_name} | precio: ${row.sale_price || row.regular_price || 'sin precio'} | url: ${row.product_url}`))
+      .join(' || ');
+    console.log(`Muestra descartada ${sourceSite}: ${sample}`);
+  }
+
+  return kept;
 }
 
+async function autoScrollCatalogPage(page: Page): Promise<void> {
+  for (let i = 0; i < 10; i += 1) {
+    await page.mouse.wheel(0, 1400);
+    await page.waitForTimeout(900);
+  }
+  await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => undefined);
+}
 async function scrapeGenericGuatemalaStore(
   page: Page,
   scrapedAt: string,
@@ -1208,6 +1404,7 @@ async function scrapeGenericGuatemalaStore(
   brand: string,
 ): Promise<CsvProduct[]> {
   await goto(page, sourceUrl);
+  await autoScrollCatalogPage(page);
   const rows = await extractCardProducts(page, sourceUrl, {
     sourceSite,
     brand,
@@ -1217,7 +1414,15 @@ async function scrapeGenericGuatemalaStore(
       '.product-card',
       '.product',
       '.vtex-product-summary-2-x-container',
+      '.vtex-search-result-3-x-galleryItem',
+      '[class*="galleryItem"]',
+      '.vtex-search-result-3-x-galleryItem',
+      '[class*="galleryItem"]',
+      '[class*="vtex-product-summary"]',
+      '[class*="product-summary"]',
       '[data-testid*="product"]',
+      '[class*="ProductSummary"]',
+      '[class*="ProductSummary"]',
       'article',
     ].join(', '),
     titleSelector: [
@@ -1226,22 +1431,26 @@ async function scrapeGenericGuatemalaStore(
       '.product-title',
       '.product-card__name',
       '.vtex-product-summary-2-x-productBrand',
+      '[class*="productBrand"]',
+      '[class*="productName"]',
+      '[class*="nameContainer"]',
+      '[class*="nameContainer"]',
       '[data-testid="product-title"]',
       'h2',
       'h3',
       'a[title]',
     ].join(', '),
     categorySelector: '.category, .product-category, .breadcrumb, [class*="category"]',
-    anchorSelector: 'a[href]',
-    imageSelector: 'img',
-    regularPriceSelector: '.old-price, .was-price, del, .price-old, [class*="oldPrice"], [class*="listPrice"]',
-    salePriceSelector: '.special-price, .sale-price, ins, .price-final_price, [class*="sellingPrice"], [class*="salePrice"]',
-    priceSelector: '.price, .price-box, .product-price, [class*="price"], [data-testid*="price"]',
+    anchorSelector: 'a.vtex-product-summary-2-x-clearLink, a[href]',
+    imageSelector: 'img.vtex-product-summary-2-x-image, img',
+    regularPriceSelector: '.old-price, .was-price, del, .price-old, [class*="oldPrice"], [class*="listPrice"], [class*="ListPrice"], [class*="list-price"]',
+    salePriceSelector: '.special-price, .sale-price, ins, .price-final_price, [class*="sellingPrice"], [class*="SellingPrice"], [class*="salePrice"], [class*="currencyContainer"]',
+    priceSelector: '.price, .price-box, .product-price, [class*="sellingPrice"], [class*="SellingPrice"], [class*="currencyContainer"], [class*="price"], [class*="Price"], [data-testid*="price"]',
     discountSelector: '.discount, .badge, .label, .tag, [class*="discount"], [class*="promo"]',
     installmentSelector: '.installment, .cuotas, [class*="installment"], [class*="cuota"]',
   });
 
-  return filterGuatemalaQuetzalRows(rows).map((row) => ({
+  return filterGuatemalaQuetzalRows(rows, sourceSite).map((row) => ({
     ...row,
     scraped_at: scrapedAt,
   }));
@@ -1260,13 +1469,108 @@ async function scrapeElektraGt(page: Page, scrapedAt: string): Promise<CsvProduc
 }
 
 async function scrapeWalmartGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
-  return scrapeGenericGuatemalaStore(page, scrapedAt, WALMART_GT_SOURCE_URL, 'Walmart Guatemala', 'Walmart');
+  const rowsByUrl = new Map<string, CsvProduct>();
+  const pageSize = 50;
+  const maxProductsPerSearch = 300;
+  const searchTerms = ['cama', 'colchon', 'almohada', 'base cama', 'protector cama'];
+
+  const formatQ = (value: unknown): string => {
+    const numberValue = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(numberValue) || numberValue <= 0) return '';
+    return 'Q ' + numberValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const categoryFromName = (name: string): string => {
+    const lower = normalizeCatalogText(name);
+    if (lower.includes('almohada')) return 'Almohadas';
+    if (lower.includes('protector') || lower.includes('cobertor') || lower.includes('sabana') || lower.includes('funda')) return 'Complementos de cama';
+    if (lower.includes('base') || lower.includes('cabecera') || lower.includes('cama')) return 'Camas y bases';
+    if (lower.includes('colchon')) return 'Colchones';
+    return 'Camas y colchones';
+  };
+
+  for (const term of searchTerms) {
+    for (let from = 0; from < maxProductsPerSearch; from += pageSize) {
+      const to = from + pageSize - 1;
+      const apiUrl = 'https://www.walmart.com.gt/api/catalog_system/pub/products/search/' + encodeURIComponent(term) + '?_from=' + from + '&_to=' + to;
+      console.log('Walmart Guatemala API: leyendo "' + term + '" productos ' + from + '-' + to + '...');
+
+      const response = await page.goto(apiUrl, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => null);
+      if (!response || !response.ok()) {
+        console.log('Walmart Guatemala API: respuesta no disponible para "' + term + '" rango ' + from + '-' + to);
+        break;
+      }
+
+      const raw = await page.locator('body').innerText({ timeout: 15000 }).catch(() => '');
+      let products: any[] = [];
+      try {
+        const parsed = JSON.parse(raw);
+        products = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        products = [];
+      }
+
+      if (products.length === 0) {
+        console.log('Walmart Guatemala API: sin productos para "' + term + '" rango ' + from + '-' + to);
+        break;
+      }
+
+      for (const product of products) {
+        const item = Array.isArray(product.items) ? product.items[0] : undefined;
+        const sellers = Array.isArray(item?.sellers) ? item.sellers : [];
+        const seller = sellers.find((entry: any) => entry?.commertialOffer?.Price) || sellers[0];
+        const offer = seller?.commertialOffer || {};
+        const price = Number(offer.Price || 0);
+        const listPrice = Number(offer.ListPrice || 0);
+        const productName = cleanText(product.productName || product.productTitle || product.productReference || item?.nameComplete || item?.name);
+        if (!productName) continue;
+
+        const productUrl = product.link || (product.linkText ? 'https://www.walmart.com.gt/' + product.linkText + '/p' : WALMART_GT_SOURCE_URL);
+        const image = Array.isArray(item?.images) && item.images[0] ? item.images[0] : {};
+        const salePrice = formatQ(price);
+        const regularPrice = listPrice && listPrice !== price ? formatQ(listPrice) : salePrice;
+        const availability = Number(offer.AvailableQuantity || 0) > 0 ? 'Disponible' : 'Listado en tienda online';
+
+        rowsByUrl.set(productUrl, {
+          source_site: 'Walmart Guatemala',
+          brand: cleanText(product.brand || 'Walmart'),
+          line: term,
+          category: categoryFromName(productName),
+          product_name: productName,
+          availability,
+          regular_price: regularPrice,
+          sale_price: salePrice,
+          discount: '',
+          installment: '',
+          product_url: productUrl,
+          source_url: WALMART_GT_SOURCE_URL,
+          headline: productName,
+          description: cleanText(product.description || product.metaTagDescription),
+          warranty: '',
+          benefits: '',
+          image_url: cleanText(image.imageUrl),
+          image_alt: cleanText(image.imageText || productName),
+          scraped_at: scrapedAt,
+        });
+      }
+
+      if (products.length < pageSize) break;
+    }
+  }
+
+  const rows = Array.from(rowsByUrl.values());
+  console.log('Walmart Guatemala API: encontrados antes de filtro=' + rows.length);
+  return filterGuatemalaQuetzalRows(rows, 'Walmart Guatemala');
 }
+
 
 async function scrapeCemacoGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
   return scrapeGenericGuatemalaStore(page, scrapedAt, CEMACO_GT_SOURCE_URL, 'Cemaco Guatemala', 'Cemaco');
 }
 
+async function scrapeSimanGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
+  return scrapeGenericGuatemalaStore(page, scrapedAt, SIMAN_GT_SOURCE_URL, 'Siman Guatemala', 'Siman');
+}
 function hasDollarPrice(row: CsvProduct): boolean {
   const priceText = normalizeCatalogText([
     row.regular_price,
@@ -1338,34 +1642,85 @@ async function main(): Promise<void> {
       { name: 'Elektra Guatemala', run: (storePage) => scrapeElektraGt(storePage, scrapedAt) },
       { name: 'Walmart Guatemala', run: (storePage) => scrapeWalmartGt(storePage, scrapedAt) },
       { name: 'Cemaco Guatemala', run: (storePage) => scrapeCemacoGt(storePage, scrapedAt) },
+      { name: 'Siman Guatemala', run: (storePage) => scrapeSimanGt(storePage, scrapedAt) },
     ];
 
     const rows: CsvProduct[] = [];
     const failures: string[] = [];
 
-    for (const store of storeScrapers) {
+    async function runStoreAttempt(store: StoreScraper, attempt: number): Promise<CsvProduct[]> {
       const storePage = await browser.newPage({
         userAgent:
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36',
       });
 
       try {
-        console.log(`Iniciando ${store.name}...`);
+        console.log(`Iniciando ${store.name} intento ${attempt}...`);
         const storeRows = await store.run(storePage);
-        rows.push(...storeRows);
-        console.log(`OK ${store.name}: ${storeRows.length} productos.`);
-      } catch (error) {
-        const technical = errorMessage(error);
-        const message = userFriendlyStoreError(store.name, technical);
-        failures.push(message);
-        console.error(`ADVERTENCIA: ${message}`);
-        console.error(`DETALLE_TECNICO ${store.name}: ${technical}`);
+        const finalRows = filterFinalCatalogRows(storeRows).filter((row) => row.source_site === store.name);
+        console.log(`OK ${store.name} intento ${attempt}: ${storeRows.length} productos leidos, ${finalRows.length} productos utiles.`);
+        return storeRows;
       } finally {
         await storePage.close().catch(() => undefined);
       }
     }
 
+    for (const store of storeScrapers) {
+      let bestRows: CsvProduct[] = [];
+      let bestFinalCount = -1;
+
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        try {
+          const attemptRows = await runStoreAttempt(store, attempt);
+          const attemptFinalCount = filterFinalCatalogRows(attemptRows).filter((row) => row.source_site === store.name).length;
+
+          if (attemptFinalCount > bestFinalCount) {
+            bestRows = attemptRows;
+            bestFinalCount = attemptFinalCount;
+          }
+
+          if (attemptRows.length > 0) {
+            break;
+          }
+
+          if (attempt < 2) {
+            console.log(`ADVERTENCIA: ${store.name} devolvio 0 productos. Reintentando solo esta tienda.`);
+          }
+        } catch (error) {
+          const technical = errorMessage(error);
+          const message = userFriendlyStoreError(store.name, technical);
+
+          if (attempt < 2) {
+            console.error(`ADVERTENCIA: ${message}`);
+            console.error(`DETALLE_TECNICO ${store.name} intento ${attempt}: ${technical}`);
+            console.log(`Reintentando solo ${store.name} por fallo en el intento ${attempt}.`);
+          } else {
+            failures.push(message);
+            console.error(`ADVERTENCIA: ${message}`);
+            console.error(`DETALLE_TECNICO ${store.name} intento ${attempt}: ${technical}`);
+          }
+        }
+      }
+
+      if (bestRows.length > 0) {
+        rows.push(...bestRows);
+        console.log(`USANDO ${store.name}: ${bestRows.length} productos leidos, ${Math.max(bestFinalCount, 0)} productos utiles.`);
+      }
+    }
+
     const filteredRows = filterFinalCatalogRows(rows);
+    const qualityWarnings: string[] = [];
+    console.log('Diagnostico final por tienda despues de filtros:');
+    for (const store of storeScrapers) {
+      const beforeCount = rows.filter((row) => row.source_site === store.name).length;
+      const afterCount = filteredRows.filter((row) => row.source_site === store.name).length;
+      console.log('FINAL ' + store.name + ': antes=' + beforeCount + ', despues=' + afterCount);
+      const qualityWarning = buildStoreQualityWarning(store.name, afterCount, beforeCount);
+      if (qualityWarning) {
+        qualityWarnings.push(qualityWarning);
+        console.log('ADVERTENCIA: ' + qualityWarning);
+      }
+    }
 
     if (filteredRows.length === 0) {
       throw new Error(`No se pudo generar informacion util. Se eliminaron productos fuera de cama o con precios en dolares. ${failures.join(' | ')}`);
@@ -1378,10 +1733,11 @@ async function main(): Promise<void> {
 
     console.log(`Productos extraidos antes de filtro: ${rows.length}`);
     console.log(`Productos guardados despues de filtro: ${filteredRows.length}`);
-    if (failures.length > 0) {
-      console.log(`Tiendas con advertencia: ${failures.length}`);
-      for (const failure of failures) {
-        console.log(`ADVERTENCIA: ${failure}`);
+    const allWarnings = [...failures, ...qualityWarnings];
+    if (allWarnings.length > 0) {
+      console.log(`Tiendas con advertencia: ${allWarnings.length}`);
+      for (const warning of allWarnings) {
+        console.log(`ADVERTENCIA: ${warning}`);
       }
     }
     console.log(`CSV generado: ${OUTPUT_FILE}`);
@@ -1395,6 +1751,19 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
