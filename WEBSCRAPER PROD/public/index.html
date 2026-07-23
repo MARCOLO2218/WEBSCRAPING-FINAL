@@ -37,6 +37,13 @@
             La diferencia compara contra productos FACENCO equivalentes. Si no hay referencia comparable, muestra Sin referencia.
           </div>
 
+          <div class="scraper-options">
+            <h3>Ejecutar scraper</h3>
+            <p>Sin seleccion corre completo. Para una revision rapida, elige una o varias tiendas.</p>
+            <select id="scraperStoreSelect" multiple size="7" aria-label="Tiendas para ejecutar scraper"></select>
+            <button id="runSelectedStoreButton" class="button full secondary" type="button">Ejecutar tiendas seleccionadas</button>
+          </div>
+
           <label>
             Buscar
             <input id="searchInput" type="search" placeholder="Producto, tienda o marca" />
@@ -195,6 +202,7 @@
     <script src="/app.js"></script>
   </body>
 </html>
+
 
 
 
