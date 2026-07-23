@@ -451,8 +451,8 @@ function startScraperStatusPolling() {
 
         waitForScraperJob(storedJobId)
           .then(async (finishedJob) => {
-            fillScraperStoreSelect();
-    await loadProducts();
+            await fillScraperStoreSelect();
+loadProducts();
             setStatus(extractRunMessage(finishedJob.output) || 'Scraper finalizado correctamente. Catalogo actualizado.', 'ok');
           })
           .catch((error) => {
@@ -492,8 +492,8 @@ function startScraperStatusPolling() {
 
       if (!catalogReloadedAfterSharedScraper) {
         catalogReloadedAfterSharedScraper = true;
-        fillScraperStoreSelect();
-    await loadProducts();
+        await fillScraperStoreSelect();
+loadProducts();
         setStatus('Scraper finalizado. Catalogo actualizado.', 'ok');
       }
 
@@ -618,15 +618,15 @@ async function runScraperAndRefresh(stores = []) {
       setStatus(`Solicitud en cola. Posicion ${job.queuePosition}. La pagina se actualizara cuando llegue su turno.`, 'running');
       elements.runScraperButton.textContent = 'Solicitud en cola...';
     } else {
-      setStatus(stores.length ? `Scraper en ejecucion para: ${stores.join(', ')}. La pagina se actualizara cuando termine.` : 'Scraper en ejecucion. Este proceso puede tardar varios minutos. La pagina se actualizara cuando termine.', 'running');
+      setStatus(stores.length ? Scraper en ejecucion para: . La pagina se actualizara cuando termine. : 'Scraper en ejecucion. Este proceso puede tardar varios minutos. La pagina se actualizara cuando termine.', 'running');
       elements.runScraperButton.textContent = 'Ejecutando scraper...';
     }
 
     startScraperStatusPolling();
     const finishedJob = await waitForScraperJob(job.id);
 
-    fillScraperStoreSelect();
-    await loadProducts();
+    await fillScraperStoreSelect();
+loadProducts();
     setStatus(extractRunMessage(finishedJob.output) || 'Scraper finalizado correctamente. Catalogo actualizado.', 'ok');
   } catch (error) {
     console.error(error);
@@ -718,9 +718,8 @@ if (elements.runSelectedStoreButton) {
   elements.runSelectedStoreButton.addEventListener('click', runSelectedStoresAndRefresh);
 }
 fillScraperStoreSelect();
-void loadProducts();
+loadProducts();
 void initializeScraperStatus();
-
 
 
 
