@@ -28,7 +28,6 @@ type ScraperJob = {
   finishedAt?: string;
   ok?: boolean;
   output?: string;
-  stores?: string[];
 };
 
 const scraperJobs = new Map<string, ScraperJob>();
@@ -37,57 +36,6 @@ let scraperQueueProcessing = false;
 let currentScraperJob: ScraperJob | null = null;
 let lastFinishedScraperJob: ScraperJob | null = null;
 const MAX_SCRAPER_JOB_HISTORY = 50;
-
-const KNOWN_STORE_NAMES = [
-  'FACENCO',
-  'Camas Olympia Online GT',
-  'La Colchoneria Guatemala',
-  'Sleep Gallery Guatemala',
-  'Mattress Guatemala',
-  'Beds & Dreams',
-  'Furniture City Guatemala',
-  'La Curacao Guatemala',
-  'MAX Guatemala',
-  'Elektra Guatemala',
-  'Walmart Guatemala',
-  'Cemaco Guatemala',
-  'Siman Guatemala',
-];
-
-function sanitizeStoreSelection(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  const known = new Map(KNOWN_STORE_NAMES.map((name) => [name.toLowerCase(), name]));
-  const selected = value
-    .map((item) => String(item || '').trim())
-    .filter(Boolean)
-    .map((item) => known.get(item.toLowerCase()))
-    .filter((item): item is string => Boolean(item));
-  return [...new Set(selected)];
-}
-
-function readJsonBody(req: import('node:http').IncomingMessage): Promise<Record<string, unknown>> {
-  return new Promise((resolveBody) => {
-    let body = '';
-    req.on('data', (chunk) => {
-      body += chunk.toString();
-      if (body.length > 50_000) {
-        req.destroy();
-      }
-    });
-    req.on('end', () => {
-      if (!body.trim()) {
-        resolveBody({});
-        return;
-      }
-      try {
-        resolveBody(JSON.parse(body));
-      } catch {
-        resolveBody({});
-      }
-    });
-    req.on('error', () => resolveBody({}));
-  });
-}
 
 type DbProduct = {
   id: string;
@@ -515,14 +463,9 @@ async function proxyImage(sourceUrl: string | null, res: import('node:http').Ser
   res.end(body);
 }
 
-function runScraperProcess(stores: string[] = []): Promise<{ ok: boolean; output: string }> {
+function runScraperProcess(): Promise<{ ok: boolean; output: string }> {
   return new Promise((resolveRun) => {
-    const args = ['dist/scrape-facenco-energy.js'];
-    if (stores.length) {
-      args.push(`--stores=${stores.join(',')}`);
-    }
-
-    const child = spawn(process.execPath, args, {
+    const child = spawn(process.execPath, ['dist/scrape-facenco-energy.js'], {
       cwd: process.cwd(),
       env: process.env,
       windowsHide: true,
@@ -593,7 +536,7 @@ function processScraperQueue(): void {
       job.status = 'running';
       job.startedAt = new Date().toISOString();
 
-      const result = await runScraperProcess(job.stores || []);
+      const result = await runScraperProcess();
       job.ok = result.ok;
       job.output = result.output;
       job.status = result.ok ? 'done' : 'error';
@@ -609,12 +552,11 @@ function processScraperQueue(): void {
   })();
 }
 
-function enqueueScraperJob(stores: string[] = []): ScraperJob & { queuePosition: number } {
+function enqueueScraperJob(): ScraperJob & { queuePosition: number } {
   const job: ScraperJob = {
     id: createJobId(),
     status: 'queued',
     createdAt: new Date().toISOString(),
-    stores,
   };
 
   scraperJobs.set(job.id, job);
@@ -676,9 +618,7 @@ const server = createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/run-scraper' && req.method === 'POST') {
-      const body = await readJsonBody(req);
-      const stores = sanitizeStoreSelection(body.stores);
-      const job = enqueueScraperJob(stores);
+      const job = enqueueScraperJob();
       res.writeHead(202, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ ok: true, accepted: true, job }));
       return;
@@ -756,7 +696,6 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Catalogo Comercial Comparativo listo en http://localhost:${PORT}`);
 });
-
 
 
 

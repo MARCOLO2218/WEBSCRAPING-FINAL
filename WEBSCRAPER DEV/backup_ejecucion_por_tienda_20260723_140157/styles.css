@@ -700,28 +700,3 @@ tbody tr:hover {
   color: #8a4300;
 }
 
-
-.scraper-options {
-  background: var(--surface-strong);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  display: grid;
-  gap: 8px;
-  margin: 12px 0;
-  padding: 10px;
-}
-
-.scraper-options h3 {
-  color: var(--facenco-navy);
-  font-size: 15px;
-}
-
-.scraper-options p {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.35;
-}
-
-.scraper-options select {
-  min-height: 150px;
-}

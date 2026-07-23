@@ -27,7 +27,7 @@ const MAX_GT_SOURCE_URL = 'https://www.max.com.gt/search?q=camas';
 const ELEKTRA_GT_SOURCE_URL = 'https://www.elektra.com.gt/cama%20king/camas?map=ft,departamento';
 const WALMART_GT_SOURCE_URL = 'https://www.walmart.com.gt/cama?_q=cama&fuzzy=0&initialMap=accesscontrollist,ft&initialQuery=walmartgtwm4414/cama&map=brand,brand,brand,brand,brand,brand,brand,brand,brand,brand,ft&operator=and&page=1&query=/belezza/camas-florida/facenco/indufoam/kangaroo/lucca/olympia/sealy/sienna/simmons/cama&searchState';
 const CEMACO_GT_SOURCE_URL = 'https://www.cemaco.com/busqueda?q=camas&indexName=cemaco';
-const SIMAN_GT_SOURCE_URL = 'https://gt.siman.com/search?_q=camas&refinements=W3siYXR0cmlidXRlIjoicXVlcnkiLCJyZWZpbmVtZW50cyI6W3siYXR0cmlidXRlIjoicXVlcnkiLCJ2YWx1ZSI6ImNhbWFzIn1dfV0';
+const SIMAN_GT_SOURCE_URL = 'https://www.siman.com/guatemala/search?q=colchon';
 // Cambia aqui la carpeta o el nombre de los archivos generados.
 const OUTPUT_FILE = resolve('output/comparacion_colchones.csv');
 const OUTPUT_XLSX_FILE = resolve('output/comparacion_colchones.xlsx');
@@ -1896,47 +1896,8 @@ async function scrapeCemacoGt(page: Page, scrapedAt: string): Promise<CsvProduct
   return scrapeGenericGuatemalaStore(page, scrapedAt, CEMACO_GT_SOURCE_URL, 'Cemaco Guatemala', 'Cemaco');
 }
 
-function simanUrlWithPage(baseUrl: string, pageNumber: number): string {
-  if (pageNumber <= 1) return baseUrl;
-  const url = new URL(baseUrl);
-  url.searchParams.set('page', String(pageNumber));
-  return url.toString();
-}
-
 async function scrapeSimanGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
-  const rowsByKey = new Map<string, CsvProduct>();
-  const maxPages = 8;
-
-  for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
-    const pageUrl = simanUrlWithPage(SIMAN_GT_SOURCE_URL, pageNumber);
-    console.log('Siman Guatemala: leyendo pagina ' + pageNumber + ' de ' + maxPages + '...');
-
-    const pageRows = await scrapeGenericGuatemalaStore(
-      page,
-      scrapedAt,
-      pageUrl,
-      'Siman Guatemala',
-      'Siman',
-    );
-
-    console.log('Siman Guatemala: pagina ' + pageNumber + ' genero ' + pageRows.length + ' productos utiles.');
-
-    for (const row of pageRows) {
-      const key = (row.product_url || (row.product_name + '|' + row.sale_price + '|' + row.regular_price)).toLowerCase();
-      if (key && !rowsByKey.has(key)) {
-        rowsByKey.set(key, row);
-      }
-    }
-
-    if (pageNumber > 1 && pageRows.length === 0) {
-      console.log('Siman Guatemala: pagina ' + pageNumber + ' no devolvio productos utiles. Se detiene paginacion.');
-      break;
-    }
-  }
-
-  const rows = Array.from(rowsByKey.values());
-  console.log('Siman Guatemala: total unico despues de paginar=' + rows.length);
-  return rows;
+  return scrapeGenericGuatemalaStore(page, scrapedAt, SIMAN_GT_SOURCE_URL, 'Siman Guatemala', 'Siman');
 }
 function hasDollarPrice(row: CsvProduct): boolean {
   const priceText = normalizeCatalogText([
@@ -1986,16 +1947,6 @@ function filterFinalCatalogRows(rows: CsvProduct[]): CsvProduct[] {
   return Array.from(unique.values());
 }
 
-
-function getSelectedStoreNames(): string[] {
-  const arg = process.argv.find((item) => item.startsWith('--stores='));
-  if (!arg) return [];
-  return arg
-    .replace('--stores=', '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
 async function main(): Promise<void> {
   const browser = await chromium.launch({ headless: true });
 
@@ -2022,22 +1973,6 @@ async function main(): Promise<void> {
       { name: 'Siman Guatemala', run: (storePage) => scrapeSimanGt(storePage, scrapedAt) },
     ];
 
-    const selectedStoreNames = getSelectedStoreNames();
-    const selectedStoreKeys = selectedStoreNames.map((name) => name.toLowerCase());
-    const storesToRun = selectedStoreKeys.length
-      ? storeScrapers.filter((store) => selectedStoreKeys.includes(store.name.toLowerCase()))
-      : storeScrapers;
-
-    if (selectedStoreKeys.length && storesToRun.length === 0) {
-      throw new Error(`No se encontro ninguna tienda seleccionada. Tiendas disponibles: ${storeScrapers.map((store) => store.name).join(', ')}`);
-    }
-
-    if (selectedStoreKeys.length) {
-      console.log(`Ejecutando scraper solo para: ${storesToRun.map((store) => store.name).join(', ')}`);
-    } else {
-      console.log('Ejecutando scraper completo para todas las tiendas.');
-    }
-
     const rows: CsvProduct[] = [];
     const failures: string[] = [];
 
@@ -2058,7 +1993,7 @@ async function main(): Promise<void> {
       }
     }
 
-    for (const store of storesToRun) {
+    for (const store of storeScrapers) {
       let bestRows: CsvProduct[] = [];
       let bestFinalCount = -1;
 
@@ -2104,7 +2039,7 @@ async function main(): Promise<void> {
     const filteredRows = filterFinalCatalogRows(rows);
     const qualityWarnings: string[] = [];
     console.log('Diagnostico final por tienda despues de filtros:');
-    for (const store of storesToRun) {
+    for (const store of storeScrapers) {
       const beforeCount = rows.filter((row) => normalizeCatalogText(row.source_site) === normalizeCatalogText(store.name)).length;
       const afterCount = filteredRows.filter((row) => normalizeCatalogText(row.source_site) === normalizeCatalogText(store.name)).length;
       console.log('FINAL ' + store.name + ': antes=' + beforeCount + ', despues=' + afterCount);
@@ -2144,10 +2079,6 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
-
-
-
-
 
 
 

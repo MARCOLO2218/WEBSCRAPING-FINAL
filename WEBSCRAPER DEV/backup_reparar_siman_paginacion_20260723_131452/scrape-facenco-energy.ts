@@ -1909,7 +1909,7 @@ async function scrapeSimanGt(page: Page, scrapedAt: string): Promise<CsvProduct[
 
   for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
     const pageUrl = simanUrlWithPage(SIMAN_GT_SOURCE_URL, pageNumber);
-    console.log('Siman Guatemala: leyendo pagina ' + pageNumber + ' de ' + maxPages + '...');
+    console.log(Siman Guatemala: leyendo pagina  de ...);
 
     const pageRows = await scrapeGenericGuatemalaStore(
       page,
@@ -1919,23 +1919,23 @@ async function scrapeSimanGt(page: Page, scrapedAt: string): Promise<CsvProduct[
       'Siman',
     );
 
-    console.log('Siman Guatemala: pagina ' + pageNumber + ' genero ' + pageRows.length + ' productos utiles.');
+    console.log(Siman Guatemala: pagina  genero  productos utiles.);
 
     for (const row of pageRows) {
-      const key = (row.product_url || (row.product_name + '|' + row.sale_price + '|' + row.regular_price)).toLowerCase();
+      const key = (row.product_url || ${row.product_name}||).toLowerCase();
       if (key && !rowsByKey.has(key)) {
         rowsByKey.set(key, row);
       }
     }
 
     if (pageNumber > 1 && pageRows.length === 0) {
-      console.log('Siman Guatemala: pagina ' + pageNumber + ' no devolvio productos utiles. Se detiene paginacion.');
+      console.log(Siman Guatemala: pagina  no devolvio productos utiles. Se detiene paginacion.);
       break;
     }
   }
 
   const rows = Array.from(rowsByKey.values());
-  console.log('Siman Guatemala: total unico despues de paginar=' + rows.length);
+  console.log(Siman Guatemala: total unico despues de paginar=);
   return rows;
 }
 function hasDollarPrice(row: CsvProduct): boolean {
@@ -1986,16 +1986,6 @@ function filterFinalCatalogRows(rows: CsvProduct[]): CsvProduct[] {
   return Array.from(unique.values());
 }
 
-
-function getSelectedStoreNames(): string[] {
-  const arg = process.argv.find((item) => item.startsWith('--stores='));
-  if (!arg) return [];
-  return arg
-    .replace('--stores=', '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
 async function main(): Promise<void> {
   const browser = await chromium.launch({ headless: true });
 
@@ -2022,22 +2012,6 @@ async function main(): Promise<void> {
       { name: 'Siman Guatemala', run: (storePage) => scrapeSimanGt(storePage, scrapedAt) },
     ];
 
-    const selectedStoreNames = getSelectedStoreNames();
-    const selectedStoreKeys = selectedStoreNames.map((name) => name.toLowerCase());
-    const storesToRun = selectedStoreKeys.length
-      ? storeScrapers.filter((store) => selectedStoreKeys.includes(store.name.toLowerCase()))
-      : storeScrapers;
-
-    if (selectedStoreKeys.length && storesToRun.length === 0) {
-      throw new Error(`No se encontro ninguna tienda seleccionada. Tiendas disponibles: ${storeScrapers.map((store) => store.name).join(', ')}`);
-    }
-
-    if (selectedStoreKeys.length) {
-      console.log(`Ejecutando scraper solo para: ${storesToRun.map((store) => store.name).join(', ')}`);
-    } else {
-      console.log('Ejecutando scraper completo para todas las tiendas.');
-    }
-
     const rows: CsvProduct[] = [];
     const failures: string[] = [];
 
@@ -2058,7 +2032,7 @@ async function main(): Promise<void> {
       }
     }
 
-    for (const store of storesToRun) {
+    for (const store of storeScrapers) {
       let bestRows: CsvProduct[] = [];
       let bestFinalCount = -1;
 
@@ -2104,7 +2078,7 @@ async function main(): Promise<void> {
     const filteredRows = filterFinalCatalogRows(rows);
     const qualityWarnings: string[] = [];
     console.log('Diagnostico final por tienda despues de filtros:');
-    for (const store of storesToRun) {
+    for (const store of storeScrapers) {
       const beforeCount = rows.filter((row) => normalizeCatalogText(row.source_site) === normalizeCatalogText(store.name)).length;
       const afterCount = filteredRows.filter((row) => normalizeCatalogText(row.source_site) === normalizeCatalogText(store.name)).length;
       console.log('FINAL ' + store.name + ': antes=' + beforeCount + ', despues=' + afterCount);
@@ -2144,8 +2118,6 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
-
-
 
 
 

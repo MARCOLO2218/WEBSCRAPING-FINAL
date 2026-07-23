@@ -1986,16 +1986,6 @@ function filterFinalCatalogRows(rows: CsvProduct[]): CsvProduct[] {
   return Array.from(unique.values());
 }
 
-
-function getSelectedStoreNames(): string[] {
-  const arg = process.argv.find((item) => item.startsWith('--stores='));
-  if (!arg) return [];
-  return arg
-    .replace('--stores=', '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
 async function main(): Promise<void> {
   const browser = await chromium.launch({ headless: true });
 
@@ -2022,22 +2012,6 @@ async function main(): Promise<void> {
       { name: 'Siman Guatemala', run: (storePage) => scrapeSimanGt(storePage, scrapedAt) },
     ];
 
-    const selectedStoreNames = getSelectedStoreNames();
-    const selectedStoreKeys = selectedStoreNames.map((name) => name.toLowerCase());
-    const storesToRun = selectedStoreKeys.length
-      ? storeScrapers.filter((store) => selectedStoreKeys.includes(store.name.toLowerCase()))
-      : storeScrapers;
-
-    if (selectedStoreKeys.length && storesToRun.length === 0) {
-      throw new Error(`No se encontro ninguna tienda seleccionada. Tiendas disponibles: ${storeScrapers.map((store) => store.name).join(', ')}`);
-    }
-
-    if (selectedStoreKeys.length) {
-      console.log(`Ejecutando scraper solo para: ${storesToRun.map((store) => store.name).join(', ')}`);
-    } else {
-      console.log('Ejecutando scraper completo para todas las tiendas.');
-    }
-
     const rows: CsvProduct[] = [];
     const failures: string[] = [];
 
@@ -2058,7 +2032,7 @@ async function main(): Promise<void> {
       }
     }
 
-    for (const store of storesToRun) {
+    for (const store of storeScrapers) {
       let bestRows: CsvProduct[] = [];
       let bestFinalCount = -1;
 
@@ -2104,7 +2078,7 @@ async function main(): Promise<void> {
     const filteredRows = filterFinalCatalogRows(rows);
     const qualityWarnings: string[] = [];
     console.log('Diagnostico final por tienda despues de filtros:');
-    for (const store of storesToRun) {
+    for (const store of storeScrapers) {
       const beforeCount = rows.filter((row) => normalizeCatalogText(row.source_site) === normalizeCatalogText(store.name)).length;
       const afterCount = filteredRows.filter((row) => normalizeCatalogText(row.source_site) === normalizeCatalogText(store.name)).length;
       console.log('FINAL ' + store.name + ': antes=' + beforeCount + ', despues=' + afterCount);
@@ -2144,7 +2118,6 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
-
 
 
 
