@@ -52,6 +52,11 @@ const KNOWN_STORE_NAMES = [
   'Walmart Guatemala',
   'Cemaco Guatemala',
   'Siman Guatemala',
+  'Suena Center Guatemala',
+  'Dormilandia Guatemala',
+  'Dormisuenos Guatemala',
+  'Bodegangas Guatemala',
+  'Americana 2000 Guatemala',
 ];
 
 function sanitizeStoreSelection(value: unknown): string[] {
@@ -756,6 +761,7 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Catalogo Comercial Comparativo listo en http://localhost:${PORT}`);
 });
+
 
 
 

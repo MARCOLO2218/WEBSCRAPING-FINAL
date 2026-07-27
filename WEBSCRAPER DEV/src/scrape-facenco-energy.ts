@@ -28,6 +28,11 @@ const ELEKTRA_GT_SOURCE_URL = 'https://www.elektra.com.gt/cama%20king/camas?map=
 const WALMART_GT_SOURCE_URL = 'https://www.walmart.com.gt/cama?_q=cama&fuzzy=0&initialMap=accesscontrollist,ft&initialQuery=walmartgtwm4414/cama&map=brand,brand,brand,brand,brand,brand,brand,brand,brand,brand,ft&operator=and&page=1&query=/belezza/camas-florida/facenco/indufoam/kangaroo/lucca/olympia/sealy/sienna/simmons/cama&searchState';
 const CEMACO_GT_SOURCE_URL = 'https://www.cemaco.com/busqueda?q=camas&indexName=cemaco';
 const SIMAN_GT_SOURCE_URL = 'https://gt.siman.com/search?_q=camas&refinements=W3siYXR0cmlidXRlIjoicXVlcnkiLCJyZWZpbmVtZW50cyI6W3siYXR0cmlidXRlIjoicXVlcnkiLCJ2YWx1ZSI6ImNhbWFzIn1dfV0';
+const SUENA_CENTER_SOURCE_URL = 'https://gt.camasuena.com/categorias/camas';
+const DORMILANDIA_SOURCE_URL = 'https://www.dormilandia.com.gt/buscador.asp';
+const DORMISUENOS_SOURCE_URL = 'https://tiendasdormisuenos.com/categoria-producto/camas/?product-page=1';
+const BODEGANGAS_SOURCE_URL = 'https://bodegangasgts.com/?product_cat=0&s=camas&et_search=true&post_type=product';
+const AMERICANA_2000_SOURCE_URL = 'https://americana2000.com/categoria-producto/camas/';
 // Cambia aqui la carpeta o el nombre de los archivos generados.
 const OUTPUT_FILE = resolve('output/comparacion_colchones.csv');
 const OUTPUT_XLSX_FILE = resolve('output/comparacion_colchones.xlsx');
@@ -1306,6 +1311,8 @@ function isLikelyCatalogNoise(row: CsvProduct): boolean {
     'walmart guatemala',
     'cemaco guatemala',
     'siman guatemala',
+    'dormisueÃ±os guatemala',
+    'dormisueÃ±os',
   ];
 
   const isTrustedBedStore = trustedBedStores.some((store) => source.includes(store));
@@ -1374,6 +1381,8 @@ function hasRelevantBedProduct(row: CsvProduct): boolean {
     'walmart guatemala',
     'cemaco guatemala',
     'siman guatemala',
+    'dormisueÃ±os guatemala',
+    'dormisueÃ±os',
   ].some((store) => sourceText.includes(store));
 
   if (hasProductKeyword) {
@@ -1387,16 +1396,62 @@ function hasRelevantBedProduct(row: CsvProduct): boolean {
   return false;
 }
 
-function hasQuetzalPrice(row: CsvProduct): boolean {
-  const priceText = cleanText([
-    row.regular_price,
-    row.sale_price,
-    row.discount,
-    row.installment,
-  ].filter(Boolean).join(' '));
-
-  return /(^|\s|[^A-Za-z])Q\s?\d|GTQ|Quetzal/i.test(priceText);
+function csvFilterText(row: CsvProduct, ...keys: string[]): string {
+  const record = row as unknown as Record<string, unknown>;
+  return keys
+    .map((key) => record[key])
+    .filter((value): value is string | number => {
+      if (typeof value === 'number') return Number.isFinite(value);
+      return typeof value === 'string' && value.trim().length > 0;
+    })
+    .map((value) => String(value))
+    .join(' ');
 }
+
+
+function makeFinalCatalogFilterKey(row: CsvProduct): string {
+  return normalizeCatalogText([
+    csvFilterText(row, 'source_site', 'sitio_fuente', 'sourceSite', 'storeName', 'tienda'),
+    csvFilterText(row, 'product_name', 'producto', 'productName', 'titulo', 'title', 'headline'),
+    csvFilterText(row, 'product_url', 'url_producto', 'productUrl', 'url'),
+    csvFilterText(row, 'regular_price', 'precio_regular', 'regularPrice', 'precioRegular'),
+    csvFilterText(row, 'sale_price', 'precio_oferta', 'salePrice', 'precioOferta'),
+  ].filter(Boolean).join('|'));
+}
+function getPriceValidationText(row: CsvProduct): string {
+  return csvFilterText(
+    row,
+    'regular_price',
+    'sale_price',
+    'precio_regular',
+    'precio_oferta',
+    'precioRegular',
+    'precioOferta',
+    'regularPrice',
+    'salePrice',
+    'product_name',
+    'producto',
+    'productName',
+    'titulo',
+    'title',
+    'headline',
+    'descripcion',
+    'description',
+    'beneficios',
+    'benefits',
+    'rawText'
+  );
+}
+
+
+
+function hasQuetzalPrice(row: CsvProduct): boolean {
+  const text = getPriceValidationText(row);
+  return /(?:^|[^A-Za-z])Q\s?\d|GTQ|Quetzal/i.test(text);
+}
+
+
+
 
 function filterGuatemalaQuetzalRows(rows: CsvProduct[], sourceSite = 'Tienda'): CsvProduct[] {
   const withQuetzal = rows.filter((row) => hasQuetzalPrice(row));
@@ -1938,53 +1993,698 @@ async function scrapeSimanGt(page: Page, scrapedAt: string): Promise<CsvProduct[
   console.log('Siman Guatemala: total unico despues de paginar=' + rows.length);
   return rows;
 }
-function hasDollarPrice(row: CsvProduct): boolean {
-  const priceText = normalizeCatalogText([
-    row.regular_price,
-    row.sale_price,
-    row.discount,
-    row.installment,
-  ].filter(Boolean).join(' '));
 
-  return /(^|\s|[^A-Za-z])\$\s?\d|usd|dolar|dolares|dÃ³lar|dÃ³lares/.test(priceText);
+async function scrapeVisualProductGrid(
+  page: Page,
+  scrapedAt: string,
+  sourceUrl: string,
+  sourceSite: string,
+  brandFallback: string
+): Promise<CsvProduct[]> {
+  await goto(page, sourceUrl);
+  await autoScrollCatalogPage(page);
+  await page.waitForTimeout(1500);
+
+  const extracted = await page.evaluate((args) => {
+    const clean = (value: string | null | undefined): string =>
+      (value ?? '').replace(/\s+/g, ' ').trim();
+
+    const absoluteUrl = (href: string | null | undefined): string => {
+      if (!href || href === '#') return args.sourceUrl;
+      try {
+        return new URL(href, window.location.href).toString();
+      } catch {
+        return args.sourceUrl;
+      }
+    };
+
+    const visible = (element: Element): boolean => {
+      const html = element as HTMLElement;
+      const rect = html.getBoundingClientRect();
+      return rect.width > 20 && rect.height > 20;
+    };
+
+    const bedWords = /(cama|camas|colch[o\u00f3]n|colchon|box|base|cabecera|almohada|pillow|sleep|dream|restonic|simmons|serta|sealy|olympia|facenco|indufoam|comfort life|therapedic|siesta)/i;
+    const ignoreWords = /(telefono|tel[e\u00e9]fono|whatsapp|carrito|login|cuenta|favoritos|menu|categorias|filtrar por|ordenar por|cloudflare|5xx-error)/i;
+    const priceRegex = /Q\s*[0-9][0-9,]*(?:\.[0-9]{2})?/gi;
+
+    const parsePrice = (value: string): number | null => {
+      const match = value.match(/Q\s*([0-9][0-9,]*(?:\.[0-9]{2})?)/i);
+      if (!match) return null;
+      const parsed = Number(match[1].replace(/,/g, ''));
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+
+    const formatPrice = (value: number | null): string => {
+      if (value === null) return '';
+      return `Q${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
+    const candidates = new Set<HTMLElement>();
+    const cardSelectors = [
+      'li.product',
+      'article',
+      '.product',
+      '.product-card',
+      '.product-item',
+      '.woocommerce-LoopProduct-link',
+      '[class*="product"]',
+      '[class*="Product"]',
+      '[class*="card"]',
+      '[class*="Card"]'
+    ];
+
+    const addCandidate = (element: Element | null) => {
+      if (!element) return;
+      const html = element as HTMLElement;
+      if (!visible(html)) return;
+      const text = clean(html.innerText || html.textContent);
+      if (!priceRegex.test(text)) {
+        priceRegex.lastIndex = 0;
+        return;
+      }
+      priceRegex.lastIndex = 0;
+      if (!bedWords.test(text)) return;
+      if (text.length > 3200) return;
+      candidates.add(html);
+    };
+
+    for (const selector of cardSelectors) {
+      document.querySelectorAll(selector).forEach(addCandidate);
+    }
+
+    const actions = Array.from(document.querySelectorAll('button, a, [role="button"]')).filter((element) => {
+      const text = clean(element.textContent);
+      return /(comprar|agregar|a[n\u00f1]adir|ver producto|cotizar)/i.test(text);
+    });
+
+    for (const action of actions) {
+      let current: Element | null = action;
+      let best: HTMLElement | null = null;
+
+      for (let depth = 0; current && depth < 9; depth += 1) {
+        const html = current as HTMLElement;
+        const text = clean(html.innerText || html.textContent);
+        const actionCount = (text.match(/(comprar|agregar|a[n\u00f1]adir|ver producto|cotizar)/gi) ?? []).length;
+
+        if (depth > 0 && (actionCount > 1 || text.length > 2800)) {
+          break;
+        }
+
+        if (priceRegex.test(text) && bedWords.test(text)) {
+          best = html;
+        }
+        priceRegex.lastIndex = 0;
+        current = current.parentElement;
+      }
+
+      addCandidate(best);
+    }
+
+    const titleSelectors = [
+      '.woocommerce-loop-product__title',
+      '.product-title',
+      '.product-name',
+      '[class*="title"]',
+      '[class*="Title"]',
+      '[class*="name"]',
+      '[class*="Name"]',
+      'h2',
+      'h3',
+      'h4',
+      'a[title]'
+    ];
+
+    const pickTitle = (card: HTMLElement): string => {
+      for (const selector of titleSelectors) {
+        const found = card.querySelector(selector);
+        const title = clean(found?.getAttribute('title') || found?.textContent);
+        if (title && bedWords.test(title) && !ignoreWords.test(title) && title.length <= 180) {
+          return title;
+        }
+      }
+
+      const lines = clean(card.innerText || card.textContent)
+        .split(/(?=Q\s*[0-9])|Comprar|Agregar|A\u00f1adir|Oferta|Desde:|Vendedor:/i)
+        .map(clean)
+        .filter(Boolean);
+
+      const bestLine = lines
+        .flatMap((line) => line.split(/\s{2,}/).map(clean))
+        .filter((line) => bedWords.test(line) && !priceRegex.test(line) && !ignoreWords.test(line))
+        .sort((a, b) => Math.abs(a.length - 55) - Math.abs(b.length - 55))[0];
+
+      priceRegex.lastIndex = 0;
+      return clean(bestLine);
+    };
+
+    const pickImage = (card: HTMLElement): { imageUrl: string; imageAlt: string } => {
+      const img = card.querySelector('img') as HTMLImageElement | null;
+      return {
+        imageUrl: img?.src || img?.getAttribute('data-src') || img?.getAttribute('data-lazy-src') || '',
+        imageAlt: clean(img?.alt)
+      };
+    };
+
+    const pickUrl = (card: HTMLElement): string => {
+      const anchors = Array.from(card.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+      const productAnchor = anchors.find((anchor) => {
+        const href = anchor.getAttribute('href') ?? '';
+        const text = clean(anchor.textContent || anchor.getAttribute('title'));
+        return href && href !== '#' && !/cart|carrito|login|cuenta|favoritos/i.test(href) && (bedWords.test(text) || /producto|product|cama|colchon/i.test(href));
+      }) ?? anchors.find((anchor) => (anchor.getAttribute('href') ?? '') !== '#');
+      return absoluteUrl(productAnchor?.getAttribute('href'));
+    };
+
+    const rows: any[] = [];
+    const seen = new Set<string>();
+
+    for (const card of Array.from(candidates)) {
+      const text = clean(card.innerText || card.textContent);
+      if (ignoreWords.test(text) && !bedWords.test(text)) continue;
+
+      const title = pickTitle(card);
+      const priceMatches = Array.from(text.matchAll(priceRegex)).map((match) => match[0]);
+      priceRegex.lastIndex = 0;
+      const prices = priceMatches
+        .map(parsePrice)
+        .filter((price): price is number => price !== null && price > 0)
+        .filter((price) => price >= 100 && price <= 100000);
+
+      if (!title || prices.length === 0) continue;
+
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      const url = pickUrl(card);
+      const key = `${title.toLowerCase()}|${url}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const image = pickImage(card);
+      const category = /almohada|pillow/i.test(title)
+        ? 'Almohadas'
+        : /base|box|cabecera|cama/i.test(title)
+          ? 'Camas y bases'
+          : 'Colchones';
+
+      rows.push({
+        source_site: args.sourceSite,
+        brand: args.brandFallback,
+        line: '',
+        category,
+        product_name: title,
+        availability: 'Listado en tienda online',
+        regular_price: formatPrice(maxPrice),
+        sale_price: minPrice < maxPrice ? formatPrice(minPrice) : '',
+        discount: '',
+        installment: '',
+        product_url: url,
+        source_url: args.sourceUrl,
+        headline: title,
+        description: '',
+        warranty: '',
+        benefits: '',
+        image_url: image.imageUrl,
+        image_alt: image.imageAlt || title,
+        scraped_at: args.scrapedAt
+      });
+    }
+
+    return rows;
+  }, { sourceUrl, sourceSite, brandFallback, scrapedAt });
+
+  console.log(`${sourceSite}: extractor visual encontro ${extracted.length} productos antes de filtros.`);
+
+  return filterGuatemalaQuetzalRows(extracted as CsvProduct[], sourceSite).map((row) => ({
+    ...row,
+    scraped_at: scrapedAt,
+  }));
 }
+
+
+async function scrapePagedVisualProductGrid(
+  page: Page,
+  scrapedAt: string,
+  sourceUrl: string,
+  sourceSite: string,
+  brandFallback: string,
+  maxPages = 3
+): Promise<CsvProduct[]> {
+  const rowsByKey = new Map<string, CsvProduct>();
+  let currentUrl = sourceUrl;
+
+  for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
+    await goto(page, currentUrl);
+    await autoScrollCatalogPage(page);
+    await page.waitForTimeout(1800);
+
+    const extracted = await page.evaluate((args) => {
+      const clean = (value: string | null | undefined): string =>
+        (value ?? '').replace(/\s+/g, ' ').trim();
+
+      const absoluteUrl = (href: string | null | undefined): string => {
+        if (!href || href === '#') return args.currentUrl;
+        try {
+          return new URL(href, window.location.href).toString();
+        } catch {
+          return args.currentUrl;
+        }
+      };
+
+      const visible = (element: Element): boolean => {
+        const html = element as HTMLElement;
+        const rect = html.getBoundingClientRect();
+        const style = window.getComputedStyle(html);
+        return rect.width > 20 && rect.height > 20 && style.display !== 'none' && style.visibility !== 'hidden';
+      };
+
+      const bedWords = /(cama|camas|colch[o\u00f3]n|colchon|box|base|cabecera|almohada|pillow|sleep|dream|restonic|simmons|serta|sealy|olympia|facenco|indufoam|comfort life|therapedic|siesta|sue[n\u00f1]a|comfortlife)/i;
+      const ignoreWords = /(telefono|tel[e\u00e9]fono|whatsapp|carrito|login|cuenta|favoritos|menu|categorias|filtrar por|ordenar por|cloudflare|5xx-error|rastrea|pedido|footer|newsletter|copyright)/i;
+      const priceRegex = /Q\s*[0-9][0-9,]*(?:\.[0-9]{2})?/gi;
+
+      const hasPrice = (text: string): boolean => {
+        priceRegex.lastIndex = 0;
+        const ok = priceRegex.test(text);
+        priceRegex.lastIndex = 0;
+        return ok;
+      };
+
+      const parsePrice = (value: string): number | null => {
+        const match = value.match(/Q\s*([0-9][0-9,]*(?:\.[0-9]{2})?)/i);
+        if (!match) return null;
+        const parsed = Number(match[1].replace(/,/g, ''));
+        return Number.isFinite(parsed) ? parsed : null;
+      };
+
+      const formatPrice = (value: number | null): string => {
+        if (value === null) return '';
+        return `Q${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      };
+
+      const imageHintsBed = (card: HTMLElement): boolean =>
+        Array.from(card.querySelectorAll('img')).some((img) => {
+          const image = img as HTMLImageElement;
+          return bedWords.test(clean(image.alt || image.title || image.src));
+        });
+
+      const candidates = new Set<HTMLElement>();
+      const cardSelectors = [
+        'li.product',
+        'ul.products > li',
+        'article',
+        '.product',
+        '.product-card',
+        '.product-item',
+        '.woocommerce-LoopProduct-link',
+        '[class*="producto"]',
+        '[class*="Producto"]',
+        '[class*="product"]',
+        '[class*="Product"]',
+        '[class*="card"]',
+        '[class*="Card"]',
+        '[class*="item"]',
+        '[class*="Item"]',
+        '[class*="grid"] > *',
+        '[class*="products"] > *',
+        '[class*="Products"] > *',
+        '[class*="collection"] > *',
+        'a[href*="/producto/"]',
+        'a[href*="/product/"]'
+      ];
+
+      const addCandidate = (element: Element | null) => {
+        if (!element) return;
+        const html = element as HTMLElement;
+        if (!visible(html)) return;
+        const text = clean(html.innerText || html.textContent);
+        if (!hasPrice(text)) return;
+        if (!bedWords.test(text) && !imageHintsBed(html)) return;
+        if (ignoreWords.test(text) && text.length > 1600) return;
+        if (text.length > 3600) return;
+        candidates.add(html);
+      };
+
+      for (const selector of cardSelectors) {
+        document.querySelectorAll(selector).forEach(addCandidate);
+      }
+
+      const priceNodes = Array.from(document.querySelectorAll('body *')).filter((element) => {
+        if (!visible(element)) return false;
+        const text = clean((element as HTMLElement).innerText || element.textContent);
+        return text.length > 0 && text.length <= 900 && hasPrice(text);
+      });
+
+      for (const node of priceNodes) {
+        let current: Element | null = node;
+        let best: HTMLElement | null = null;
+
+        for (let depth = 0; current && depth < 10; depth += 1) {
+          const html = current as HTMLElement;
+          const text = clean(html.innerText || html.textContent);
+          const priceCount = (text.match(priceRegex) ?? []).length;
+          priceRegex.lastIndex = 0;
+          const actionCount = (text.match(/(comprar|agregar|a[n\u00f1]adir|ver producto|cotizar)/gi) ?? []).length;
+          const imageCount = html.querySelectorAll('img').length;
+
+          if (depth > 0 && (actionCount > 1 || priceCount > 5 || imageCount > 3 || text.length > 3200)) {
+            break;
+          }
+
+          if (hasPrice(text) && (bedWords.test(text) || imageHintsBed(html))) {
+            best = html;
+          }
+
+          current = current.parentElement;
+        }
+
+        addCandidate(best);
+      }
+
+      const titleSelectors = [
+        '.woocommerce-loop-product__title',
+        '.product-title',
+        '.product-name',
+        '[class*="title"]',
+        '[class*="Title"]',
+        '[class*="name"]',
+        '[class*="Name"]',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'a[title]'
+      ];
+
+      const pickTitle = (card: HTMLElement): string => {
+        for (const selector of titleSelectors) {
+          const found = card.querySelector(selector);
+          const title = clean(found?.getAttribute('title') || found?.textContent);
+          if (title && bedWords.test(title) && !ignoreWords.test(title) && title.length <= 190) {
+            return title;
+          }
+        }
+
+        const imageTitle = Array.from(card.querySelectorAll('img'))
+          .map((img) => clean((img as HTMLImageElement).alt || (img as HTMLImageElement).title))
+          .find((title) => title && bedWords.test(title) && !ignoreWords.test(title) && title.length <= 190);
+        if (imageTitle) return imageTitle;
+
+        const rawLines = (card.innerText || card.textContent || '')
+          .split(/\n+|Comprar|Agregar|A\u00f1adir|Oferta|Desde:|Vendedor:|Valido hasta/i)
+          .map(clean)
+          .filter(Boolean);
+
+        const bestLine = rawLines
+          .filter((line) => bedWords.test(line) && !hasPrice(line) && !ignoreWords.test(line) && line.length >= 4 && line.length <= 190)
+          .sort((a, b) => Math.abs(a.length - 55) - Math.abs(b.length - 55))[0];
+
+        return clean(bestLine);
+      };
+
+      const pickImage = (card: HTMLElement): { imageUrl: string; imageAlt: string } => {
+        const images = Array.from(card.querySelectorAll('img')) as HTMLImageElement[];
+        const img = images.find((image) => bedWords.test(clean(image.alt || image.title || image.src))) ?? images[0];
+        return {
+          imageUrl: img?.src || img?.getAttribute('data-src') || img?.getAttribute('data-lazy-src') || img?.getAttribute('data-original') || '',
+          imageAlt: clean(img?.alt || img?.title)
+        };
+      };
+
+      const pickUrl = (card: HTMLElement): string => {
+        const anchors = Array.from(card.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+        const productAnchor = anchors.find((anchor) => {
+          const href = anchor.getAttribute('href') ?? '';
+          const text = clean(anchor.textContent || anchor.getAttribute('title'));
+          return href && href !== '#' && !/cart|carrito|login|cuenta|favoritos|whatsapp/i.test(href) && (bedWords.test(text) || /producto|product|cama|colchon/i.test(href));
+        }) ?? anchors.find((anchor) => (anchor.getAttribute('href') ?? '') !== '#');
+        return absoluteUrl(productAnchor?.getAttribute('href'));
+      };
+
+      const rows: any[] = [];
+      const seen = new Set<string>();
+
+      for (const card of Array.from(candidates)) {
+        const text = clean(card.innerText || card.textContent);
+        if (ignoreWords.test(text) && !bedWords.test(text)) continue;
+
+        const title = pickTitle(card);
+        const priceMatches = Array.from(text.matchAll(priceRegex)).map((match) => match[0]);
+        priceRegex.lastIndex = 0;
+        const prices = priceMatches
+          .map(parsePrice)
+          .filter((price): price is number => price !== null && price > 0)
+          .filter((price) => price >= 100 && price <= 100000);
+
+        if (!title || prices.length === 0) continue;
+
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        const url = pickUrl(card);
+        const key = `${title.toLowerCase()}|${url}|${minPrice}|${maxPrice}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        const image = pickImage(card);
+        const category = /almohada|pillow/i.test(title)
+          ? 'Almohadas'
+          : /base|box|cabecera|cama/i.test(title)
+            ? 'Camas y bases'
+            : 'Colchones';
+
+        rows.push({
+          source_site: args.sourceSite,
+          brand: args.brandFallback,
+          line: '',
+          category,
+          product_name: title,
+          availability: /agotado|sin existencia|no disponible/i.test(text) ? 'Agotado' : 'Listado en tienda online',
+          regular_price: formatPrice(maxPrice),
+          sale_price: minPrice < maxPrice ? formatPrice(minPrice) : '',
+          discount: '',
+          installment: '',
+          product_url: url,
+          source_url: args.sourceUrl,
+          headline: title,
+          description: '',
+          warranty: '',
+          benefits: '',
+          image_url: image.imageUrl,
+          image_alt: image.imageAlt || title,
+          scraped_at: args.scrapedAt
+        });
+      }
+
+      const nextLinks = Array.from(document.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+      const nextAnchor = nextLinks.find((anchor) => {
+        const text = clean(anchor.textContent || anchor.getAttribute('aria-label') || anchor.className);
+        const rel = clean(anchor.getAttribute('rel'));
+        return /next|siguiente|proxima|pr[o\u00f3]xima/i.test(`${text} ${rel}`);
+      });
+
+      return {
+        rows,
+        nextUrl: absoluteUrl(nextAnchor?.getAttribute('href'))
+      };
+    }, { currentUrl, sourceUrl, sourceSite, brandFallback, scrapedAt });
+
+    console.log(`${sourceSite}: pagina visual ${pageNumber} encontro ${extracted.rows.length} productos antes de filtros.`);
+
+    for (const row of filterGuatemalaQuetzalRows(extracted.rows as CsvProduct[], sourceSite)) {
+      const key = row.product_url || `${row.product_name}|${row.regular_price}|${row.sale_price}`;
+      if (!rowsByKey.has(key)) {
+        rowsByKey.set(key, {
+          ...row,
+          source_url: sourceUrl,
+          scraped_at: scrapedAt,
+        });
+      }
+    }
+
+    const nextUrl = extracted.nextUrl;
+    if (!nextUrl || nextUrl === currentUrl || nextUrl === sourceUrl) {
+      break;
+    }
+
+    currentUrl = nextUrl;
+  }
+
+  return Array.from(rowsByKey.values());
+}
+async function scrapeSuenaCenterGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
+  return scrapePagedVisualProductGrid(page, scrapedAt, SUENA_CENTER_SOURCE_URL, 'Suena Center Guatemala', 'Suena Center', 2);
+}
+
+async function scrapeDormilandiaGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
+  return scrapeGenericGuatemalaStore(page, scrapedAt, DORMILANDIA_SOURCE_URL, 'Dormilandia Guatemala', 'Dormilandia');
+}
+
+function dormisuenosUrlWithPage(pageNumber: number): string {
+  const url = new URL(DORMISUENOS_SOURCE_URL);
+  url.searchParams.set('product-page', String(pageNumber));
+  return url.toString();
+}
+
+async function scrapeDormisuenosGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
+  const rowsByUrl = new Map<string, CsvProduct>();
+  const maxPages = 4;
+
+  for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
+    const pageUrl = dormisuenosUrlWithPage(pageNumber);
+    const pageRows = await scrapeVisualProductGrid(page, scrapedAt, pageUrl, 'Dormisuenos Guatemala', 'Dormisuenos');
+
+    if (pageRows.length === 0 && pageNumber > 1) {
+      break;
+    }
+
+    for (const row of pageRows) {
+      const key = row.product_url || row.product_name;
+      if (!rowsByUrl.has(key)) {
+        rowsByUrl.set(key, {
+          ...row,
+          source_url: DORMISUENOS_SOURCE_URL,
+        });
+      }
+    }
+  }
+
+  return Array.from(rowsByUrl.values());
+}
+
+async function scrapeBodegangasGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
+  const urls = [
+    BODEGANGAS_SOURCE_URL,
+    'https://bodegangasgts.com/?product_cat=camas&s=camas&et_search=true&post_type=product',
+    'https://bodegangasgts.com/product-category/camas/'
+  ];
+  const rowsByKey = new Map<string, CsvProduct>();
+
+  for (const url of urls) {
+    const rows = await scrapePagedVisualProductGrid(page, scrapedAt, url, 'Bodegangas Guatemala', 'Bodegangas', 5);
+    for (const row of rows) {
+      const key = row.product_url || `${row.product_name}|${row.regular_price}|${row.sale_price}`;
+      if (!rowsByKey.has(key)) {
+        rowsByKey.set(key, {
+          ...row,
+          source_url: BODEGANGAS_SOURCE_URL,
+        });
+      }
+    }
+
+    if (rowsByKey.size >= 20) {
+      break;
+    }
+  }
+
+  return Array.from(rowsByKey.values());
+}
+
+async function scrapeAmericana2000Gt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
+  const rows = await scrapeVisualProductGrid(page, scrapedAt, AMERICANA_2000_SOURCE_URL, 'Americana 2000 Guatemala', 'Americana 2000');
+
+  if (rows.length === 0) {
+    const blocked = await page.evaluate(() => {
+      const text = `${document.body?.innerText ?? ''} ${window.location.href}`;
+      return /cloudflare|5xx-error|checking your browser|attention required/i.test(text);
+    }).catch(() => false);
+
+    if (blocked) {
+      console.log('ADVERTENCIA: Americana 2000 Guatemala parece bloqueada por Cloudflare. No se guardan productos falsos.');
+    }
+  }
+
+  return rows;
+}
+function hasDollarPrice(row: CsvProduct): boolean {
+  const text = normalizeCatalogText(getPriceValidationText(row));
+  return /(?:^|[\s(])US\$|(?:^|[\s(])\$ ?\d|d[oÃ³]lar|usd/i.test(text);
+}
+
+
+
 
 function isFacencoRow(row: CsvProduct): boolean {
   return normalizeCatalogText(row.source_site) === 'facenco' || normalizeCatalogText(row.brand) === 'facenco';
 }
-
+const FINAL_QUETZAL_PRICE_PATTERN = /(?:Q|GTQ)\s*\d/i;
+const FINAL_DOLLAR_PRICE_PATTERN = /\b(usd|us\$|d[oÃ³]lar(?:es)?|dollars?)\b|\$\s*\d/i;
 function shouldKeepCatalogRow(row: CsvProduct): boolean {
-  if (!hasRelevantBedProduct(row)) {
-    return false;
-  }
-
-  if (isFacencoRow(row)) {
-    return true;
-  }
-
-  if (hasDollarPrice(row)) {
-    return false;
-  }
-
-  return hasQuetzalPrice(row);
+  return getCatalogFilterReason(row) === '';
 }
 
+
+
+
 function filterFinalCatalogRows(rows: CsvProduct[]): CsvProduct[] {
-  const unique = new Map<string, CsvProduct>();
+  const result: CsvProduct[] = [];
+  const rejectedByStore = new Map<string, { count: number; samples: string[] }>();
+  const seen = new Set<string>();
 
   for (const row of rows) {
-    if (!shouldKeepCatalogRow(row)) {
+    const reason = getCatalogFilterReason(row);
+    if (reason) {
+      const store = csvFilterText(
+        row,
+        'source_site',
+        'sitio_fuente',
+        'sourceSite',
+        'sourceName',
+        'storeName',
+        'tienda',
+        'store',
+        'site',
+      ) || 'Sin tienda';
+      const info = rejectedByStore.get(store) ?? { count: 0, samples: [] };
+      info.count += 1;
+      if (info.samples.length < 3) {
+        const product = csvFilterText(
+          row,
+          'product_name',
+          'producto',
+          'productName',
+          'titulo',
+          'title',
+          'headline',
+          'name',
+        ) || 'Sin producto';
+        const price = csvFilterText(
+          row,
+          'sale_price',
+          'regular_price',
+          'precio_oferta',
+          'precio_regular',
+          'precioOferta',
+          'precioRegular',
+          'salePrice',
+          'regularPrice',
+          'offerPrice',
+          'price',
+          'priceText',
+        ) || 'sin precio';
+        info.samples.push(`${product} | precio: ${price} | motivo: ${reason}`);
+      }
+      rejectedByStore.set(store, info);
       continue;
     }
 
-    const key = row.product_url || `${row.source_site}|${row.product_name}|${row.regular_price}|${row.sale_price}`;
-    if (!unique.has(key)) {
-      unique.set(key, row);
+    const key = makeFinalDedupKey(row);
+    if (key && seen.has(key)) continue;
+    if (key) seen.add(key);
+    result.push(row);
+  }
+
+  if (rejectedByStore.size > 0) {
+    console.log('Productos descartados por filtro final:');
+    for (const [store, info] of rejectedByStore.entries()) {
+      console.log(`- ${store}: ${info.count} descartados`);
+      for (const sample of info.samples) console.log(`  ejemplo: ${sample}`);
     }
   }
 
-  return Array.from(unique.values());
+  return result;
 }
+
+
+
 
 
 function getSelectedStoreNames(): string[] {
@@ -1996,6 +2696,75 @@ function getSelectedStoreNames(): string[] {
     .map((item) => item.trim())
     .filter(Boolean);
 }
+// INICIO FIX FILTRO FINAL POR TIENDA
+const FINAL_BED_PRODUCT_PATTERN = /(cama|camas|colchon|colch[oÃ³]n|colchones|mattress|box\s*spring|base|bases|cabecera|cabeceras|almohada|almohadas|protector|protectores|funda|fundas|s[aÃ¡]bana|sabanas|s[aÃ¡]banas|edred[oÃ³]n|edredones|cobertor|cobertores|duvet|set\s+de\s+cama|dormitorio|litera|literas|camarote|sofa\s*cama|sof[aÃ¡]\s*cama|rec[aÃ¡]mara|sleep|dream|restonic|simmons|serta|sealy|olympia|indufoam|facenco|comfort\s*life|therapedic|belezza|lucca|sienna|kangaroo)/i;
+const FINAL_NON_BED_PRODUCT_PATTERN = /(celular|telefono|tel[eÃ©]fono|smartphone|iphone|samsung\s+galaxy|laptop|notebook|computadora|tablet|televisor|tv\s|aud[iÃ­]fono|bocina|mouse|teclado|impresora|monitor|c[aÃ¡]mara|camera|refrigeradora|lavadora|estufa|microondas|licuadora|cafetera|maquillaje|rubor|labial|maybelline|juguete|paw\s*patrol|figura\s+de\s+acci[oÃ³]n|bicicleta|moto|llanta|zapato|tenis|ropa|vestido|camisa|pantal[oÃ³]n)/i;
+const BED_PRODUCT_PATTERN = FINAL_BED_PRODUCT_PATTERN;
+const NON_BED_PRODUCT_PATTERN = FINAL_NON_BED_PRODUCT_PATTERN;
+
+function readCsvProductText(row: CsvProduct, keys: string[]): string {
+  const record = row as unknown as Record<string, unknown>;
+  for (const key of keys) {
+    const value = record[key];
+    if (value !== undefined && value !== null && String(value).trim()) {
+      return String(value).trim();
+    }
+  }
+  return '';
+}
+
+function getCatalogFilterReason(row: CsvProduct): string {
+  const site = readCsvProductText(row, ['source_site', 'sourceSite', 'sourceName', 'sitio_fuente', 'tienda', 'store', 'site']);
+  const product = readCsvProductText(row, ['product_name', 'productName', 'producto', 'title', 'titulo', 'name']);
+  const brand = readCsvProductText(row, ['brand', 'marca']);
+  const line = readCsvProductText(row, ['line', 'linea']);
+  const category = readCsvProductText(row, ['category', 'categoria']);
+  const description = readCsvProductText(row, ['description', 'descripcion', 'details', 'detalle']);
+  const headline = readCsvProductText(row, ['headline', 'title', 'titulo']);
+  const benefits = readCsvProductText(row, ['benefits', 'beneficios']);
+  const productUrl = readCsvProductText(row, ['product_url', 'productUrl', 'url_producto', 'url']);
+  const imageAlt = readCsvProductText(row, ['image_alt', 'imageAlt']);
+  const priceText = csvFilterText(
+    row,
+    'regular_price',
+    'sale_price',
+    'price',
+    'priceText',
+    'precio',
+    'precio_regular',
+    'precio_oferta',
+    'regularPrice',
+    'salePrice',
+    'offerPrice',
+  );
+  const searchableText = [product, brand, line, category, headline, description, benefits, productUrl, imageAlt].join(' ');
+  const specializedBedStore = /(facenco|olympia|colchoneria|colchoner[iÃ­]a|sleep\s*gallery|mattress|beds?\s*&?\s*dreams?|sue[nÃ±]a\s*center|dormilandia|dormisue[nÃ±]os)/i.test(site);
+
+  if (!site) return 'sin tienda';
+  if (!product && !description) return 'sin producto';
+  if (FINAL_NON_BED_PRODUCT_PATTERN.test(searchableText)) return 'producto no relacionado a cama';
+  if (!specializedBedStore && !FINAL_BED_PRODUCT_PATTERN.test(searchableText)) return 'no parece producto de cama';
+
+  // No se exige precio para guardar: FACENCO y algunas tiendas pueden traer catalogo sin precio.
+  // Solo se rechaza si claramente viene en dolares y no aparece Quetzal.
+  if ((/\bUSD\b|US\$|\$/i.test(priceText)) && !/(Q\s*\d|GTQ)/i.test(priceText)) {
+    return 'precio en dolares';
+  }
+
+  return '';
+}
+
+function makeFinalDedupKey(row: CsvProduct): string {
+  const site = readCsvProductText(row, ['source_site', 'sourceSite', 'sourceName', 'sitio_fuente', 'tienda', 'store', 'site']);
+  const product = readCsvProductText(row, ['product_name', 'productName', 'producto', 'title', 'titulo', 'name']);
+  const productUrl = readCsvProductText(row, ['product_url', 'productUrl', 'url_producto', 'url']);
+  const regularPrice = readCsvProductText(row, ['regular_price', 'precio_regular', 'regularPrice', 'precioRegular']);
+  const salePrice = readCsvProductText(row, ['sale_price', 'precio_oferta', 'salePrice', 'offerPrice', 'precioOferta']);
+  return [site, product, productUrl, regularPrice, salePrice]
+    .map((value) => value.toLowerCase().replace(/\s+/g, ' ').trim())
+    .join('|');
+}
+// FIN FIX FILTRO FINAL POR TIENDA
 async function main(): Promise<void> {
   const browser = await chromium.launch({ headless: true });
 
@@ -2020,6 +2789,11 @@ async function main(): Promise<void> {
       { name: 'Walmart Guatemala', run: (storePage) => scrapeWalmartGt(storePage, scrapedAt) },
       { name: 'Cemaco Guatemala', run: (storePage) => scrapeCemacoGt(storePage, scrapedAt) },
       { name: 'Siman Guatemala', run: (storePage) => scrapeSimanGt(storePage, scrapedAt) },
+      { name: 'Suena Center Guatemala', run: (storePage) => scrapeSuenaCenterGt(storePage, scrapedAt) },
+      { name: 'Dormilandia Guatemala', run: (storePage) => scrapeDormilandiaGt(storePage, scrapedAt) },
+      { name: 'Dormisuenos Guatemala', run: (storePage) => scrapeDormisuenosGt(storePage, scrapedAt) },
+      { name: 'Bodegangas Guatemala', run: (storePage) => scrapeBodegangasGt(storePage, scrapedAt) },
+      { name: 'Americana 2000 Guatemala', run: (storePage) => scrapeAmericana2000Gt(storePage, scrapedAt) },
     ];
 
     const selectedStoreNames = getSelectedStoreNames();
@@ -2144,6 +2918,18 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
