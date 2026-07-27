@@ -26,6 +26,11 @@ const SCRAPER_STORE_OPTIONS = [
   'Walmart Guatemala',
   'Cemaco Guatemala',
   'Siman Guatemala',
+  'Suena Center Guatemala',
+  'Dormilandia Guatemala',
+  'Dormisuenos Guatemala',
+  'Bodegangas Guatemala',
+  'Americana 2000 Guatemala',
 ];
 
 const elements = {
