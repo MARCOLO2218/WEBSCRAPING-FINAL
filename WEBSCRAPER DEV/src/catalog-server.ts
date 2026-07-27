@@ -351,11 +351,11 @@ async function getProducts(searchParams: URLSearchParams): Promise<CatalogProduc
   const values: string[] = [];
 
   const filterMap: Array<[string, string]> = [
-    ['semana', 'semana_run::text'],
-    ['tienda', 'sitio_fuente'],
-    ['marca', 'marca'],
-    ['categoria', 'categoria'],
-    ['disponibilidad', 'disponibilidad'],
+    ['semana', 'p.semana_run::text'],
+    ['tienda', 'p.sitio_fuente'],
+    ['marca', 'p.marca'],
+    ['categoria', 'p.categoria'],
+    ['disponibilidad', 'p.disponibilidad'],
   ];
 
   for (const [param, column] of filterMap) {
@@ -369,19 +369,23 @@ async function getProducts(searchParams: URLSearchParams): Promise<CatalogProduc
   const query = searchParams.get('q');
   if (query) {
     values.push(`%${query}%`);
-    filters.push(`(producto ILIKE $${values.length} OR marca ILIKE $${values.length} OR sitio_fuente ILIKE $${values.length})`);
+    filters.push(`(p.producto ILIKE $${values.length} OR p.marca ILIKE $${values.length} OR p.sitio_fuente ILIKE $${values.length})`);
   }
 
-  const latestRunFilter = `run_id = (SELECT id FROM ${schema}.scraping_runs ORDER BY id DESC LIMIT 1)`;
+  const latestRunFilter = `p.run_id = (
+    SELECT MAX(latest.run_id)
+    FROM ${schema}.productos_catalogo latest
+    WHERE latest.sitio_fuente = p.sitio_fuente
+  )`;
   const where = `WHERE ${[latestRunFilter, ...filters].join(' AND ')}`;
   const pool = getDbPool();
 
   try {
     const result = await pool.query<DbProduct>(`
-      SELECT *
-      FROM ${schema}.productos_catalogo
+      SELECT p.*
+      FROM ${schema}.productos_catalogo p
       ${where}
-      ORDER BY id ASC
+      ORDER BY p.id ASC
     `, values);
 
     const facencoExcelRows = await loadFacencoPriceRows(result.rows);
