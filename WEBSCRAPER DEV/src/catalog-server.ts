@@ -44,6 +44,7 @@ const KNOWN_STORE_NAMES = [
   'La Colchoneria Guatemala',
   'Sleep Gallery Guatemala',
   'Serta Guatemala',
+  'Americana 2000 Guatemala',
   'Mattress Guatemala',
   'Beds & Dreams',
   'Furniture City Guatemala',
@@ -57,7 +58,6 @@ const KNOWN_STORE_NAMES = [
   'Dormilandia Guatemala',
   'Dormisuenos Guatemala',
   'Bodegangas Guatemala',
-  'Americana 2000 Guatemala',
 ];
 
 function sanitizeStoreSelection(value: unknown): string[] {

@@ -17,6 +17,7 @@ const SCRAPER_STORE_OPTIONS = [
   'La Colchoneria Guatemala',
   'Sleep Gallery Guatemala',
   'Serta Guatemala',
+  'Americana 2000 Guatemala',
   'Mattress Guatemala',
   'Beds & Dreams',
   'Furniture City Guatemala',
@@ -30,7 +31,6 @@ const SCRAPER_STORE_OPTIONS = [
   'Dormilandia Guatemala',
   'Dormisuenos Guatemala',
   'Bodegangas Guatemala',
-  'Americana 2000 Guatemala',
 ];
 
 const elements = {

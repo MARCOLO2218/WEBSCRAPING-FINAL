@@ -3135,6 +3135,7 @@ async function main(): Promise<void> {
       { name: 'La Colchoneria Guatemala', run: (storePage) => scrapeLaColchoneria(storePage, scrapedAt) },
       { name: 'Sleep Gallery Guatemala', run: (storePage) => scrapeSleepGallery(storePage, scrapedAt) },
       { name: 'Serta Guatemala', run: (storePage) => scrapeSertaGt(storePage, scrapedAt) },
+      { name: 'Americana 2000 Guatemala', run: (storePage) => scrapeAmericana2000Gt(storePage, scrapedAt) },
       { name: 'Mattress Guatemala', run: (storePage) => scrapeMattress(storePage, scrapedAt) },
       { name: 'Beds & Dreams', run: (storePage) => scrapeBedsDreams(storePage, scrapedAt) },
       { name: 'Furniture City Guatemala', run: (storePage) => scrapeFurnitureCity(storePage, scrapedAt) },
@@ -3148,7 +3149,6 @@ async function main(): Promise<void> {
       { name: 'Dormilandia Guatemala', run: (storePage) => scrapeDormilandiaGt(storePage, scrapedAt) },
       { name: 'Dormisuenos Guatemala', run: (storePage) => scrapeDormisuenosGt(storePage, scrapedAt) },
       { name: 'Bodegangas Guatemala', run: (storePage) => scrapeBodegangasGt(storePage, scrapedAt) },
-      { name: 'Americana 2000 Guatemala', run: (storePage) => scrapeAmericana2000Gt(storePage, scrapedAt) },
     ];
 
     const selectedStoreNames = getSelectedStoreNames();
