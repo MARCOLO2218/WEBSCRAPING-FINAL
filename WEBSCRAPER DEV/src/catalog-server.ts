@@ -43,6 +43,7 @@ const KNOWN_STORE_NAMES = [
   'Camas Olympia Online GT',
   'La Colchoneria Guatemala',
   'Sleep Gallery Guatemala',
+  'Serta Guatemala',
   'Mattress Guatemala',
   'Beds & Dreams',
   'Furniture City Guatemala',

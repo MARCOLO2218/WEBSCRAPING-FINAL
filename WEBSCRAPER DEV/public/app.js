@@ -16,6 +16,7 @@ const SCRAPER_STORE_OPTIONS = [
   'Camas Olympia Online GT',
   'La Colchoneria Guatemala',
   'Sleep Gallery Guatemala',
+  'Serta Guatemala',
   'Mattress Guatemala',
   'Beds & Dreams',
   'Furniture City Guatemala',

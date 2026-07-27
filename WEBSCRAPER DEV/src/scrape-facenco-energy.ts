@@ -18,7 +18,7 @@ if (envFile) {
 const FACENCO_SOURCE_URL = 'https://camasfacenco.com/';
 const OLYMPIA_SOURCE_URL = 'https://camasolympiaonline.com/gt/';
 const LA_COLCHONERIA_SOURCE_URL = 'https://lacolchoneria.com.gt/';
-const SLEEP_GALLERY_SOURCE_URL = 'https://paises.sleepgalleryca.com/';
+const SLEEP_GALLERY_SOURCE_URL = 'https://sleepgalleryca.com/gt/';
 const MATTRESS_SOURCE_URL = 'https://mattress.com.gt/';
 const BEDS_DREAMS_SOURCE_URL = 'https://www.bedsndreams.com/';
 const FURNITURE_CITY_SOURCE_URL = 'https://www.furniturecity.com.gt/mattress-colchones/';
@@ -32,7 +32,9 @@ const SUENA_CENTER_SOURCE_URL = 'https://gt.camasuena.com/categorias/camas';
 const DORMILANDIA_SOURCE_URL = 'https://www.dormilandia.com.gt/buscador.asp';
 const DORMISUENOS_SOURCE_URL = 'https://tiendasdormisuenos.com/categoria-producto/camas/?product-page=1';
 const BODEGANGAS_SOURCE_URL = 'https://bodegangasgts.com/?product_cat=0&s=camas&et_search=true&post_type=product';
-const AMERICANA_2000_SOURCE_URL = 'https://americana2000.com/categoria-producto/camas/';
+const AMERICANA_2000_SOURCE_URL = 'https://americana2000.com/categoria-producto/camas/?am2k_attr_product_brand=facenco%2Cultra%2Ccomfort-life%2Colympia%2Csealy';
+const AMERICANA_2000_API_URL = 'https://americana2000.com/wp-json/wc/store/v1/products?category=328&per_page=100';
+const SERTA_GT_SOURCE_URL = 'https://sertacentroamerica.com/guatemala/catalogo/';
 // Cambia aqui la carpeta o el nombre de los archivos generados.
 const OUTPUT_FILE = resolve('output/comparacion_colchones.csv');
 const OUTPUT_XLSX_FILE = resolve('output/comparacion_colchones.xlsx');
@@ -54,6 +56,8 @@ const STORE_QUALITY_RULES: Record<string, { minFinalProducts: number }> = {
   'Walmart Guatemala': { minFinalProducts: 10 },
   'Cemaco Guatemala': { minFinalProducts: 5 },
   'Siman Guatemala': { minFinalProducts: 10 },
+  'Serta Guatemala': { minFinalProducts: 10 },
+  'Americana 2000 Guatemala': { minFinalProducts: 30 },
 };
 
 
@@ -1117,6 +1121,79 @@ async function scrapeSleepGallery(page: Page, scrapedAt: string): Promise<CsvPro
     ...row,
     scraped_at: scrapedAt,
   }));
+}
+
+const SERTA_GT_CATALOG_SECTIONS = [
+  { line: 'Catálogo', url: SERTA_GT_SOURCE_URL },
+  { line: 'Isupport', url: 'https://sertacentroamerica.com/guatemala/categoria-producto/isupport/' },
+  { line: 'Perfect Sleeper', url: 'https://sertacentroamerica.com/guatemala/categoria-producto/perfect-sleeper/' },
+  { line: 'Perfect Comfort', url: 'https://sertacentroamerica.com/guatemala/categoria-producto/perfect-comfort/' },
+  { line: 'Smart Comfort', url: 'https://sertacentroamerica.com/guatemala/categoria-producto/smart-comfort/' },
+  { line: 'Perfect Start - Cuna', url: 'https://sertacentroamerica.com/guatemala/producto/perfect-start-colchon-de-cuna/' },
+  { line: 'Toppers para Colchón', url: 'https://sertacentroamerica.com/guatemala/toppers-para-colchon/' },
+];
+
+async function scrapeSertaGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
+  const rowsByKey = new Map<string, CsvProduct>();
+  const allowedProductPattern = /(colch[oó]n|colchon|cama|base|canap[eé]|camastr[oó]n|cuna|topper)/i;
+
+  for (const section of SERTA_GT_CATALOG_SECTIONS) {
+    await goto(page, section.url);
+    await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => undefined);
+
+    const rows = await extractCardProducts(page, section.url, {
+      sourceSite: 'Serta Guatemala',
+      brand: 'Serta',
+      cardSelector: 'li.product, .products .product, .type-product',
+      titleSelector: '.woocommerce-loop-product__title, .product_title, h1.product_title, h2',
+      anchorSelector: 'a.woocommerce-LoopProduct-link, a[href*="/guatemala/producto/"]',
+      imageSelector: 'img.attachment-woocommerce_thumbnail, .woocommerce-product-gallery img, img',
+      regularPriceSelector: '.price del, del .woocommerce-Price-amount, del',
+      salePriceSelector: '.price ins, ins .woocommerce-Price-amount, ins',
+      priceSelector: '.price, .woocommerce-Price-amount',
+      discountSelector: '.onsale',
+    });
+
+    for (const row of rows) {
+      if (!allowedProductPattern.test(row.product_name)) {
+        continue;
+      }
+
+      const productUrl = row.product_url || section.url;
+      const key = normalizeCatalogText(productUrl || row.product_name);
+      const existing = rowsByKey.get(key);
+      const candidate: CsvProduct = {
+        ...row,
+        line: section.line === 'Catálogo' ? row.line : section.line,
+        category: /cuna/i.test(row.product_name)
+          ? 'Colchones de cuna'
+          : /topper/i.test(row.product_name)
+            ? 'Toppers para colchón'
+            : 'Colchones y camas',
+        source_url: SERTA_GT_SOURCE_URL,
+        scraped_at: scrapedAt,
+      };
+
+      if (!existing) {
+        rowsByKey.set(key, candidate);
+      } else if (existing.line === '' || existing.line === 'Catálogo') {
+        rowsByKey.set(key, {
+          ...existing,
+          line: candidate.line || existing.line,
+          category: candidate.category || existing.category,
+          regular_price: candidate.regular_price || existing.regular_price,
+          sale_price: candidate.sale_price || existing.sale_price,
+          discount: candidate.discount || existing.discount,
+          image_url: candidate.image_url || existing.image_url,
+          image_alt: candidate.image_alt || existing.image_alt,
+        });
+      }
+    }
+  }
+
+  const rows = Array.from(rowsByKey.values());
+  console.log(`Serta Guatemala: ${rows.length} productos unicos encontrados en las lineas de camas.`);
+  return filterGuatemalaQuetzalRows(rows, 'Serta Guatemala');
 }
 
 async function scrapeMattress(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
@@ -2579,19 +2656,77 @@ async function scrapeBodegangasGt(page: Page, scrapedAt: string): Promise<CsvPro
 }
 
 async function scrapeAmericana2000Gt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
-  const rows = await scrapeVisualProductGrid(page, scrapedAt, AMERICANA_2000_SOURCE_URL, 'Americana 2000 Guatemala', 'Americana 2000');
+  void page;
+  const response = await fetch(AMERICANA_2000_API_URL, {
+    headers: {
+      Accept: 'application/json',
+      'User-Agent': 'Mozilla/5.0 (compatible; FACENCO-Catalog/1.0)',
+    },
+    signal: AbortSignal.timeout(60000),
+  });
 
-  if (rows.length === 0) {
-    const blocked = await page.evaluate(() => {
-      const text = `${document.body?.innerText ?? ''} ${window.location.href}`;
-      return /cloudflare|5xx-error|checking your browser|attention required/i.test(text);
-    }).catch(() => false);
-
-    if (blocked) {
-      console.log('ADVERTENCIA: Americana 2000 Guatemala parece bloqueada por Cloudflare. No se guardan productos falsos.');
-    }
+  if (!response.ok) {
+    throw new Error(`Americana 2000 API respondio HTTP ${response.status}.`);
   }
 
+  const products = await response.json() as Array<Record<string, any>>;
+  const allowedBrands = new Set(['facenco', 'ultra', 'comfort life', 'olympia', 'sealy']);
+  const cleanHtml = (value: unknown): string =>
+    cleanText(String(value ?? '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;|&#160;/gi, ' '));
+  const formatApiPrice = (value: unknown, minorUnit: number): string => {
+    const amount = Number(value);
+    if (!Number.isFinite(amount) || amount <= 0) return '';
+    return `Q${(amount / (10 ** minorUnit)).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+
+  const rows: CsvProduct[] = [];
+  for (const product of products) {
+    const brands = (Array.isArray(product.brands) ? product.brands : [])
+      .map((brand: Record<string, unknown>) => cleanText(String(brand.name ?? '')))
+      .filter((brand: string) => allowedBrands.has(normalizeCatalogText(brand)));
+    if (brands.length === 0) continue;
+
+    const prices = product.prices ?? {};
+    if (String(prices.currency_code ?? '').toUpperCase() !== 'GTQ') continue;
+    const minorUnit = Number(prices.currency_minor_unit ?? 2);
+    const regularPrice = formatApiPrice(prices.regular_price, minorUnit);
+    const currentPrice = formatApiPrice(prices.price, minorUnit);
+    const salePrice = String(prices.sale_price ?? '') && prices.sale_price !== prices.regular_price
+      ? formatApiPrice(prices.sale_price, minorUnit)
+      : '';
+    const categories = (Array.isArray(product.categories) ? product.categories : [])
+      .map((category: Record<string, unknown>) => cleanText(String(category.name ?? '')))
+      .filter(Boolean);
+    const line = categories.find((category: string) => normalizeCatalogText(category) !== 'camas') ?? '';
+    const image = Array.isArray(product.images) ? product.images[0] ?? {} : {};
+
+    rows.push({
+      source_site: 'Americana 2000 Guatemala',
+      brand: brands.join(' / '),
+      line,
+      category: 'Camas',
+      product_name: cleanText(String(product.name ?? '')),
+      availability: product.is_in_stock === false ? 'Agotado' : 'Disponible',
+      regular_price: regularPrice || currentPrice,
+      sale_price: salePrice || (currentPrice !== regularPrice ? currentPrice : ''),
+      discount: product.on_sale ? 'Oferta' : '',
+      installment: '',
+      product_url: cleanText(String(product.permalink ?? '')),
+      source_url: AMERICANA_2000_SOURCE_URL,
+      headline: cleanText(String(product.name ?? '')),
+      description: cleanHtml(product.short_description || product.description),
+      warranty: '',
+      benefits: '',
+      image_url: cleanText(String(image.src ?? '')),
+      image_alt: cleanText(String(image.alt ?? product.name ?? '')),
+      scraped_at: scrapedAt,
+    });
+  }
+
+  console.log(`Americana 2000 Guatemala API: ${products.length} camas recibidas, ${rows.length} con las marcas seleccionadas.`);
   return rows;
 }
 function hasDollarPrice(row: CsvProduct): boolean {
@@ -2738,7 +2873,7 @@ function getCatalogFilterReason(row: CsvProduct): string {
     'offerPrice',
   );
   const searchableText = [product, brand, line, category, headline, description, benefits, productUrl, imageAlt].join(' ');
-  const specializedBedStore = /(facenco|olympia|colchoneria|colchoner[iÃ­]a|sleep\s*gallery|mattress|beds?\s*&?\s*dreams?|sue[nÃ±]a\s*center|dormilandia|dormisue[nÃ±]os)/i.test(site);
+  const specializedBedStore = /(facenco|olympia|colchoneria|colchoner[iÃ­]a|sleep\s*gallery|mattress|beds?\s*&?\s*dreams?|sue[nÃ±]a\s*center|dormilandia|dormisue[nÃ±]os|serta\s*guatemala)/i.test(site);
 
   if (!site) return 'sin tienda';
   if (!product && !description) return 'sin producto';
@@ -2780,6 +2915,7 @@ async function main(): Promise<void> {
       { name: 'Camas Olympia Online GT', run: (storePage) => scrapeOlympia(storePage, scrapedAt) },
       { name: 'La Colchoneria Guatemala', run: (storePage) => scrapeLaColchoneria(storePage, scrapedAt) },
       { name: 'Sleep Gallery Guatemala', run: (storePage) => scrapeSleepGallery(storePage, scrapedAt) },
+      { name: 'Serta Guatemala', run: (storePage) => scrapeSertaGt(storePage, scrapedAt) },
       { name: 'Mattress Guatemala', run: (storePage) => scrapeMattress(storePage, scrapedAt) },
       { name: 'Beds & Dreams', run: (storePage) => scrapeBedsDreams(storePage, scrapedAt) },
       { name: 'Furniture City Guatemala', run: (storePage) => scrapeFurnitureCity(storePage, scrapedAt) },
