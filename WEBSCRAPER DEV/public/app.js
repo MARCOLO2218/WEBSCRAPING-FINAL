@@ -385,6 +385,10 @@ function resetScraperButton() {
   localScraperRequestRunning = false;
   elements.runScraperButton.disabled = false;
   elements.runScraperButton.textContent = 'Ejecutar scraper y actualizar';
+  if (elements.runSelectedStoreButton) {
+    elements.runSelectedStoreButton.disabled = false;
+    elements.runSelectedStoreButton.textContent = 'Ejecutar tiendas seleccionadas';
+  }
 }
 
 async function fetchJsonWithTimeout(url, options = {}, timeoutMs = 15000) {
@@ -563,7 +567,18 @@ async function waitForScraperJob(jobId) {
       elements.runScraperButton.textContent = `En cola (${position})...`;
       missingChecks = 0;
     } else if (job?.status === 'running') {
-      setStatus(`Ejecutando esta solicitud (${job.id}). Este proceso puede tardar varios minutos.`, 'running');
+      const elapsedMinutes = job.startedAt
+        ? Math.max(0, Math.floor((Date.now() - new Date(job.startedAt).getTime()) / 60000))
+        : 0;
+      const progressLines = String(job.output || '')
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => /^(Iniciando|OK |USANDO |ADVERTENCIA:)/i.test(line));
+      const progress = progressLines.at(-1);
+      setStatus(
+        `Ejecutando esta solicitud (${elapsedMinutes} min). ${progress || 'Preparando la siguiente tienda...'}`,
+        'running',
+      );
       elements.runScraperButton.textContent = 'Ejecutando scraper...';
       missingChecks = 0;
     } else if (job?.status === 'done') {
@@ -609,6 +624,10 @@ async function waitForScraperJob(jobId) {
 async function runScraperAndRefresh(stores = []) {
   elements.runScraperButton.disabled = true;
   elements.runScraperButton.textContent = 'Preparando solicitud...';
+  if (elements.runSelectedStoreButton) {
+    elements.runSelectedStoreButton.disabled = true;
+    elements.runSelectedStoreButton.textContent = 'Preparando...';
+  }
   localScraperRequestRunning = true;
 
   try {
@@ -628,7 +647,6 @@ async function runScraperAndRefresh(stores = []) {
       elements.runScraperButton.textContent = 'Ejecutando scraper...';
     }
 
-    startScraperStatusPolling();
     const finishedJob = await waitForScraperJob(job.id);
 
     fillScraperStoreSelect();

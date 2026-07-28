@@ -3121,6 +3121,10 @@ function makeFinalDedupKey(row: CsvProduct): string {
 // FIN FIX FILTRO FINAL POR TIENDA
 async function main(): Promise<void> {
   const browser = await chromium.launch({ headless: true });
+  const storeTimeoutMs = Math.max(
+    30_000,
+    Number(process.env.SCRAPER_STORE_TIMEOUT_MS || 4 * 60_000),
+  );
 
   try {
     const scrapedAt = new Date().toISOString();
@@ -3178,12 +3182,28 @@ async function main(): Promise<void> {
 
       try {
         console.log(`Iniciando ${store.name} intento ${attempt}...`);
-        const storeRows = await store.run(storePage);
+        let timeoutHandle: NodeJS.Timeout | undefined;
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timeoutHandle = setTimeout(() => {
+            reject(new Error(
+              `${store.name} excedio el limite de ${Math.round(storeTimeoutMs / 60_000)} minutos por intento.`,
+            ));
+          }, storeTimeoutMs);
+        });
+        const storeRows = await Promise.race([
+          store.run(storePage),
+          timeoutPromise,
+        ]).finally(() => {
+          if (timeoutHandle) clearTimeout(timeoutHandle);
+        });
         const finalRows = filterFinalCatalogRows(storeRows).filter((row) => row.source_site === store.name);
         console.log(`OK ${store.name} intento ${attempt}: ${storeRows.length} productos leidos, ${finalRows.length} productos utiles.`);
         return storeRows;
       } finally {
-        await storePage.close().catch(() => undefined);
+        await Promise.race([
+          storePage.close().catch(() => undefined),
+          new Promise<void>((resolveClose) => setTimeout(resolveClose, 5_000)),
+        ]);
       }
     }
 

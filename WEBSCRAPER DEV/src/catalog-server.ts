@@ -18,6 +18,10 @@ const OUTPUT_CSV = resolve('output/comparacion_colchones.csv');
 const FACENCO_PRICE_FILE = resolve('data/precios_facenco.xlsx');
 const LOG_DIR = resolve('logs');
 const SCRAPER_LOG = resolve(LOG_DIR, 'ultimo_scraper.log');
+const SCRAPER_PROCESS_TIMEOUT_MS = Math.max(
+  60_000,
+  Number(process.env.SCRAPER_PROCESS_TIMEOUT_MS || 90 * 60_000),
+);
 let scraperRunning = false;
 
 type ScraperJob = {
@@ -529,8 +533,14 @@ async function proxyImage(sourceUrl: string | null, res: import('node:http').Ser
   res.end(body);
 }
 
-function runScraperProcess(stores: string[] = []): Promise<{ ok: boolean; output: string }> {
+function runScraperProcess(
+  stores: string[] = [],
+  onProgress?: (output: string) => void,
+): Promise<{ ok: boolean; output: string }> {
   return new Promise((resolveRun) => {
+    const jobTimeoutMs = stores.length
+      ? Math.min(SCRAPER_PROCESS_TIMEOUT_MS, Math.max(10 * 60_000, stores.length * 10 * 60_000))
+      : SCRAPER_PROCESS_TIMEOUT_MS;
     const args = ['dist/scrape-facenco-energy.js'];
     if (stores.length) {
       args.push(`--stores=${stores.join(',')}`);
@@ -543,31 +553,54 @@ function runScraperProcess(stores: string[] = []): Promise<{ ok: boolean; output
     });
 
     let output = '';
+    let settled = false;
+
+    const finish = (ok: boolean, finalOutput: string) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      void writeScraperLog(finalOutput);
+      resolveRun({
+        ok,
+        output: summarizeScraperOutput(finalOutput, ok),
+      });
+    };
+
+    const appendOutput = (chunk: unknown) => {
+      output += String(chunk);
+      onProgress?.(output.slice(-8_000));
+    };
 
     child.stdout.on('data', (chunk) => {
-      output += chunk.toString();
+      appendOutput(chunk);
     });
 
     child.stderr.on('data', (chunk) => {
-      output += chunk.toString();
+      appendOutput(chunk);
     });
 
     child.on('close', (code) => {
-      const ok = code === 0;
-      void writeScraperLog(output);
-      resolveRun({
-        ok,
-        output: summarizeScraperOutput(output, ok),
-      });
+      finish(code === 0, output);
     });
 
     child.on('error', (error) => {
-      void writeScraperLog(error.message);
-      resolveRun({
-        ok: false,
-        output: summarizeScraperOutput(error.message, false),
-      });
+      appendOutput(`\n${error.message}\n`);
+      finish(false, output);
     });
+
+    const timeout = setTimeout(() => {
+      const timeoutMessage =
+        `\nADVERTENCIA: El proceso excedio el limite de ${Math.round(jobTimeoutMs / 60_000)} minutos y fue detenido para liberar la cola.\n`;
+      appendOutput(timeoutMessage);
+      child.kill('SIGTERM');
+      setTimeout(() => {
+        if (!settled) {
+          child.kill('SIGKILL');
+          finish(false, output);
+        }
+      }, 10_000).unref();
+    }, jobTimeoutMs);
+    timeout.unref();
   });
 }
 
@@ -607,16 +640,24 @@ function processScraperQueue(): void {
       job.status = 'running';
       job.startedAt = new Date().toISOString();
 
-      const result = await runScraperProcess(job.stores || []);
-      job.ok = result.ok;
-      job.output = result.output;
-      job.status = result.ok ? 'done' : 'error';
-      job.finishedAt = new Date().toISOString();
-      lastFinishedScraperJob = job;
-
-      currentScraperJob = null;
-      scraperRunning = false;
-      cleanupScraperJobs();
+      try {
+        const result = await runScraperProcess(job.stores || [], (progress) => {
+          job.output = progress;
+        });
+        job.ok = result.ok;
+        job.output = result.output;
+        job.status = result.ok ? 'done' : 'error';
+      } catch (error) {
+        job.ok = false;
+        job.output = error instanceof Error ? error.message : String(error);
+        job.status = 'error';
+      } finally {
+        job.finishedAt = new Date().toISOString();
+        lastFinishedScraperJob = job;
+        currentScraperJob = null;
+        scraperRunning = false;
+        cleanupScraperJobs();
+      }
     }
 
     scraperQueueProcessing = false;
