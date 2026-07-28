@@ -372,18 +372,22 @@ async function getProducts(searchParams: URLSearchParams): Promise<CatalogProduc
     filters.push(`(p.producto ILIKE $${values.length} OR p.marca ILIKE $${values.length} OR p.sitio_fuente ILIKE $${values.length})`);
   }
 
-  const latestRunFilter = `p.run_id = (
-    SELECT MAX(latest.run_id)
-    FROM ${schema}.productos_catalogo latest
-    WHERE latest.sitio_fuente = p.sitio_fuente
-  )`;
-  const where = `WHERE ${[latestRunFilter, ...filters].join(' AND ')}`;
+  const where = filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : '';
   const pool = getDbPool();
 
   try {
     const result = await pool.query<DbProduct>(`
+      WITH latest_store_runs AS (
+        SELECT sitio_fuente, MAX(run_id) AS run_id
+        FROM ${schema}.productos_catalogo
+        WHERE sitio_fuente IS NOT NULL
+        GROUP BY sitio_fuente
+      )
       SELECT p.*
       FROM ${schema}.productos_catalogo p
+      INNER JOIN latest_store_runs latest
+        ON latest.sitio_fuente = p.sitio_fuente
+       AND latest.run_id = p.run_id
       ${where}
       ORDER BY p.id ASC
     `, values);
