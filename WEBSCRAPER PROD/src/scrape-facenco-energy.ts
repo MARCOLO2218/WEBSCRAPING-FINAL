@@ -18,7 +18,7 @@ if (envFile) {
 const FACENCO_SOURCE_URL = 'https://camasfacenco.com/';
 const OLYMPIA_SOURCE_URL = 'https://camasolympiaonline.com/gt/';
 const LA_COLCHONERIA_SOURCE_URL = 'https://lacolchoneria.com.gt/';
-const SLEEP_GALLERY_SOURCE_URL = 'https://paises.sleepgalleryca.com/';
+const SLEEP_GALLERY_SOURCE_URL = 'https://sleepgalleryca.com/gt/';
 const MATTRESS_SOURCE_URL = 'https://mattress.com.gt/';
 const BEDS_DREAMS_SOURCE_URL = 'https://www.bedsndreams.com/';
 const FURNITURE_CITY_SOURCE_URL = 'https://www.furniturecity.com.gt/mattress-colchones/';
@@ -28,6 +28,16 @@ const ELEKTRA_GT_SOURCE_URL = 'https://www.elektra.com.gt/cama%20king/camas?map=
 const WALMART_GT_SOURCE_URL = 'https://www.walmart.com.gt/cama?_q=cama&fuzzy=0&initialMap=accesscontrollist,ft&initialQuery=walmartgtwm4414/cama&map=brand,brand,brand,brand,brand,brand,brand,brand,brand,brand,ft&operator=and&page=1&query=/belezza/camas-florida/facenco/indufoam/kangaroo/lucca/olympia/sealy/sienna/simmons/cama&searchState';
 const CEMACO_GT_SOURCE_URL = 'https://www.cemaco.com/busqueda?q=camas&indexName=cemaco';
 const SIMAN_GT_SOURCE_URL = 'https://gt.siman.com/search?_q=camas&refinements=W3siYXR0cmlidXRlIjoicXVlcnkiLCJyZWZpbmVtZW50cyI6W3siYXR0cmlidXRlIjoicXVlcnkiLCJ2YWx1ZSI6ImNhbWFzIn1dfV0';
+const SUENA_CENTER_SOURCE_URL = 'https://gt.camasuena.com/categorias/camas';
+const SUENA_CENTER_ALGOLIA_APP_ID = 'LP9ZU0LM0S';
+const SUENA_CENTER_ALGOLIA_INDEX = 'Prod_Suena_Online_GT_V1';
+const SUENA_CENTER_ALGOLIA_SEARCH_KEY = '132d6bf8c576cc05ecfc9af0f6e46e2c';
+const DORMILANDIA_SOURCE_URL = 'https://www.dormilandia.com.gt/buscador.asp';
+const DORMISUENOS_SOURCE_URL = 'https://tiendasdormisuenos.com/categoria-producto/camas/?product-page=1';
+const BODEGANGAS_SOURCE_URL = 'https://bodegangasgts.com/?product_cat=0&s=camas&et_search=true&post_type=product';
+const AMERICANA_2000_SOURCE_URL = 'https://americana2000.com/categoria-producto/camas/?am2k_attr_product_brand=facenco%2Cultra%2Ccomfort-life%2Colympia%2Csealy';
+const AMERICANA_2000_API_URL = 'https://americana2000.com/wp-json/wc/store/v1/products?category=328&per_page=100';
+const SERTA_GT_SOURCE_URL = 'https://sertacentroamerica.com/guatemala/catalogo/';
 // Cambia aqui la carpeta o el nombre de los archivos generados.
 const OUTPUT_FILE = resolve('output/comparacion_colchones.csv');
 const OUTPUT_XLSX_FILE = resolve('output/comparacion_colchones.xlsx');
@@ -49,6 +59,8 @@ const STORE_QUALITY_RULES: Record<string, { minFinalProducts: number }> = {
   'Walmart Guatemala': { minFinalProducts: 10 },
   'Cemaco Guatemala': { minFinalProducts: 5 },
   'Siman Guatemala': { minFinalProducts: 10 },
+  'Serta Guatemala': { minFinalProducts: 10 },
+  'Americana 2000 Guatemala': { minFinalProducts: 30 },
 };
 
 
@@ -1114,6 +1126,79 @@ async function scrapeSleepGallery(page: Page, scrapedAt: string): Promise<CsvPro
   }));
 }
 
+const SERTA_GT_CATALOG_SECTIONS = [
+  { line: 'Catálogo', url: SERTA_GT_SOURCE_URL },
+  { line: 'Isupport', url: 'https://sertacentroamerica.com/guatemala/categoria-producto/isupport/' },
+  { line: 'Perfect Sleeper', url: 'https://sertacentroamerica.com/guatemala/categoria-producto/perfect-sleeper/' },
+  { line: 'Perfect Comfort', url: 'https://sertacentroamerica.com/guatemala/categoria-producto/perfect-comfort/' },
+  { line: 'Smart Comfort', url: 'https://sertacentroamerica.com/guatemala/categoria-producto/smart-comfort/' },
+  { line: 'Perfect Start - Cuna', url: 'https://sertacentroamerica.com/guatemala/producto/perfect-start-colchon-de-cuna/' },
+  { line: 'Toppers para Colchón', url: 'https://sertacentroamerica.com/guatemala/toppers-para-colchon/' },
+];
+
+async function scrapeSertaGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
+  const rowsByKey = new Map<string, CsvProduct>();
+  const allowedProductPattern = /(colch[oó]n|colchon|cama|base|canap[eé]|camastr[oó]n|cuna|topper)/i;
+
+  for (const section of SERTA_GT_CATALOG_SECTIONS) {
+    await goto(page, section.url);
+    await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => undefined);
+
+    const rows = await extractCardProducts(page, section.url, {
+      sourceSite: 'Serta Guatemala',
+      brand: 'Serta',
+      cardSelector: 'li.product, .products .product, .type-product',
+      titleSelector: '.woocommerce-loop-product__title, .product_title, h1.product_title, h2',
+      anchorSelector: 'a.woocommerce-LoopProduct-link, a[href*="/guatemala/producto/"]',
+      imageSelector: 'img.attachment-woocommerce_thumbnail, .woocommerce-product-gallery img, img',
+      regularPriceSelector: '.price del, del .woocommerce-Price-amount, del',
+      salePriceSelector: '.price ins, ins .woocommerce-Price-amount, ins',
+      priceSelector: '.price, .woocommerce-Price-amount',
+      discountSelector: '.onsale',
+    });
+
+    for (const row of rows) {
+      if (!allowedProductPattern.test(row.product_name)) {
+        continue;
+      }
+
+      const productUrl = row.product_url || section.url;
+      const key = normalizeCatalogText(productUrl || row.product_name);
+      const existing = rowsByKey.get(key);
+      const candidate: CsvProduct = {
+        ...row,
+        line: section.line === 'Catálogo' ? row.line : section.line,
+        category: /cuna/i.test(row.product_name)
+          ? 'Colchones de cuna'
+          : /topper/i.test(row.product_name)
+            ? 'Toppers para colchón'
+            : 'Colchones y camas',
+        source_url: SERTA_GT_SOURCE_URL,
+        scraped_at: scrapedAt,
+      };
+
+      if (!existing) {
+        rowsByKey.set(key, candidate);
+      } else if (existing.line === '' || existing.line === 'Catálogo') {
+        rowsByKey.set(key, {
+          ...existing,
+          line: candidate.line || existing.line,
+          category: candidate.category || existing.category,
+          regular_price: candidate.regular_price || existing.regular_price,
+          sale_price: candidate.sale_price || existing.sale_price,
+          discount: candidate.discount || existing.discount,
+          image_url: candidate.image_url || existing.image_url,
+          image_alt: candidate.image_alt || existing.image_alt,
+        });
+      }
+    }
+  }
+
+  const rows = Array.from(rowsByKey.values());
+  console.log(`Serta Guatemala: ${rows.length} productos unicos encontrados en las lineas de camas.`);
+  return filterGuatemalaQuetzalRows(rows, 'Serta Guatemala');
+}
+
 async function scrapeMattress(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
   await goto(page, MATTRESS_SOURCE_URL);
   const rows = await extractCardProducts(page, MATTRESS_SOURCE_URL, {
@@ -1137,25 +1222,148 @@ async function scrapeMattress(page: Page, scrapedAt: string): Promise<CsvProduct
 }
 
 async function scrapeBedsDreams(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
-  await goto(page, BEDS_DREAMS_SOURCE_URL);
-  const rows = await extractCardProducts(page, BEDS_DREAMS_SOURCE_URL, {
-    sourceSite: 'Beds & Dreams',
-    brand: 'Beds & Dreams',
-    cardSelector: '.product-card.js-product-card',
-    titleSelector: '.product-card__name',
-    categorySelector: '.product-card__type, .product-card__vendor',
-    anchorSelector: '.product-card__name[href], a[href]',
-    imageSelector: 'img.vtex-product-summary-2-x-image, img',
-    regularPriceSelector: '.product-card__regular-price, s',
-    salePriceSelector: '.product-card__price',
-    priceSelector: '.product-card__price',
-    discountSelector: '.product-label, .product-tag-sale',
-  });
+  void page;
+  const collectionSources = [
+    { handle: 'simmons', brand: 'Simmons' },
+    { handle: 'indufoam', brand: 'Indufoam' },
+    { handle: 'bases-electricas', brand: 'Bases Eléctricas' },
+  ];
+  const comfortSources = [
+    { handle: 'confort-suave', line: 'Confort Suave' },
+    { handle: 'confort-semi-firme', line: 'Confort Semi Firme' },
+    { handle: 'confort-firme', line: 'Confort Firme' },
+    { handle: 'confort-ortopedico', line: 'Confort Ortopédico' },
+    { handle: 'confort-suave-indufoam', line: 'Confort Suave' },
+    { handle: 'confort-semi-firme-indufoam', line: 'Confort Semi Firme' },
+    { handle: 'confort-firme-indufoam', line: 'Confort Firme' },
+    { handle: 'confort-ortopedico-indufoam', line: 'Confort Ortopédico' },
+    { handle: 'confort-extra-firme', line: 'Confort Extra Firme' },
+  ];
 
-  return rows.map((row) => ({
-    ...row,
-    scraped_at: scrapedAt,
-  }));
+  const fetchShopifyCollection = async (handle: string): Promise<Array<Record<string, any>>> => {
+    const url = new URL(`/collections/${handle}/products.json`, BEDS_DREAMS_SOURCE_URL);
+    url.searchParams.set('limit', '250');
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; FACENCO-Catalog/1.0)',
+      },
+      signal: AbortSignal.timeout(60000),
+    });
+    if (!response.ok) {
+      throw new Error(`Beds & Dreams coleccion ${handle} respondio HTTP ${response.status}.`);
+    }
+    const payload = await response.json() as { products?: Array<Record<string, any>> };
+    return Array.isArray(payload.products) ? payload.products : [];
+  };
+
+  const comfortProducts = await Promise.all(
+    comfortSources.map(async (source) => ({
+      ...source,
+      products: await fetchShopifyCollection(source.handle),
+    })),
+  );
+  const comfortByProductId = new Map<string, Set<string>>();
+  for (const source of comfortProducts) {
+    for (const product of source.products) {
+      const key = String(product.id ?? '');
+      if (!key) continue;
+      const lines = comfortByProductId.get(key) ?? new Set<string>();
+      lines.add(source.line);
+      comfortByProductId.set(key, lines);
+    }
+  }
+
+  const inferComfort = (title: string, description: string, brand: string): string => {
+    const text = normalizeCatalogText(`${title} ${description}`);
+    if (brand === 'Bases Eléctricas') return 'Bases Eléctricas';
+    if (/extra firm|extra firme/.test(text)) return 'Confort Extra Firme';
+    if (/ortho|ortoped|back guard/.test(text)) return 'Confort Ortopédico';
+    if (/medium|semi firm|semi firme/.test(text)) return 'Confort Semi Firme';
+    if (/firm|firme/.test(text)) return 'Confort Firme';
+    if (/plush|pillow top|soft|suave/.test(text)) return 'Confort Suave';
+    return '';
+  };
+  const formatPriceRange = (values: number[]): string => {
+    if (values.length === 0) return '';
+    const minimum = Math.min(...values);
+    const maximum = Math.max(...values);
+    const format = (value: number) => `Q${value.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+    return minimum === maximum ? format(minimum) : `${format(minimum)} - ${format(maximum)}`;
+  };
+
+  const collectionProducts = await Promise.all(
+    collectionSources.map(async (source) => ({
+      ...source,
+      products: await fetchShopifyCollection(source.handle),
+    })),
+  );
+  const rowsByProductId = new Map<string, CsvProduct>();
+
+  for (const source of collectionProducts) {
+    for (const product of source.products) {
+      const id = String(product.id ?? '');
+      const title = cleanText(String(product.title ?? ''));
+      if (!id || !title || !/(cama|colch[oó]n|colchon|base)/i.test(title)) continue;
+
+      const variants = Array.isArray(product.variants) ? product.variants : [];
+      const currentPrices = variants
+        .map((variant: Record<string, unknown>) => Number(variant.price))
+        .filter((value: number) => Number.isFinite(value) && value > 0);
+      const comparePrices = variants
+        .map((variant: Record<string, unknown>) => Number(variant.compare_at_price))
+        .filter((value: number) => Number.isFinite(value) && value > 0);
+      if (currentPrices.length === 0) continue;
+
+      const hasDiscount = variants.some((variant: Record<string, unknown>) => {
+        const current = Number(variant.price);
+        const regular = Number(variant.compare_at_price);
+        return Number.isFinite(current) && Number.isFinite(regular) && regular > current;
+      });
+      const explicitComfort = Array.from(comfortByProductId.get(id) ?? []);
+      const description = cleanText(String(product.body_html ?? '').replace(/<[^>]+>/g, ' '));
+      const line = explicitComfort.join(' / ') || inferComfort(title, description, source.brand);
+      const image = Array.isArray(product.images) ? product.images[0] ?? {} : {};
+      const productUrl = new URL(`/products/${String(product.handle ?? '')}`, BEDS_DREAMS_SOURCE_URL).toString();
+
+      rowsByProductId.set(id, {
+        source_site: 'Beds & Dreams',
+        brand: source.brand,
+        line,
+        category: /base el[eé]ctrica/i.test(`${title} ${source.brand}`)
+          ? 'Bases eléctricas'
+          : /cama completa/i.test(title)
+            ? 'Camas completas'
+            : 'Colchones',
+        product_name: title,
+        availability: variants.some((variant: Record<string, unknown>) => variant.available !== false)
+          ? 'Disponible'
+          : 'Agotado',
+        regular_price: formatPriceRange(comparePrices.length ? comparePrices : currentPrices),
+        sale_price: hasDiscount ? formatPriceRange(currentPrices) : '',
+        discount: hasDiscount ? 'Oferta' : '',
+        installment: '',
+        product_url: productUrl,
+        source_url: BEDS_DREAMS_SOURCE_URL,
+        headline: title,
+        description,
+        warranty: '',
+        benefits: '',
+        image_url: cleanText(String(image.src ?? '')),
+        image_alt: title,
+        scraped_at: scrapedAt,
+      });
+    }
+  }
+
+  const rows = Array.from(rowsByProductId.values());
+  console.log(
+    `Beds & Dreams API: Simmons=${collectionProducts[0].products.length}, Indufoam=${collectionProducts[1].products.length}, Bases Electricas=${collectionProducts[2].products.length}, total unico=${rows.length}.`,
+  );
+  return rows;
 }
 
 async function extractFurnitureCityCatalogUrls(page: Page): Promise<string[]> {
@@ -1306,6 +1514,8 @@ function isLikelyCatalogNoise(row: CsvProduct): boolean {
     'walmart guatemala',
     'cemaco guatemala',
     'siman guatemala',
+    'dormisueÃ±os guatemala',
+    'dormisueÃ±os',
   ];
 
   const isTrustedBedStore = trustedBedStores.some((store) => source.includes(store));
@@ -1374,6 +1584,8 @@ function hasRelevantBedProduct(row: CsvProduct): boolean {
     'walmart guatemala',
     'cemaco guatemala',
     'siman guatemala',
+    'dormisueÃ±os guatemala',
+    'dormisueÃ±os',
   ].some((store) => sourceText.includes(store));
 
   if (hasProductKeyword) {
@@ -1387,16 +1599,62 @@ function hasRelevantBedProduct(row: CsvProduct): boolean {
   return false;
 }
 
-function hasQuetzalPrice(row: CsvProduct): boolean {
-  const priceText = cleanText([
-    row.regular_price,
-    row.sale_price,
-    row.discount,
-    row.installment,
-  ].filter(Boolean).join(' '));
-
-  return /(^|\s|[^A-Za-z])Q\s?\d|GTQ|Quetzal/i.test(priceText);
+function csvFilterText(row: CsvProduct, ...keys: string[]): string {
+  const record = row as unknown as Record<string, unknown>;
+  return keys
+    .map((key) => record[key])
+    .filter((value): value is string | number => {
+      if (typeof value === 'number') return Number.isFinite(value);
+      return typeof value === 'string' && value.trim().length > 0;
+    })
+    .map((value) => String(value))
+    .join(' ');
 }
+
+
+function makeFinalCatalogFilterKey(row: CsvProduct): string {
+  return normalizeCatalogText([
+    csvFilterText(row, 'source_site', 'sitio_fuente', 'sourceSite', 'storeName', 'tienda'),
+    csvFilterText(row, 'product_name', 'producto', 'productName', 'titulo', 'title', 'headline'),
+    csvFilterText(row, 'product_url', 'url_producto', 'productUrl', 'url'),
+    csvFilterText(row, 'regular_price', 'precio_regular', 'regularPrice', 'precioRegular'),
+    csvFilterText(row, 'sale_price', 'precio_oferta', 'salePrice', 'precioOferta'),
+  ].filter(Boolean).join('|'));
+}
+function getPriceValidationText(row: CsvProduct): string {
+  return csvFilterText(
+    row,
+    'regular_price',
+    'sale_price',
+    'precio_regular',
+    'precio_oferta',
+    'precioRegular',
+    'precioOferta',
+    'regularPrice',
+    'salePrice',
+    'product_name',
+    'producto',
+    'productName',
+    'titulo',
+    'title',
+    'headline',
+    'descripcion',
+    'description',
+    'beneficios',
+    'benefits',
+    'rawText'
+  );
+}
+
+
+
+function hasQuetzalPrice(row: CsvProduct): boolean {
+  const text = getPriceValidationText(row);
+  return /(?:^|[^A-Za-z])Q\s?\d|GTQ|Quetzal/i.test(text);
+}
+
+
+
 
 function filterGuatemalaQuetzalRows(rows: CsvProduct[], sourceSite = 'Tienda'): CsvProduct[] {
   const withQuetzal = rows.filter((row) => hasQuetzalPrice(row));
@@ -1938,53 +2196,848 @@ async function scrapeSimanGt(page: Page, scrapedAt: string): Promise<CsvProduct[
   console.log('Siman Guatemala: total unico despues de paginar=' + rows.length);
   return rows;
 }
-function hasDollarPrice(row: CsvProduct): boolean {
-  const priceText = normalizeCatalogText([
-    row.regular_price,
-    row.sale_price,
-    row.discount,
-    row.installment,
-  ].filter(Boolean).join(' '));
 
-  return /(^|\s|[^A-Za-z])\$\s?\d|usd|dolar|dolares|dÃ³lar|dÃ³lares/.test(priceText);
+async function scrapeVisualProductGrid(
+  page: Page,
+  scrapedAt: string,
+  sourceUrl: string,
+  sourceSite: string,
+  brandFallback: string
+): Promise<CsvProduct[]> {
+  await goto(page, sourceUrl);
+  await autoScrollCatalogPage(page);
+  await page.waitForTimeout(1500);
+
+  const extracted = await page.evaluate((args) => {
+    const clean = (value: string | null | undefined): string =>
+      (value ?? '').replace(/\s+/g, ' ').trim();
+
+    const absoluteUrl = (href: string | null | undefined): string => {
+      if (!href || href === '#') return args.sourceUrl;
+      try {
+        return new URL(href, window.location.href).toString();
+      } catch {
+        return args.sourceUrl;
+      }
+    };
+
+    const visible = (element: Element): boolean => {
+      const html = element as HTMLElement;
+      const rect = html.getBoundingClientRect();
+      return rect.width > 20 && rect.height > 20;
+    };
+
+    const bedWords = /(cama|camas|colch[o\u00f3]n|colchon|box|base|cabecera|almohada|pillow|sleep|dream|restonic|simmons|serta|sealy|olympia|facenco|indufoam|comfort life|therapedic|siesta)/i;
+    const ignoreWords = /(telefono|tel[e\u00e9]fono|whatsapp|carrito|login|cuenta|favoritos|menu|categorias|filtrar por|ordenar por|cloudflare|5xx-error)/i;
+    const priceRegex = /Q\s*[0-9][0-9,]*(?:\.[0-9]{2})?/gi;
+
+    const parsePrice = (value: string): number | null => {
+      const match = value.match(/Q\s*([0-9][0-9,]*(?:\.[0-9]{2})?)/i);
+      if (!match) return null;
+      const parsed = Number(match[1].replace(/,/g, ''));
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+
+    const formatPrice = (value: number | null): string => {
+      if (value === null) return '';
+      return `Q${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
+    const candidates = new Set<HTMLElement>();
+    const cardSelectors = [
+      'li.product',
+      'article',
+      '.product',
+      '.product-card',
+      '.product-item',
+      '.woocommerce-LoopProduct-link',
+      '[class*="product"]',
+      '[class*="Product"]',
+      '[class*="card"]',
+      '[class*="Card"]'
+    ];
+
+    const addCandidate = (element: Element | null) => {
+      if (!element) return;
+      const html = element as HTMLElement;
+      if (!visible(html)) return;
+      const text = clean(html.innerText || html.textContent);
+      if (!priceRegex.test(text)) {
+        priceRegex.lastIndex = 0;
+        return;
+      }
+      priceRegex.lastIndex = 0;
+      if (!bedWords.test(text)) return;
+      if (text.length > 3200) return;
+      candidates.add(html);
+    };
+
+    for (const selector of cardSelectors) {
+      document.querySelectorAll(selector).forEach(addCandidate);
+    }
+
+    const actions = Array.from(document.querySelectorAll('button, a, [role="button"]')).filter((element) => {
+      const text = clean(element.textContent);
+      return /(comprar|agregar|a[n\u00f1]adir|ver producto|cotizar)/i.test(text);
+    });
+
+    for (const action of actions) {
+      let current: Element | null = action;
+      let best: HTMLElement | null = null;
+
+      for (let depth = 0; current && depth < 9; depth += 1) {
+        const html = current as HTMLElement;
+        const text = clean(html.innerText || html.textContent);
+        const actionCount = (text.match(/(comprar|agregar|a[n\u00f1]adir|ver producto|cotizar)/gi) ?? []).length;
+
+        if (depth > 0 && (actionCount > 1 || text.length > 2800)) {
+          break;
+        }
+
+        if (priceRegex.test(text) && bedWords.test(text)) {
+          best = html;
+        }
+        priceRegex.lastIndex = 0;
+        current = current.parentElement;
+      }
+
+      addCandidate(best);
+    }
+
+    const titleSelectors = [
+      '.woocommerce-loop-product__title',
+      '.product-title',
+      '.product-name',
+      '[class*="title"]',
+      '[class*="Title"]',
+      '[class*="name"]',
+      '[class*="Name"]',
+      'h2',
+      'h3',
+      'h4',
+      'a[title]'
+    ];
+
+    const pickTitle = (card: HTMLElement): string => {
+      for (const selector of titleSelectors) {
+        const found = card.querySelector(selector);
+        const title = clean(found?.getAttribute('title') || found?.textContent);
+        if (title && bedWords.test(title) && !ignoreWords.test(title) && title.length <= 180) {
+          return title;
+        }
+      }
+
+      const lines = clean(card.innerText || card.textContent)
+        .split(/(?=Q\s*[0-9])|Comprar|Agregar|A\u00f1adir|Oferta|Desde:|Vendedor:/i)
+        .map(clean)
+        .filter(Boolean);
+
+      const bestLine = lines
+        .flatMap((line) => line.split(/\s{2,}/).map(clean))
+        .filter((line) => bedWords.test(line) && !priceRegex.test(line) && !ignoreWords.test(line))
+        .sort((a, b) => Math.abs(a.length - 55) - Math.abs(b.length - 55))[0];
+
+      priceRegex.lastIndex = 0;
+      return clean(bestLine);
+    };
+
+    const pickImage = (card: HTMLElement): { imageUrl: string; imageAlt: string } => {
+      const img = card.querySelector('img') as HTMLImageElement | null;
+      return {
+        imageUrl: img?.src || img?.getAttribute('data-src') || img?.getAttribute('data-lazy-src') || '',
+        imageAlt: clean(img?.alt)
+      };
+    };
+
+    const pickUrl = (card: HTMLElement): string => {
+      const anchors = Array.from(card.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+      const productAnchor = anchors.find((anchor) => {
+        const href = anchor.getAttribute('href') ?? '';
+        const text = clean(anchor.textContent || anchor.getAttribute('title'));
+        return href && href !== '#' && !/cart|carrito|login|cuenta|favoritos/i.test(href) && (bedWords.test(text) || /producto|product|cama|colchon/i.test(href));
+      }) ?? anchors.find((anchor) => (anchor.getAttribute('href') ?? '') !== '#');
+      return absoluteUrl(productAnchor?.getAttribute('href'));
+    };
+
+    const rows: any[] = [];
+    const seen = new Set<string>();
+
+    for (const card of Array.from(candidates)) {
+      const text = clean(card.innerText || card.textContent);
+      if (ignoreWords.test(text) && !bedWords.test(text)) continue;
+
+      const title = pickTitle(card);
+      const priceMatches = Array.from(text.matchAll(priceRegex)).map((match) => match[0]);
+      priceRegex.lastIndex = 0;
+      const prices = priceMatches
+        .map(parsePrice)
+        .filter((price): price is number => price !== null && price > 0)
+        .filter((price) => price >= 100 && price <= 100000);
+
+      if (!title || prices.length === 0) continue;
+
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      const url = pickUrl(card);
+      const key = `${title.toLowerCase()}|${url}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const image = pickImage(card);
+      const category = /almohada|pillow/i.test(title)
+        ? 'Almohadas'
+        : /base|box|cabecera|cama/i.test(title)
+          ? 'Camas y bases'
+          : 'Colchones';
+
+      rows.push({
+        source_site: args.sourceSite,
+        brand: args.brandFallback,
+        line: '',
+        category,
+        product_name: title,
+        availability: 'Listado en tienda online',
+        regular_price: formatPrice(maxPrice),
+        sale_price: minPrice < maxPrice ? formatPrice(minPrice) : '',
+        discount: '',
+        installment: '',
+        product_url: url,
+        source_url: args.sourceUrl,
+        headline: title,
+        description: '',
+        warranty: '',
+        benefits: '',
+        image_url: image.imageUrl,
+        image_alt: image.imageAlt || title,
+        scraped_at: args.scrapedAt
+      });
+    }
+
+    return rows;
+  }, { sourceUrl, sourceSite, brandFallback, scrapedAt });
+
+  console.log(`${sourceSite}: extractor visual encontro ${extracted.length} productos antes de filtros.`);
+
+  return filterGuatemalaQuetzalRows(extracted as CsvProduct[], sourceSite).map((row) => ({
+    ...row,
+    scraped_at: scrapedAt,
+  }));
 }
+
+
+async function scrapePagedVisualProductGrid(
+  page: Page,
+  scrapedAt: string,
+  sourceUrl: string,
+  sourceSite: string,
+  brandFallback: string,
+  maxPages = 3
+): Promise<CsvProduct[]> {
+  const rowsByKey = new Map<string, CsvProduct>();
+  let currentUrl = sourceUrl;
+
+  for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
+    await goto(page, currentUrl);
+    await autoScrollCatalogPage(page);
+    await page.waitForTimeout(1800);
+
+    const extracted = await page.evaluate((args) => {
+      const clean = (value: string | null | undefined): string =>
+        (value ?? '').replace(/\s+/g, ' ').trim();
+
+      const absoluteUrl = (href: string | null | undefined): string => {
+        if (!href || href === '#') return args.currentUrl;
+        try {
+          return new URL(href, window.location.href).toString();
+        } catch {
+          return args.currentUrl;
+        }
+      };
+
+      const visible = (element: Element): boolean => {
+        const html = element as HTMLElement;
+        const rect = html.getBoundingClientRect();
+        const style = window.getComputedStyle(html);
+        return rect.width > 20 && rect.height > 20 && style.display !== 'none' && style.visibility !== 'hidden';
+      };
+
+      const bedWords = /(cama|camas|colch[o\u00f3]n|colchon|box|base|cabecera|almohada|pillow|sleep|dream|restonic|simmons|serta|sealy|olympia|facenco|indufoam|comfort life|therapedic|siesta|sue[n\u00f1]a|comfortlife)/i;
+      const ignoreWords = /(telefono|tel[e\u00e9]fono|whatsapp|carrito|login|cuenta|favoritos|menu|categorias|filtrar por|ordenar por|cloudflare|5xx-error|rastrea|pedido|footer|newsletter|copyright)/i;
+      const priceRegex = /Q\s*[0-9][0-9,]*(?:\.[0-9]{2})?/gi;
+
+      const hasPrice = (text: string): boolean => {
+        priceRegex.lastIndex = 0;
+        const ok = priceRegex.test(text);
+        priceRegex.lastIndex = 0;
+        return ok;
+      };
+
+      const parsePrice = (value: string): number | null => {
+        const match = value.match(/Q\s*([0-9][0-9,]*(?:\.[0-9]{2})?)/i);
+        if (!match) return null;
+        const parsed = Number(match[1].replace(/,/g, ''));
+        return Number.isFinite(parsed) ? parsed : null;
+      };
+
+      const formatPrice = (value: number | null): string => {
+        if (value === null) return '';
+        return `Q${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      };
+
+      const imageHintsBed = (card: HTMLElement): boolean =>
+        Array.from(card.querySelectorAll('img')).some((img) => {
+          const image = img as HTMLImageElement;
+          return bedWords.test(clean(image.alt || image.title || image.src));
+        });
+
+      const candidates = new Set<HTMLElement>();
+      const cardSelectors = [
+        'li.product',
+        'ul.products > li',
+        'article',
+        '.product',
+        '.product-card',
+        '.product-item',
+        '.woocommerce-LoopProduct-link',
+        '[class*="producto"]',
+        '[class*="Producto"]',
+        '[class*="product"]',
+        '[class*="Product"]',
+        '[class*="card"]',
+        '[class*="Card"]',
+        '[class*="item"]',
+        '[class*="Item"]',
+        '[class*="grid"] > *',
+        '[class*="products"] > *',
+        '[class*="Products"] > *',
+        '[class*="collection"] > *',
+        'a[href*="/producto/"]',
+        'a[href*="/product/"]'
+      ];
+
+      const addCandidate = (element: Element | null) => {
+        if (!element) return;
+        const html = element as HTMLElement;
+        if (!visible(html)) return;
+        const text = clean(html.innerText || html.textContent);
+        if (!hasPrice(text)) return;
+        if (!bedWords.test(text) && !imageHintsBed(html)) return;
+        if (ignoreWords.test(text) && text.length > 1600) return;
+        if (text.length > 3600) return;
+        candidates.add(html);
+      };
+
+      for (const selector of cardSelectors) {
+        document.querySelectorAll(selector).forEach(addCandidate);
+      }
+
+      const priceNodes = Array.from(document.querySelectorAll('body *')).filter((element) => {
+        if (!visible(element)) return false;
+        const text = clean((element as HTMLElement).innerText || element.textContent);
+        return text.length > 0 && text.length <= 900 && hasPrice(text);
+      });
+
+      for (const node of priceNodes) {
+        let current: Element | null = node;
+        let best: HTMLElement | null = null;
+
+        for (let depth = 0; current && depth < 10; depth += 1) {
+          const html = current as HTMLElement;
+          const text = clean(html.innerText || html.textContent);
+          const priceCount = (text.match(priceRegex) ?? []).length;
+          priceRegex.lastIndex = 0;
+          const actionCount = (text.match(/(comprar|agregar|a[n\u00f1]adir|ver producto|cotizar)/gi) ?? []).length;
+          const imageCount = html.querySelectorAll('img').length;
+
+          if (depth > 0 && (actionCount > 1 || priceCount > 5 || imageCount > 3 || text.length > 3200)) {
+            break;
+          }
+
+          if (hasPrice(text) && (bedWords.test(text) || imageHintsBed(html))) {
+            best = html;
+          }
+
+          current = current.parentElement;
+        }
+
+        addCandidate(best);
+      }
+
+      const titleSelectors = [
+        '.woocommerce-loop-product__title',
+        '.product-title',
+        '.product-name',
+        '[class*="title"]',
+        '[class*="Title"]',
+        '[class*="name"]',
+        '[class*="Name"]',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'a[title]'
+      ];
+
+      const pickTitle = (card: HTMLElement): string => {
+        for (const selector of titleSelectors) {
+          const found = card.querySelector(selector);
+          const title = clean(found?.getAttribute('title') || found?.textContent);
+          if (title && bedWords.test(title) && !ignoreWords.test(title) && title.length <= 190) {
+            return title;
+          }
+        }
+
+        const imageTitle = Array.from(card.querySelectorAll('img'))
+          .map((img) => clean((img as HTMLImageElement).alt || (img as HTMLImageElement).title))
+          .find((title) => title && bedWords.test(title) && !ignoreWords.test(title) && title.length <= 190);
+        if (imageTitle) return imageTitle;
+
+        const rawLines = (card.innerText || card.textContent || '')
+          .split(/\n+|Comprar|Agregar|A\u00f1adir|Oferta|Desde:|Vendedor:|Valido hasta/i)
+          .map(clean)
+          .filter(Boolean);
+
+        const bestLine = rawLines
+          .filter((line) => bedWords.test(line) && !hasPrice(line) && !ignoreWords.test(line) && line.length >= 4 && line.length <= 190)
+          .sort((a, b) => Math.abs(a.length - 55) - Math.abs(b.length - 55))[0];
+
+        return clean(bestLine);
+      };
+
+      const pickImage = (card: HTMLElement): { imageUrl: string; imageAlt: string } => {
+        const images = Array.from(card.querySelectorAll('img')) as HTMLImageElement[];
+        const img = images.find((image) => bedWords.test(clean(image.alt || image.title || image.src))) ?? images[0];
+        return {
+          imageUrl: img?.src || img?.getAttribute('data-src') || img?.getAttribute('data-lazy-src') || img?.getAttribute('data-original') || '',
+          imageAlt: clean(img?.alt || img?.title)
+        };
+      };
+
+      const pickUrl = (card: HTMLElement): string => {
+        const anchors = Array.from(card.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+        const productAnchor = anchors.find((anchor) => {
+          const href = anchor.getAttribute('href') ?? '';
+          const text = clean(anchor.textContent || anchor.getAttribute('title'));
+          return href && href !== '#' && !/cart|carrito|login|cuenta|favoritos|whatsapp/i.test(href) && (bedWords.test(text) || /producto|product|cama|colchon/i.test(href));
+        }) ?? anchors.find((anchor) => (anchor.getAttribute('href') ?? '') !== '#');
+        return absoluteUrl(productAnchor?.getAttribute('href'));
+      };
+
+      const rows: any[] = [];
+      const seen = new Set<string>();
+
+      for (const card of Array.from(candidates)) {
+        const text = clean(card.innerText || card.textContent);
+        if (ignoreWords.test(text) && !bedWords.test(text)) continue;
+
+        const title = pickTitle(card);
+        const priceMatches = Array.from(text.matchAll(priceRegex)).map((match) => match[0]);
+        priceRegex.lastIndex = 0;
+        const prices = priceMatches
+          .map(parsePrice)
+          .filter((price): price is number => price !== null && price > 0)
+          .filter((price) => price >= 100 && price <= 100000);
+
+        if (!title || prices.length === 0) continue;
+
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        const url = pickUrl(card);
+        const key = `${title.toLowerCase()}|${url}|${minPrice}|${maxPrice}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        const image = pickImage(card);
+        const category = /almohada|pillow/i.test(title)
+          ? 'Almohadas'
+          : /base|box|cabecera|cama/i.test(title)
+            ? 'Camas y bases'
+            : 'Colchones';
+
+        rows.push({
+          source_site: args.sourceSite,
+          brand: args.brandFallback,
+          line: '',
+          category,
+          product_name: title,
+          availability: /agotado|sin existencia|no disponible/i.test(text) ? 'Agotado' : 'Listado en tienda online',
+          regular_price: formatPrice(maxPrice),
+          sale_price: minPrice < maxPrice ? formatPrice(minPrice) : '',
+          discount: '',
+          installment: '',
+          product_url: url,
+          source_url: args.sourceUrl,
+          headline: title,
+          description: '',
+          warranty: '',
+          benefits: '',
+          image_url: image.imageUrl,
+          image_alt: image.imageAlt || title,
+          scraped_at: args.scrapedAt
+        });
+      }
+
+      const nextLinks = Array.from(document.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+      const nextAnchor = nextLinks.find((anchor) => {
+        const text = clean(anchor.textContent || anchor.getAttribute('aria-label') || anchor.className);
+        const rel = clean(anchor.getAttribute('rel'));
+        return /next|siguiente|proxima|pr[o\u00f3]xima/i.test(`${text} ${rel}`);
+      });
+
+      return {
+        rows,
+        nextUrl: absoluteUrl(nextAnchor?.getAttribute('href'))
+      };
+    }, { currentUrl, sourceUrl, sourceSite, brandFallback, scrapedAt });
+
+    console.log(`${sourceSite}: pagina visual ${pageNumber} encontro ${extracted.rows.length} productos antes de filtros.`);
+
+    for (const row of filterGuatemalaQuetzalRows(extracted.rows as CsvProduct[], sourceSite)) {
+      const key = row.product_url || `${row.product_name}|${row.regular_price}|${row.sale_price}`;
+      if (!rowsByKey.has(key)) {
+        rowsByKey.set(key, {
+          ...row,
+          source_url: sourceUrl,
+          scraped_at: scrapedAt,
+        });
+      }
+    }
+
+    const nextUrl = extracted.nextUrl;
+    if (!nextUrl || nextUrl === currentUrl || nextUrl === sourceUrl) {
+      break;
+    }
+
+    currentUrl = nextUrl;
+  }
+
+  return Array.from(rowsByKey.values());
+}
+async function scrapeSuenaCenterGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
+  void page;
+  const apiUrl = `https://${SUENA_CENTER_ALGOLIA_APP_ID}-dsn.algolia.net/1/indexes/${SUENA_CENTER_ALGOLIA_INDEX}/query`;
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Algolia-Application-Id': SUENA_CENTER_ALGOLIA_APP_ID,
+      'X-Algolia-API-Key': SUENA_CENTER_ALGOLIA_SEARCH_KEY,
+    },
+    body: JSON.stringify({ query: '', hitsPerPage: 1000 }),
+    signal: AbortSignal.timeout(60000),
+  });
+  if (!response.ok) {
+    throw new Error(`Suena Center API respondio HTTP ${response.status}.`);
+  }
+
+  const payload = await response.json() as { hits?: Array<Record<string, any>> };
+  const hits = Array.isArray(payload.hits) ? payload.hits : [];
+  const formatPriceRange = (values: number[]): string => {
+    if (values.length === 0) return '';
+    const minimum = Math.min(...values);
+    const maximum = Math.max(...values);
+    const format = (value: number) => `Q${value.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+    return minimum === maximum ? format(minimum) : `${format(minimum)} - ${format(maximum)}`;
+  };
+  const normalizeBrand = (value: unknown): string => {
+    const brand = normalizeCatalogText(String(value ?? ''));
+    if (brand === 'suena' || brand === 'sueÃ±a') return 'Sueña';
+    if (brand === 'indufoam') return 'Indufoam';
+    if (brand === 'simmons') return 'Simmons';
+    return cleanText(String(value ?? '')) || 'Sueña Center';
+  };
+  const normalizeComfort = (value: unknown): string => {
+    const comfort = normalizeCatalogText(String(value ?? '')).replace(/\s+/g, ' ');
+    if (comfort === 'suave' || comfort === 'semi suave') return 'Confort Suave';
+    if (comfort === 'semi firme') return 'Confort Semi-Firme';
+    if (comfort === 'extra firme') return 'Confort Extra-Firme';
+    if (comfort === 'firme') return 'Confort Firme';
+    return cleanText(String(value ?? ''));
+  };
+
+  const rows: CsvProduct[] = hits
+    .filter((product) =>
+      normalizeCatalogText(String(product.group_level_one_name ?? '')) === 'camas'
+      && Number(product.is_visible_in_store ?? 0) === 1
+      && ['suena', 'sueÃ±a', 'indufoam', 'simmons'].includes(normalizeCatalogText(String(product.brand_name ?? ''))),
+    )
+    .map((product) => {
+      const variants = Array.isArray(product.variants) ? product.variants : [];
+      const regularPrices = variants
+        .map((variant: Record<string, unknown>) => Number(variant.retail_price))
+        .filter((value: number) => Number.isFinite(value) && value > 0);
+      const offerPrices = variants
+        .map((variant: Record<string, unknown>) => Number(variant.offer_price || variant.final_price))
+        .filter((value: number) => Number.isFinite(value) && value > 0);
+      const hasOffer = variants.some((variant: Record<string, unknown>) =>
+        Number(variant.offer_price) > 0 && Number(variant.offer_price) < Number(variant.retail_price),
+      );
+      const title = cleanText(String(product.name ?? product.label ?? ''));
+      const slug = cleanText(String(product.slug ?? ''));
+      const description = cleanText(String(product.description ?? '').replace(/<[^>]+>/g, ' '));
+      const discount = Number(product.discount ?? 0);
+
+      return {
+        source_site: 'Suena Center Guatemala',
+        brand: normalizeBrand(product.brand_name),
+        line: normalizeComfort(product.comfort),
+        category: 'Camas',
+        product_name: title,
+        availability: Number(product.available_balance ?? 0) > 0 ? 'Disponible' : 'Agotado',
+        regular_price: formatPriceRange(regularPrices.length ? regularPrices : [Number(product.retail_price)]),
+        sale_price: hasOffer
+          ? formatPriceRange(offerPrices.length ? offerPrices : [Number(product.final_price)])
+          : '',
+        discount: discount > 0 ? `${Math.round(discount)}%` : '',
+        installment: '',
+        product_url: new URL(`/products/${slug}`, SUENA_CENTER_SOURCE_URL).toString(),
+        source_url: SUENA_CENTER_SOURCE_URL,
+        headline: title,
+        description,
+        warranty: cleanText(String(product.guarantee ?? '')),
+        benefits: '',
+        image_url: cleanText(String(product.image_url ?? '')),
+        image_alt: title,
+        scraped_at: scrapedAt,
+      } satisfies CsvProduct;
+    });
+
+  console.log(`Suena Center Guatemala API: ${rows.length} camas visibles con marca y confort.`);
+  return rows;
+}
+
+async function scrapeDormilandiaGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
+  return scrapeGenericGuatemalaStore(page, scrapedAt, DORMILANDIA_SOURCE_URL, 'Dormilandia Guatemala', 'Dormilandia');
+}
+
+function dormisuenosUrlWithPage(pageNumber: number): string {
+  const url = new URL(DORMISUENOS_SOURCE_URL);
+  url.searchParams.set('product-page', String(pageNumber));
+  return url.toString();
+}
+
+async function scrapeDormisuenosGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
+  const rowsByUrl = new Map<string, CsvProduct>();
+  const maxPages = 4;
+
+  for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
+    const pageUrl = dormisuenosUrlWithPage(pageNumber);
+    const pageRows = await scrapeVisualProductGrid(page, scrapedAt, pageUrl, 'Dormisuenos Guatemala', 'Dormisuenos');
+
+    if (pageRows.length === 0 && pageNumber > 1) {
+      break;
+    }
+
+    for (const row of pageRows) {
+      const key = row.product_url || row.product_name;
+      if (!rowsByUrl.has(key)) {
+        rowsByUrl.set(key, {
+          ...row,
+          source_url: DORMISUENOS_SOURCE_URL,
+        });
+      }
+    }
+  }
+
+  return Array.from(rowsByUrl.values());
+}
+
+async function scrapeBodegangasGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
+  const urls = [
+    BODEGANGAS_SOURCE_URL,
+    'https://bodegangasgts.com/?product_cat=camas&s=camas&et_search=true&post_type=product',
+    'https://bodegangasgts.com/product-category/camas/'
+  ];
+  const rowsByKey = new Map<string, CsvProduct>();
+
+  for (const url of urls) {
+    const rows = await scrapePagedVisualProductGrid(page, scrapedAt, url, 'Bodegangas Guatemala', 'Bodegangas', 5);
+    for (const row of rows) {
+      const key = row.product_url || `${row.product_name}|${row.regular_price}|${row.sale_price}`;
+      if (!rowsByKey.has(key)) {
+        rowsByKey.set(key, {
+          ...row,
+          source_url: BODEGANGAS_SOURCE_URL,
+        });
+      }
+    }
+
+    if (rowsByKey.size >= 20) {
+      break;
+    }
+  }
+
+  return Array.from(rowsByKey.values());
+}
+
+async function scrapeAmericana2000Gt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
+  void page;
+  const response = await fetch(AMERICANA_2000_API_URL, {
+    headers: {
+      Accept: 'application/json',
+      'User-Agent': 'Mozilla/5.0 (compatible; FACENCO-Catalog/1.0)',
+    },
+    signal: AbortSignal.timeout(60000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Americana 2000 API respondio HTTP ${response.status}.`);
+  }
+
+  const products = await response.json() as Array<Record<string, any>>;
+  const allowedBrands = new Set(['facenco', 'ultra', 'comfort life', 'olympia', 'sealy']);
+  const cleanHtml = (value: unknown): string =>
+    cleanText(String(value ?? '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;|&#160;/gi, ' '));
+  const formatApiPrice = (value: unknown, minorUnit: number): string => {
+    const amount = Number(value);
+    if (!Number.isFinite(amount) || amount <= 0) return '';
+    return `Q${(amount / (10 ** minorUnit)).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+
+  const rows: CsvProduct[] = [];
+  for (const product of products) {
+    const brands = (Array.isArray(product.brands) ? product.brands : [])
+      .map((brand: Record<string, unknown>) => cleanText(String(brand.name ?? '')))
+      .filter((brand: string) => allowedBrands.has(normalizeCatalogText(brand)));
+    if (brands.length === 0) continue;
+
+    const prices = product.prices ?? {};
+    if (String(prices.currency_code ?? '').toUpperCase() !== 'GTQ') continue;
+    const minorUnit = Number(prices.currency_minor_unit ?? 2);
+    const regularPrice = formatApiPrice(prices.regular_price, minorUnit);
+    const currentPrice = formatApiPrice(prices.price, minorUnit);
+    const salePrice = String(prices.sale_price ?? '') && prices.sale_price !== prices.regular_price
+      ? formatApiPrice(prices.sale_price, minorUnit)
+      : '';
+    const categories = (Array.isArray(product.categories) ? product.categories : [])
+      .map((category: Record<string, unknown>) => cleanText(String(category.name ?? '')))
+      .filter(Boolean);
+    const line = categories.find((category: string) => normalizeCatalogText(category) !== 'camas') ?? '';
+    const image = Array.isArray(product.images) ? product.images[0] ?? {} : {};
+
+    rows.push({
+      source_site: 'Americana 2000 Guatemala',
+      brand: brands.join(' / '),
+      line,
+      category: 'Camas',
+      product_name: cleanText(String(product.name ?? '')),
+      availability: product.is_in_stock === false ? 'Agotado' : 'Disponible',
+      regular_price: regularPrice || currentPrice,
+      sale_price: salePrice || (currentPrice !== regularPrice ? currentPrice : ''),
+      discount: product.on_sale ? 'Oferta' : '',
+      installment: '',
+      product_url: cleanText(String(product.permalink ?? '')),
+      source_url: AMERICANA_2000_SOURCE_URL,
+      headline: cleanText(String(product.name ?? '')),
+      description: cleanHtml(product.short_description || product.description),
+      warranty: '',
+      benefits: '',
+      image_url: cleanText(String(image.src ?? '')),
+      image_alt: cleanText(String(image.alt ?? product.name ?? '')),
+      scraped_at: scrapedAt,
+    });
+  }
+
+  console.log(`Americana 2000 Guatemala API: ${products.length} camas recibidas, ${rows.length} con las marcas seleccionadas.`);
+  return rows;
+}
+function hasDollarPrice(row: CsvProduct): boolean {
+  const text = normalizeCatalogText(getPriceValidationText(row));
+  return /(?:^|[\s(])US\$|(?:^|[\s(])\$ ?\d|d[oÃ³]lar|usd/i.test(text);
+}
+
+
+
 
 function isFacencoRow(row: CsvProduct): boolean {
   return normalizeCatalogText(row.source_site) === 'facenco' || normalizeCatalogText(row.brand) === 'facenco';
 }
-
+const FINAL_QUETZAL_PRICE_PATTERN = /(?:Q|GTQ)\s*\d/i;
+const FINAL_DOLLAR_PRICE_PATTERN = /\b(usd|us\$|d[oÃ³]lar(?:es)?|dollars?)\b|\$\s*\d/i;
 function shouldKeepCatalogRow(row: CsvProduct): boolean {
-  if (!hasRelevantBedProduct(row)) {
-    return false;
-  }
-
-  if (isFacencoRow(row)) {
-    return true;
-  }
-
-  if (hasDollarPrice(row)) {
-    return false;
-  }
-
-  return hasQuetzalPrice(row);
+  return getCatalogFilterReason(row) === '';
 }
 
+
+
+
 function filterFinalCatalogRows(rows: CsvProduct[]): CsvProduct[] {
-  const unique = new Map<string, CsvProduct>();
+  const result: CsvProduct[] = [];
+  const rejectedByStore = new Map<string, { count: number; samples: string[] }>();
+  const seen = new Set<string>();
 
   for (const row of rows) {
-    if (!shouldKeepCatalogRow(row)) {
+    const reason = getCatalogFilterReason(row);
+    if (reason) {
+      const store = csvFilterText(
+        row,
+        'source_site',
+        'sitio_fuente',
+        'sourceSite',
+        'sourceName',
+        'storeName',
+        'tienda',
+        'store',
+        'site',
+      ) || 'Sin tienda';
+      const info = rejectedByStore.get(store) ?? { count: 0, samples: [] };
+      info.count += 1;
+      if (info.samples.length < 3) {
+        const product = csvFilterText(
+          row,
+          'product_name',
+          'producto',
+          'productName',
+          'titulo',
+          'title',
+          'headline',
+          'name',
+        ) || 'Sin producto';
+        const price = csvFilterText(
+          row,
+          'sale_price',
+          'regular_price',
+          'precio_oferta',
+          'precio_regular',
+          'precioOferta',
+          'precioRegular',
+          'salePrice',
+          'regularPrice',
+          'offerPrice',
+          'price',
+          'priceText',
+        ) || 'sin precio';
+        info.samples.push(`${product} | precio: ${price} | motivo: ${reason}`);
+      }
+      rejectedByStore.set(store, info);
       continue;
     }
 
-    const key = row.product_url || `${row.source_site}|${row.product_name}|${row.regular_price}|${row.sale_price}`;
-    if (!unique.has(key)) {
-      unique.set(key, row);
+    const key = makeFinalDedupKey(row);
+    if (key && seen.has(key)) continue;
+    if (key) seen.add(key);
+    result.push(row);
+  }
+
+  if (rejectedByStore.size > 0) {
+    console.log('Productos descartados por filtro final:');
+    for (const [store, info] of rejectedByStore.entries()) {
+      console.log(`- ${store}: ${info.count} descartados`);
+      for (const sample of info.samples) console.log(`  ejemplo: ${sample}`);
     }
   }
 
-  return Array.from(unique.values());
+  return result;
 }
+
+
+
 
 
 function getSelectedStoreNames(): string[] {
@@ -1996,8 +3049,82 @@ function getSelectedStoreNames(): string[] {
     .map((item) => item.trim())
     .filter(Boolean);
 }
+// INICIO FIX FILTRO FINAL POR TIENDA
+const FINAL_BED_PRODUCT_PATTERN = /(cama|camas|colchon|colch[oÃ³]n|colchones|mattress|box\s*spring|base|bases|cabecera|cabeceras|almohada|almohadas|protector|protectores|funda|fundas|s[aÃ¡]bana|sabanas|s[aÃ¡]banas|edred[oÃ³]n|edredones|cobertor|cobertores|duvet|set\s+de\s+cama|dormitorio|litera|literas|camarote|sofa\s*cama|sof[aÃ¡]\s*cama|rec[aÃ¡]mara|sleep|dream|restonic|simmons|serta|sealy|olympia|indufoam|facenco|comfort\s*life|therapedic|belezza|lucca|sienna|kangaroo|beautyrest|beautysleep|back\s*care|backcare)/i;
+const FINAL_NON_BED_PRODUCT_PATTERN = /(celular|telefono|tel[eÃ©]fono|smartphone|iphone|samsung\s+galaxy|laptop|notebook|computadora|tablet|televisor|tv\s|aud[iÃ­]fono|bocina|mouse|teclado|impresora|monitor|c[aÃ¡]mara|camera|refrigeradora|lavadora|estufa|microondas|licuadora|cafetera|maquillaje|rubor|labial|maybelline|juguete|paw\s*patrol|figura\s+de\s+acci[oÃ³]n|bicicleta|moto|llanta|zapato|tenis|ropa|vestido|camisa|pantal[oÃ³]n)/i;
+const BED_PRODUCT_PATTERN = FINAL_BED_PRODUCT_PATTERN;
+const NON_BED_PRODUCT_PATTERN = FINAL_NON_BED_PRODUCT_PATTERN;
+
+function readCsvProductText(row: CsvProduct, keys: string[]): string {
+  const record = row as unknown as Record<string, unknown>;
+  for (const key of keys) {
+    const value = record[key];
+    if (value !== undefined && value !== null && String(value).trim()) {
+      return String(value).trim();
+    }
+  }
+  return '';
+}
+
+function getCatalogFilterReason(row: CsvProduct): string {
+  const site = readCsvProductText(row, ['source_site', 'sourceSite', 'sourceName', 'sitio_fuente', 'tienda', 'store', 'site']);
+  const product = readCsvProductText(row, ['product_name', 'productName', 'producto', 'title', 'titulo', 'name']);
+  const brand = readCsvProductText(row, ['brand', 'marca']);
+  const line = readCsvProductText(row, ['line', 'linea']);
+  const category = readCsvProductText(row, ['category', 'categoria']);
+  const description = readCsvProductText(row, ['description', 'descripcion', 'details', 'detalle']);
+  const headline = readCsvProductText(row, ['headline', 'title', 'titulo']);
+  const benefits = readCsvProductText(row, ['benefits', 'beneficios']);
+  const productUrl = readCsvProductText(row, ['product_url', 'productUrl', 'url_producto', 'url']);
+  const imageAlt = readCsvProductText(row, ['image_alt', 'imageAlt']);
+  const priceText = csvFilterText(
+    row,
+    'regular_price',
+    'sale_price',
+    'price',
+    'priceText',
+    'precio',
+    'precio_regular',
+    'precio_oferta',
+    'regularPrice',
+    'salePrice',
+    'offerPrice',
+  );
+  const identityText = [product, brand, line, category, headline, productUrl, imageAlt].join(' ');
+  const searchableText = [identityText, description, benefits].join(' ');
+  const specializedBedStore = /(facenco|olympia|colchoneria|colchoner[iÃ­]a|sleep\s*gallery|mattress|beds?\s*&?\s*dreams?|suena\s*center|sue[nÃ±]a\s*center|dormilandia|dormisue[nÃ±]os|serta\s*guatemala)/i.test(site);
+
+  if (!site) return 'sin tienda';
+  if (!product && !description) return 'sin producto';
+  if (FINAL_NON_BED_PRODUCT_PATTERN.test(identityText)) return 'producto no relacionado a cama';
+  if (!specializedBedStore && !FINAL_BED_PRODUCT_PATTERN.test(searchableText)) return 'no parece producto de cama';
+
+  // No se exige precio para guardar: FACENCO y algunas tiendas pueden traer catalogo sin precio.
+  // Solo se rechaza si claramente viene en dolares y no aparece Quetzal.
+  if ((/\bUSD\b|US\$|\$/i.test(priceText)) && !/(Q\s*\d|GTQ)/i.test(priceText)) {
+    return 'precio en dolares';
+  }
+
+  return '';
+}
+
+function makeFinalDedupKey(row: CsvProduct): string {
+  const site = readCsvProductText(row, ['source_site', 'sourceSite', 'sourceName', 'sitio_fuente', 'tienda', 'store', 'site']);
+  const product = readCsvProductText(row, ['product_name', 'productName', 'producto', 'title', 'titulo', 'name']);
+  const productUrl = readCsvProductText(row, ['product_url', 'productUrl', 'url_producto', 'url']);
+  const regularPrice = readCsvProductText(row, ['regular_price', 'precio_regular', 'regularPrice', 'precioRegular']);
+  const salePrice = readCsvProductText(row, ['sale_price', 'precio_oferta', 'salePrice', 'offerPrice', 'precioOferta']);
+  return [site, product, productUrl, regularPrice, salePrice]
+    .map((value) => value.toLowerCase().replace(/\s+/g, ' ').trim())
+    .join('|');
+}
+// FIN FIX FILTRO FINAL POR TIENDA
 async function main(): Promise<void> {
   const browser = await chromium.launch({ headless: true });
+  const storeTimeoutMs = Math.max(
+    30_000,
+    Number(process.env.SCRAPER_STORE_TIMEOUT_MS || 4 * 60_000),
+  );
 
   try {
     const scrapedAt = new Date().toISOString();
@@ -2011,6 +3138,8 @@ async function main(): Promise<void> {
       { name: 'Camas Olympia Online GT', run: (storePage) => scrapeOlympia(storePage, scrapedAt) },
       { name: 'La Colchoneria Guatemala', run: (storePage) => scrapeLaColchoneria(storePage, scrapedAt) },
       { name: 'Sleep Gallery Guatemala', run: (storePage) => scrapeSleepGallery(storePage, scrapedAt) },
+      { name: 'Serta Guatemala', run: (storePage) => scrapeSertaGt(storePage, scrapedAt) },
+      { name: 'Americana 2000 Guatemala', run: (storePage) => scrapeAmericana2000Gt(storePage, scrapedAt) },
       { name: 'Mattress Guatemala', run: (storePage) => scrapeMattress(storePage, scrapedAt) },
       { name: 'Beds & Dreams', run: (storePage) => scrapeBedsDreams(storePage, scrapedAt) },
       { name: 'Furniture City Guatemala', run: (storePage) => scrapeFurnitureCity(storePage, scrapedAt) },
@@ -2020,6 +3149,10 @@ async function main(): Promise<void> {
       { name: 'Walmart Guatemala', run: (storePage) => scrapeWalmartGt(storePage, scrapedAt) },
       { name: 'Cemaco Guatemala', run: (storePage) => scrapeCemacoGt(storePage, scrapedAt) },
       { name: 'Siman Guatemala', run: (storePage) => scrapeSimanGt(storePage, scrapedAt) },
+      { name: 'Suena Center Guatemala', run: (storePage) => scrapeSuenaCenterGt(storePage, scrapedAt) },
+      { name: 'Dormilandia Guatemala', run: (storePage) => scrapeDormilandiaGt(storePage, scrapedAt) },
+      { name: 'Dormisuenos Guatemala', run: (storePage) => scrapeDormisuenosGt(storePage, scrapedAt) },
+      { name: 'Bodegangas Guatemala', run: (storePage) => scrapeBodegangasGt(storePage, scrapedAt) },
     ];
 
     const selectedStoreNames = getSelectedStoreNames();
@@ -2049,12 +3182,28 @@ async function main(): Promise<void> {
 
       try {
         console.log(`Iniciando ${store.name} intento ${attempt}...`);
-        const storeRows = await store.run(storePage);
+        let timeoutHandle: NodeJS.Timeout | undefined;
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timeoutHandle = setTimeout(() => {
+            reject(new Error(
+              `${store.name} excedio el limite de ${Math.round(storeTimeoutMs / 60_000)} minutos por intento.`,
+            ));
+          }, storeTimeoutMs);
+        });
+        const storeRows = await Promise.race([
+          store.run(storePage),
+          timeoutPromise,
+        ]).finally(() => {
+          if (timeoutHandle) clearTimeout(timeoutHandle);
+        });
         const finalRows = filterFinalCatalogRows(storeRows).filter((row) => row.source_site === store.name);
         console.log(`OK ${store.name} intento ${attempt}: ${storeRows.length} productos leidos, ${finalRows.length} productos utiles.`);
         return storeRows;
       } finally {
-        await storePage.close().catch(() => undefined);
+        await Promise.race([
+          storePage.close().catch(() => undefined),
+          new Promise<void>((resolveClose) => setTimeout(resolveClose, 5_000)),
+        ]);
       }
     }
 
@@ -2144,6 +3293,18 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

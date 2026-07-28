@@ -18,6 +18,10 @@ const OUTPUT_CSV = resolve('output/comparacion_colchones.csv');
 const FACENCO_PRICE_FILE = resolve('data/precios_facenco.xlsx');
 const LOG_DIR = resolve('logs');
 const SCRAPER_LOG = resolve(LOG_DIR, 'ultimo_scraper.log');
+const SCRAPER_PROCESS_TIMEOUT_MS = Math.max(
+  60_000,
+  Number(process.env.SCRAPER_PROCESS_TIMEOUT_MS || 90 * 60_000),
+);
 let scraperRunning = false;
 
 type ScraperJob = {
@@ -43,6 +47,8 @@ const KNOWN_STORE_NAMES = [
   'Camas Olympia Online GT',
   'La Colchoneria Guatemala',
   'Sleep Gallery Guatemala',
+  'Serta Guatemala',
+  'Americana 2000 Guatemala',
   'Mattress Guatemala',
   'Beds & Dreams',
   'Furniture City Guatemala',
@@ -52,6 +58,10 @@ const KNOWN_STORE_NAMES = [
   'Walmart Guatemala',
   'Cemaco Guatemala',
   'Siman Guatemala',
+  'Suena Center Guatemala',
+  'Dormilandia Guatemala',
+  'Dormisuenos Guatemala',
+  'Bodegangas Guatemala',
 ];
 
 function sanitizeStoreSelection(value: unknown): string[] {
@@ -345,11 +355,11 @@ async function getProducts(searchParams: URLSearchParams): Promise<CatalogProduc
   const values: string[] = [];
 
   const filterMap: Array<[string, string]> = [
-    ['semana', 'semana_run::text'],
-    ['tienda', 'sitio_fuente'],
-    ['marca', 'marca'],
-    ['categoria', 'categoria'],
-    ['disponibilidad', 'disponibilidad'],
+    ['semana', 'p.semana_run::text'],
+    ['tienda', 'p.sitio_fuente'],
+    ['marca', 'p.marca'],
+    ['categoria', 'p.categoria'],
+    ['disponibilidad', 'p.disponibilidad'],
   ];
 
   for (const [param, column] of filterMap) {
@@ -363,19 +373,27 @@ async function getProducts(searchParams: URLSearchParams): Promise<CatalogProduc
   const query = searchParams.get('q');
   if (query) {
     values.push(`%${query}%`);
-    filters.push(`(producto ILIKE $${values.length} OR marca ILIKE $${values.length} OR sitio_fuente ILIKE $${values.length})`);
+    filters.push(`(p.producto ILIKE $${values.length} OR p.marca ILIKE $${values.length} OR p.sitio_fuente ILIKE $${values.length})`);
   }
 
-  const latestRunFilter = `run_id = (SELECT id FROM ${schema}.scraping_runs ORDER BY id DESC LIMIT 1)`;
-  const where = `WHERE ${[latestRunFilter, ...filters].join(' AND ')}`;
+  const where = filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : '';
   const pool = getDbPool();
 
   try {
     const result = await pool.query<DbProduct>(`
-      SELECT *
-      FROM ${schema}.productos_catalogo
+      WITH latest_store_runs AS (
+        SELECT sitio_fuente, MAX(run_id) AS run_id
+        FROM ${schema}.productos_catalogo
+        WHERE sitio_fuente IS NOT NULL
+        GROUP BY sitio_fuente
+      )
+      SELECT p.*
+      FROM ${schema}.productos_catalogo p
+      INNER JOIN latest_store_runs latest
+        ON latest.sitio_fuente = p.sitio_fuente
+       AND latest.run_id = p.run_id
       ${where}
-      ORDER BY id ASC
+      ORDER BY p.id ASC
     `, values);
 
     const facencoExcelRows = await loadFacencoPriceRows(result.rows);
@@ -515,8 +533,14 @@ async function proxyImage(sourceUrl: string | null, res: import('node:http').Ser
   res.end(body);
 }
 
-function runScraperProcess(stores: string[] = []): Promise<{ ok: boolean; output: string }> {
+function runScraperProcess(
+  stores: string[] = [],
+  onProgress?: (output: string) => void,
+): Promise<{ ok: boolean; output: string }> {
   return new Promise((resolveRun) => {
+    const jobTimeoutMs = stores.length
+      ? Math.min(SCRAPER_PROCESS_TIMEOUT_MS, Math.max(10 * 60_000, stores.length * 10 * 60_000))
+      : SCRAPER_PROCESS_TIMEOUT_MS;
     const args = ['dist/scrape-facenco-energy.js'];
     if (stores.length) {
       args.push(`--stores=${stores.join(',')}`);
@@ -529,31 +553,54 @@ function runScraperProcess(stores: string[] = []): Promise<{ ok: boolean; output
     });
 
     let output = '';
+    let settled = false;
+
+    const finish = (ok: boolean, finalOutput: string) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      void writeScraperLog(finalOutput);
+      resolveRun({
+        ok,
+        output: summarizeScraperOutput(finalOutput, ok),
+      });
+    };
+
+    const appendOutput = (chunk: unknown) => {
+      output += String(chunk);
+      onProgress?.(output.slice(-8_000));
+    };
 
     child.stdout.on('data', (chunk) => {
-      output += chunk.toString();
+      appendOutput(chunk);
     });
 
     child.stderr.on('data', (chunk) => {
-      output += chunk.toString();
+      appendOutput(chunk);
     });
 
     child.on('close', (code) => {
-      const ok = code === 0;
-      void writeScraperLog(output);
-      resolveRun({
-        ok,
-        output: summarizeScraperOutput(output, ok),
-      });
+      finish(code === 0, output);
     });
 
     child.on('error', (error) => {
-      void writeScraperLog(error.message);
-      resolveRun({
-        ok: false,
-        output: summarizeScraperOutput(error.message, false),
-      });
+      appendOutput(`\n${error.message}\n`);
+      finish(false, output);
     });
+
+    const timeout = setTimeout(() => {
+      const timeoutMessage =
+        `\nADVERTENCIA: El proceso excedio el limite de ${Math.round(jobTimeoutMs / 60_000)} minutos y fue detenido para liberar la cola.\n`;
+      appendOutput(timeoutMessage);
+      child.kill('SIGTERM');
+      setTimeout(() => {
+        if (!settled) {
+          child.kill('SIGKILL');
+          finish(false, output);
+        }
+      }, 10_000).unref();
+    }, jobTimeoutMs);
+    timeout.unref();
   });
 }
 
@@ -593,16 +640,24 @@ function processScraperQueue(): void {
       job.status = 'running';
       job.startedAt = new Date().toISOString();
 
-      const result = await runScraperProcess(job.stores || []);
-      job.ok = result.ok;
-      job.output = result.output;
-      job.status = result.ok ? 'done' : 'error';
-      job.finishedAt = new Date().toISOString();
-      lastFinishedScraperJob = job;
-
-      currentScraperJob = null;
-      scraperRunning = false;
-      cleanupScraperJobs();
+      try {
+        const result = await runScraperProcess(job.stores || [], (progress) => {
+          job.output = progress;
+        });
+        job.ok = result.ok;
+        job.output = result.output;
+        job.status = result.ok ? 'done' : 'error';
+      } catch (error) {
+        job.ok = false;
+        job.output = error instanceof Error ? error.message : String(error);
+        job.status = 'error';
+      } finally {
+        job.finishedAt = new Date().toISOString();
+        lastFinishedScraperJob = job;
+        currentScraperJob = null;
+        scraperRunning = false;
+        cleanupScraperJobs();
+      }
     }
 
     scraperQueueProcessing = false;
@@ -756,6 +811,7 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Catalogo Comercial Comparativo listo en http://localhost:${PORT}`);
 });
+
 
 
 
