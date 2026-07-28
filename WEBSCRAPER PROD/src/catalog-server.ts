@@ -385,15 +385,27 @@ async function getProducts(searchParams: URLSearchParams): Promise<CatalogProduc
   try {
     const result = await pool.query<DbProduct>(`
       WITH latest_store_runs AS (
-        SELECT sitio_fuente, MAX(run_id) AS run_id
+        SELECT
+          CASE
+            WHEN sitio_fuente LIKE 'La Colchoner%' THEN 'La Colchoneria Guatemala'
+            ELSE sitio_fuente
+          END AS store_key,
+          MAX(run_id) AS run_id
         FROM ${schema}.productos_catalogo
         WHERE sitio_fuente IS NOT NULL
-        GROUP BY sitio_fuente
+        GROUP BY
+          CASE
+            WHEN sitio_fuente LIKE 'La Colchoner%' THEN 'La Colchoneria Guatemala'
+            ELSE sitio_fuente
+          END
       )
       SELECT p.*
       FROM ${schema}.productos_catalogo p
       INNER JOIN latest_store_runs latest
-        ON latest.sitio_fuente = p.sitio_fuente
+        ON latest.store_key = CASE
+          WHEN p.sitio_fuente LIKE 'La Colchoner%' THEN 'La Colchoneria Guatemala'
+          ELSE p.sitio_fuente
+        END
        AND latest.run_id = p.run_id
       ${where}
       ORDER BY p.id ASC
