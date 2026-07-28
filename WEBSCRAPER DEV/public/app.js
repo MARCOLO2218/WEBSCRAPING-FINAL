@@ -292,14 +292,17 @@ function renderMetrics() {
   const stores = new Set(state.filtered.map((product) => product.sitio_fuente).filter(Boolean));
   const cheaper = state.filtered.filter((product) => product.etiqueta_diferencia === 'Mas barato').length;
   const expensive = state.filtered.filter((product) => product.etiqueta_diferencia === 'Mas caro').length;
-  const last = state.products.at(-1);
+  const latestRunProduct = state.products.reduce((latest, product) => {
+    if (!latest) return product;
+    return Number(product.run_id || 0) > Number(latest.run_id || 0) ? product : latest;
+  }, null);
 
   elements.avgPrice.textContent = formatMoney(average);
   elements.cheaperCount.textContent = String(cheaper);
   elements.expensiveCount.textContent = String(expensive);
   elements.storeCount.textContent = String(stores.size);
-  elements.weekBadge.textContent = last?.semana_run ? `Semana ${last.semana_run}` : 'Semana -';
-  elements.runBadge.textContent = last?.run_id ? `Run ID ${last.run_id}` : 'Run ID -';
+  elements.weekBadge.textContent = latestRunProduct?.semana_run ? `Semana ${latestRunProduct.semana_run}` : 'Semana -';
+  elements.runBadge.textContent = latestRunProduct?.run_id ? `Run ID ${latestRunProduct.run_id}` : 'Run ID -';
   elements.countBadge.textContent = `${state.filtered.length} productos`;
 }
 

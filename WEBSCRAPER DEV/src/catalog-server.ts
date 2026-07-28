@@ -214,7 +214,10 @@ async function loadFacencoPriceRows(templateRows: DbProduct[]): Promise<DbProduc
     if (header) headerMap.set(header, colNumber);
   });
 
-  const latest = templateRows.find((row) => row.run_id) || templateRows[0];
+  const latest = templateRows.reduce<DbProduct | undefined>((current, row) => {
+    if (!current) return row;
+    return Number(row.run_id || 0) > Number(current.run_id || 0) ? row : current;
+  }, undefined);
   const rows: DbProduct[] = [];
 
   sheet.eachRow((row, rowNumber) => {
