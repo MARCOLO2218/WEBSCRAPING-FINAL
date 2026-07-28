@@ -384,29 +384,56 @@ async function getProducts(searchParams: URLSearchParams): Promise<CatalogProduc
 
   try {
     const result = await pool.query<DbProduct>(`
-      WITH latest_store_runs AS (
+      WITH product_runs AS (
         SELECT
           CASE
-            WHEN sitio_fuente LIKE 'La Colchoner%' THEN 'La Colchoneria Guatemala'
-            ELSE sitio_fuente
+            WHEN p.sitio_fuente LIKE 'La Colchoner%' THEN 'La Colchoneria Guatemala'
+            ELSE p.sitio_fuente
           END AS store_key,
-          MAX(run_id) AS run_id
-        FROM ${schema}.productos_catalogo
-        WHERE sitio_fuente IS NOT NULL
+          p.run_id,
+          COUNT(*) AS product_count,
+          MAX(COALESCE(sr.started_at, p.fecha_scraping, p.creado_en)) AS run_time
+        FROM ${schema}.productos_catalogo p
+        LEFT JOIN ${schema}.scraping_runs sr ON sr.id = p.run_id
+        WHERE p.sitio_fuente IS NOT NULL
+          AND p.run_id IS NOT NULL
         GROUP BY
           CASE
-            WHEN sitio_fuente LIKE 'La Colchoner%' THEN 'La Colchoneria Guatemala'
-            ELSE sitio_fuente
-          END
+            WHEN p.sitio_fuente LIKE 'La Colchoner%' THEN 'La Colchoneria Guatemala'
+            ELSE p.sitio_fuente
+          END,
+          p.run_id
+      ),
+      latest_store_times AS (
+        SELECT store_key, MAX(run_time) AS latest_time
+        FROM product_runs
+        GROUP BY store_key
+      ),
+      ranked_store_runs AS (
+        SELECT
+          pr.*,
+          ROW_NUMBER() OVER (
+            PARTITION BY pr.store_key
+            ORDER BY pr.product_count DESC, pr.run_time DESC, pr.run_id DESC
+          ) AS preference
+        FROM product_runs pr
+        INNER JOIN latest_store_times latest
+          ON latest.store_key = pr.store_key
+        WHERE pr.run_time >= latest.latest_time - INTERVAL '3 hours'
+      ),
+      preferred_store_runs AS (
+        SELECT store_key, run_id
+        FROM ranked_store_runs
+        WHERE preference = 1
       )
       SELECT p.*
       FROM ${schema}.productos_catalogo p
-      INNER JOIN latest_store_runs latest
-        ON latest.store_key = CASE
+      INNER JOIN preferred_store_runs preferred
+        ON preferred.store_key = CASE
           WHEN p.sitio_fuente LIKE 'La Colchoner%' THEN 'La Colchoneria Guatemala'
           ELSE p.sitio_fuente
         END
-       AND latest.run_id = p.run_id
+       AND preferred.run_id = p.run_id
       ${where}
       ORDER BY p.id ASC
     `, values);
