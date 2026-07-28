@@ -437,7 +437,7 @@ async function getProducts(searchParams: URLSearchParams): Promise<CatalogProduc
     `);
 
     const result = await pool.query<DbProduct>(`
-      preferred_store_runs AS (
+      WITH preferred_store_runs AS (
         SELECT store_key, run_id
         FROM ${schema}.catalog_display_snapshots
       )
