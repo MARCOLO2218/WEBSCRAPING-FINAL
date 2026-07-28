@@ -41,6 +41,15 @@ CREATE TABLE IF NOT EXISTS catalogo.productos_catalogo (
     creado_en TIMESTAMP DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS catalogo.catalog_display_snapshots (
+    store_key TEXT PRIMARY KEY,
+    run_id BIGINT NOT NULL,
+    product_count INTEGER NOT NULL,
+    locked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    lock_until TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS ix_productos_catalogo_fecha_id
 ON catalogo.productos_catalogo (fecha_scraping DESC, id DESC);
 

@@ -370,6 +370,17 @@ async function ensurePostgresTables(client: PoolClient, schema: string): Promise
     )
   `);
 
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS ${schema}.catalog_display_snapshots (
+      store_key TEXT PRIMARY KEY,
+      run_id BIGINT NOT NULL,
+      product_count INTEGER NOT NULL,
+      locked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      lock_until TIMESTAMPTZ NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
   await client.query(`ALTER TABLE ${schema}.scraping_runs ADD COLUMN IF NOT EXISTS run_uuid UUID`);
   await client.query(`ALTER TABLE ${schema}.scraping_runs ADD COLUMN IF NOT EXISTS semana_run INTEGER`);
   await client.query(`ALTER TABLE ${schema}.scraping_runs ADD COLUMN IF NOT EXISTS semana_inicio DATE`);
@@ -494,11 +505,38 @@ async function saveProductsToPostgres(rows: CsvProduct[]): Promise<void> {
       }
     }
 
+    const storeCounts = new Map<string, number>();
+    for (const row of rows) {
+      const storeKey = row.source_site.startsWith('La Colchoner')
+        ? 'La Colchoneria Guatemala'
+        : row.source_site;
+      storeCounts.set(storeKey, (storeCounts.get(storeKey) || 0) + 1);
+    }
+
+    let publishedStores = 0;
+    for (const [storeKey, productCount] of storeCounts) {
+      const publication = await client.query(`
+        INSERT INTO ${config.schema}.catalog_display_snapshots (
+          store_key, run_id, product_count, locked_at, lock_until, updated_at
+        )
+        VALUES ($1, $2, $3, NOW(), NOW() + INTERVAL '3 hours', NOW())
+        ON CONFLICT (store_key) DO UPDATE SET
+          run_id = EXCLUDED.run_id,
+          product_count = EXCLUDED.product_count,
+          locked_at = NOW(),
+          lock_until = NOW() + INTERVAL '3 hours',
+          updated_at = NOW()
+        WHERE ${config.schema}.catalog_display_snapshots.lock_until <= NOW()
+      `, [storeKey, runId, productCount]);
+      publishedStores += publication.rowCount || 0;
+    }
+
     await client.query('COMMIT');
     console.log(`Run ID de esta consulta: Semana ${runWeek} (run_id ${runId})`);
     console.log(`Inicio de semana: ${weekStart}`);
     console.log(`UUID tecnico de esta consulta: ${runUuid}`);
     console.log(`PostgreSQL actualizado: ${insertedRows} productos insertados.`);
+    console.log(`Catalogo publicado: ${publishedStores} tienda(s) actualizaron su llave de 3 horas.`);
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -3221,12 +3259,16 @@ async function main(): Promise<void> {
             bestFinalCount = attemptFinalCount;
           }
 
-          if (attemptRows.length > 0) {
+          const retryMinimum = getStoreRetryMinimum(store.name);
+          if (attemptFinalCount >= retryMinimum) {
             break;
           }
 
           if (attempt < 2) {
-            console.log(`ADVERTENCIA: ${store.name} devolvio 0 productos. Reintentando solo esta tienda.`);
+            console.log(
+              `ADVERTENCIA: ${store.name} obtuvo ${attemptFinalCount} productos utiles; `
+              + `minimo para aceptar ${retryMinimum}. Reintentando para conservar el mejor resultado.`,
+            );
           }
         } catch (error) {
           const technical = errorMessage(error);
