@@ -536,7 +536,14 @@ async function saveProductsToPostgres(rows: CsvProduct[]): Promise<void> {
     console.log(`Inicio de semana: ${weekStart}`);
     console.log(`UUID tecnico de esta consulta: ${runUuid}`);
     console.log(`PostgreSQL actualizado: ${insertedRows} productos insertados.`);
-    console.log(`Catalogo publicado: ${publishedStores} tienda(s) actualizaron su llave de 3 horas.`);
+    if (publishedStores > 0) {
+      console.log(`Catalogo visible actualizado: ${publishedStores} tienda(s) iniciaron una nueva llave de 3 horas.`);
+    } else {
+      console.log(
+        `Llave de 3 horas activa: los ${insertedRows} productos fueron guardados, `
+        + 'pero 0 tiendas cambiaron el catalogo visible.',
+      );
+    }
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
