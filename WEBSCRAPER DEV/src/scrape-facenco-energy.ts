@@ -2213,18 +2213,40 @@ function simanUrlWithPage(baseUrl: string, pageNumber: number): string {
 async function scrapeSimanGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
   const rowsByKey = new Map<string, CsvProduct>();
   const maxPages = 8;
+  const pageTimeoutMs = 90_000;
 
   for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
     const pageUrl = simanUrlWithPage(SIMAN_GT_SOURCE_URL, pageNumber);
     console.log('Siman Guatemala: leyendo pagina ' + pageNumber + ' de ' + maxPages + '...');
 
-    const pageRows = await scrapeGenericGuatemalaStore(
-      page,
-      scrapedAt,
-      pageUrl,
-      'Siman Guatemala',
-      'Siman',
-    );
+    let pageTimeoutHandle: NodeJS.Timeout | undefined;
+    let pageRows: CsvProduct[];
+    try {
+      const pageTimeout = new Promise<never>((_, reject) => {
+        pageTimeoutHandle = setTimeout(() => {
+          reject(new Error(`Siman Guatemala: pagina ${pageNumber} excedio 90 segundos.`));
+        }, pageTimeoutMs);
+      });
+      pageRows = await Promise.race([
+        scrapeGenericGuatemalaStore(
+          page,
+          scrapedAt,
+          pageUrl,
+          'Siman Guatemala',
+          'Siman',
+        ),
+        pageTimeout,
+      ]);
+    } catch (error) {
+      if (rowsByKey.size === 0) throw error;
+      console.log(
+        `ADVERTENCIA: Siman Guatemala conservara ${rowsByKey.size} productos parciales `
+        + `porque la pagina ${pageNumber} no termino: ${errorMessage(error)}`,
+      );
+      break;
+    } finally {
+      if (pageTimeoutHandle) clearTimeout(pageTimeoutHandle);
+    }
 
     console.log('Siman Guatemala: pagina ' + pageNumber + ' genero ' + pageRows.length + ' productos utiles.');
 
@@ -2891,7 +2913,74 @@ async function scrapeDormisuenosGt(page: Page, scrapedAt: string): Promise<CsvPr
     }
   }
 
-  return Array.from(rowsByUrl.values());
+  const visualRows = Array.from(rowsByUrl.values());
+  if (visualRows.length > 0) return visualRows;
+
+  console.log('Dormisuenos Guatemala: la pagina visual vino vacia; probando API de WooCommerce...');
+  try {
+    const apiUrl = new URL('/wp-json/wc/store/v1/products', DORMISUENOS_SOURCE_URL);
+    apiUrl.searchParams.set('per_page', '100');
+    const response = await fetch(apiUrl, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; FACENCO-Catalog/1.0)',
+      },
+      signal: AbortSignal.timeout(60_000),
+    });
+    if (!response.ok) {
+      throw new Error(`API respondio HTTP ${response.status}`);
+    }
+
+    const products = await response.json() as Array<Record<string, any>>;
+    const apiRows = products
+      .filter((product) => Array.isArray(product.categories)
+        && product.categories.some((category: Record<string, any>) => {
+          const value = normalizeCatalogText(`${category.slug ?? ''} ${category.name ?? ''}`);
+          return /(^|\s)camas?(\s|$)/.test(value);
+        }))
+      .map((product) => {
+        const prices = product.prices ?? {};
+        const minorUnit = Number(prices.currency_minor_unit ?? 2);
+        const divisor = 10 ** (Number.isFinite(minorUnit) ? minorUnit : 2);
+        const regularValue = Number(prices.regular_price ?? prices.price ?? 0) / divisor;
+        const saleValue = Number(prices.sale_price ?? 0) / divisor;
+        const formatApiPrice = (value: number): string => value > 0
+          ? `Q${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          : '';
+        const name = cleanText(String(product.name ?? ''));
+        const image = Array.isArray(product.images) ? product.images[0] ?? {} : {};
+        const description = cleanText(String(product.short_description ?? product.description ?? '').replace(/<[^>]+>/g, ' '));
+
+        return {
+          source_site: 'Dormisuenos Guatemala',
+          brand: cleanText(String(product.brands?.[0]?.name ?? 'Dormisuenos')),
+          line: '',
+          category: 'Camas',
+          product_name: name,
+          availability: product.is_in_stock === false ? 'Agotado' : 'Disponible',
+          regular_price: formatApiPrice(regularValue),
+          sale_price: saleValue > 0 && saleValue < regularValue ? formatApiPrice(saleValue) : '',
+          discount: '',
+          installment: '',
+          product_url: cleanText(String(product.permalink ?? DORMISUENOS_SOURCE_URL)),
+          source_url: DORMISUENOS_SOURCE_URL,
+          headline: name,
+          description,
+          warranty: '',
+          benefits: '',
+          image_url: cleanText(String(image.src ?? '')),
+          image_alt: cleanText(String(image.alt ?? name)),
+          scraped_at: scrapedAt,
+        } satisfies CsvProduct;
+      })
+      .filter((row) => row.product_name && (row.regular_price || row.sale_price));
+
+    console.log(`Dormisuenos Guatemala API: ${apiRows.length} camas recuperadas.`);
+    return apiRows;
+  } catch (error) {
+    console.log(`ADVERTENCIA: Dormisuenos Guatemala API no disponible: ${errorMessage(error)}`);
+    return [];
+  }
 }
 
 async function scrapeBodegangasGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
@@ -3174,6 +3263,9 @@ async function main(): Promise<void> {
     30_000,
     Number(process.env.SCRAPER_STORE_TIMEOUT_MS || 4 * 60_000),
   );
+  const getAttemptTimeoutMs = (storeName: string): number => (
+    storeName === 'Siman Guatemala' ? Math.max(storeTimeoutMs, 10 * 60_000) : storeTimeoutMs
+  );
 
   try {
     const scrapedAt = new Date().toISOString();
@@ -3231,13 +3323,14 @@ async function main(): Promise<void> {
 
       try {
         console.log(`Iniciando ${store.name} intento ${attempt}...`);
+        const attemptTimeoutMs = getAttemptTimeoutMs(store.name);
         let timeoutHandle: NodeJS.Timeout | undefined;
         const timeoutPromise = new Promise<never>((_, reject) => {
           timeoutHandle = setTimeout(() => {
             reject(new Error(
-              `${store.name} excedio el limite de ${Math.round(storeTimeoutMs / 60_000)} minutos por intento.`,
+              `${store.name} excedio el limite de ${Math.round(attemptTimeoutMs / 60_000)} minutos por intento.`,
             ));
-          }, storeTimeoutMs);
+          }, attemptTimeoutMs);
         });
         const storeRows = await Promise.race([
           store.run(storePage),
