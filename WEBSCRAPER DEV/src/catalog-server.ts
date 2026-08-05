@@ -782,6 +782,19 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if (url.pathname === '/api/latest-run') {
+      const pool = getDbPool();
+      const schema = process.env.PGSCHEMA || 'catalogo';
+      const result = await pool.query(`
+        SELECT id AS run_id, semana_run, semana_inicio, started_at, total_products
+        FROM ${schema}.scraping_runs
+        ORDER BY id DESC
+        LIMIT 1
+      `);
+      await sendJson(res, result.rows[0] || null);
+      return;
+    }
+
     if (url.pathname === '/api/image') {
       await proxyImage(url.searchParams.get('url'), res);
       return;

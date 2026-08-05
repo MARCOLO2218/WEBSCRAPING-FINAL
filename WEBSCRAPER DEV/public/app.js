@@ -1,6 +1,7 @@
 ﻿const state = {
   products: [],
   filtered: [],
+  latestRun: null,
   selectedId: null,
   currentPage: 1,
   pageSize: 100,
@@ -301,8 +302,9 @@ function renderMetrics() {
   elements.cheaperCount.textContent = String(cheaper);
   elements.expensiveCount.textContent = String(expensive);
   elements.storeCount.textContent = String(stores.size);
-  elements.weekBadge.textContent = latestRunProduct?.semana_run ? `Semana ${latestRunProduct.semana_run}` : 'Semana -';
-  elements.runBadge.textContent = latestRunProduct?.run_id ? `Run ID ${latestRunProduct.run_id}` : 'Run ID -';
+  const latestRun = state.latestRun || latestRunProduct;
+  elements.weekBadge.textContent = latestRun?.semana_run ? `Semana ${latestRun.semana_run}` : 'Semana -';
+  elements.runBadge.textContent = latestRun?.run_id ? `Run ID ${latestRun.run_id}` : 'Run ID -';
   elements.countBadge.textContent = `${state.filtered.length} productos`;
 }
 
@@ -342,8 +344,12 @@ function render() {
 
 async function loadProducts() {
   try {
-    const response = await fetch('/api/products');
+    const [response, latestRunResponse] = await Promise.all([
+      fetch('/api/products'),
+      fetch('/api/latest-run'),
+    ]);
     if (!response.ok) throw new Error('No se pudo cargar el catalogo.');
+    state.latestRun = latestRunResponse.ok ? await latestRunResponse.json() : null;
     state.products = (await response.json()).map(normalizeProductText);
     state.filtered = [...state.products];
     state.selectedId = null;

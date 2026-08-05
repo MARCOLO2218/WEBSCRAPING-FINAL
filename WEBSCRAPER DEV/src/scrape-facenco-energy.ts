@@ -527,6 +527,7 @@ async function saveProductsToPostgres(rows: CsvProduct[]): Promise<void> {
           lock_until = NOW() + INTERVAL '3 hours',
           updated_at = NOW()
         WHERE ${config.schema}.catalog_display_snapshots.lock_until <= NOW()
+           OR EXCLUDED.product_count > ${config.schema}.catalog_display_snapshots.product_count
       `, [storeKey, runId, productCount]);
       publishedStores += publication.rowCount || 0;
     }
@@ -536,7 +537,17 @@ async function saveProductsToPostgres(rows: CsvProduct[]): Promise<void> {
     console.log(`Inicio de semana: ${weekStart}`);
     console.log(`UUID tecnico de esta consulta: ${runUuid}`);
     console.log(`PostgreSQL actualizado: ${insertedRows} productos insertados.`);
-    console.log(`Catalogo publicado: ${publishedStores} tienda(s) actualizaron su llave de 3 horas.`);
+    if (publishedStores > 0) {
+      console.log(
+        `Catalogo visible actualizado: ${publishedStores} tienda(s) vencieron la llave `
+        + 'o publicaron una cantidad mayor de productos.',
+      );
+    } else {
+      console.log(
+        `Llave de 3 horas activa: los ${insertedRows} productos fueron guardados, `
+        + 'pero 0 tiendas cambiaron el catalogo visible.',
+      );
+    }
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
