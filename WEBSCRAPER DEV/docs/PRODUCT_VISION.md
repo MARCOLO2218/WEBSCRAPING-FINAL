@@ -21,7 +21,7 @@ El Catalogo Comercial Comparativo permite recopilar, conservar y comparar precio
 
 ## Vision regional
 
-Una sola plataforma atendera Guatemala, Honduras, El Salvador, Nicaragua y Costa Rica. Toda tienda, ejecucion y producto pertenecera explicitamente a un pais. Las comparaciones se realizaran dentro del mismo pais y moneda.
+Una sola plataforma atendera Guatemala, Honduras, El Salvador y Nicaragua. Costa Rica queda fuera del alcance definido. Toda tienda, ejecucion y producto pertenecera explicitamente a un pais. Las comparaciones se realizaran dentro del mismo pais y moneda.
 
 ## Principios
 

@@ -34,4 +34,5 @@
 
 - [ ] Agregar modelo de pais y moneda en base de datos.
 - [ ] Ejecutar piloto con Honduras y dos o tres tiendas.
-- [ ] Incorporar El Salvador, Nicaragua y Costa Rica progresivamente.
+- [ ] Incorporar El Salvador y Nicaragua progresivamente.
+- [ ] Aplicar segmentacion por pais en consultas, ejecuciones y publicaciones.

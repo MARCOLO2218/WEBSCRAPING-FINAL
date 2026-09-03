@@ -23,3 +23,4 @@ Este directorio conserva las especificaciones funcionales y tecnicas del product
 |---|---|---|
 | `SPEC-001-base-arquitectura.md` | Completada | Base documental, catalogo central de tiendas y primeras pruebas. |
 | `SPEC-002-contratos-api-actual.md` | Completada | Inventario verificable de los contratos de la API Node actual. |
+| `SPEC-003-regionalizacion-cuatro-paises.md` | Propuesta | Alcance de cuatro paises, separacion modular y base regional segmentada. |

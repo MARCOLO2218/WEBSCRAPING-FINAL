@@ -22,3 +22,16 @@
 
 - Estado: permanente.
 - Decision: ninguna etapa se aplica a PROD antes de compilar, probar y validar funcionalmente en DEV.
+- Motivo: proteger la operacion estable mientras evoluciona la arquitectura.
+
+## ADR-005: Alcance regional de cuatro paises
+
+- Estado: aceptada.
+- Decision: la plataforma atendera Guatemala, Honduras, El Salvador y Nicaragua; Costa Rica queda fuera del alcance.
+- Motivo: concentrar la expansion regional en los cuatro paises definidos por el negocio.
+
+## ADR-006: Una base regional segmentada por pais
+
+- Estado: propuesta.
+- Decision: usar una sola base de datos y asociar pais y moneda a tiendas, ejecuciones, productos y publicaciones.
+- Motivo: mantener una operacion general, facilitar reportes regionales y evitar cuatro esquemas y migraciones duplicadas. La aplicacion debera exigir filtros, restricciones e indices por pais.

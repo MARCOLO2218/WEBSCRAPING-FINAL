@@ -49,3 +49,18 @@ Responsabilidades previstas:
 - DEV sigue usando el puerto 3030 y su base independiente.
 - PROD no se modifica hasta aprobar expresamente la promocion.
 - `.env` nunca se copia entre ambientes.
+
+## Regionalizacion propuesta
+
+La plataforma se organizara para Guatemala (`GT`), Honduras (`HN`), El Salvador
+(`SV`) y Nicaragua (`NI`). Costa Rica no forma parte del alcance.
+
+- Se mantendra una sola aplicacion y, de preferencia, una sola base de datos.
+- Paises y tiendas se definiran en catalogos centrales.
+- Los extractores se agruparan por pais y luego por tienda o familia tecnica.
+- Tiendas, ejecuciones, productos y publicaciones quedaran asociados a un pais.
+- Toda consulta y comparacion exigira el pais y respetara su moneda.
+- Indices y restricciones compuestos por pais evitaran cruces accidentales.
+
+La separacion en cuatro bases fisicas se reserva para un requisito posterior de
+aislamiento legal, infraestructura independiente o escalamiento comprobado.
