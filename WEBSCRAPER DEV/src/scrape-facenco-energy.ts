@@ -6,6 +6,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { getStoreRegistrationDifferences } from './config/store-catalog.js';
 
 const envFile = existsSync('.env') ? '.env' : undefined;
 if (envFile) {
@@ -3295,6 +3296,14 @@ async function main(): Promise<void> {
       { name: 'Dormisuenos Guatemala', run: (storePage) => scrapeDormisuenosGt(storePage, scrapedAt) },
       { name: 'Bodegangas Guatemala', run: (storePage) => scrapeBodegangasGt(storePage, scrapedAt) },
     ];
+
+    const registration = getStoreRegistrationDifferences(storeScrapers.map((store) => store.name));
+    if (registration.missing.length || registration.unknown.length) {
+      throw new Error(
+        `Catalogo de tiendas desalineado. Faltantes: ${registration.missing.join(', ') || 'ninguna'}. `
+        + `No configuradas: ${registration.unknown.join(', ') || 'ninguna'}.`,
+      );
+    }
 
     const selectedStoreNames = getSelectedStoreNames();
     const selectedStoreKeys = selectedStoreNames.map((name) => name.toLowerCase());

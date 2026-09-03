@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process';
 import { config as loadEnv } from 'dotenv';
 import { Pool } from 'pg';
 import ExcelJS from 'exceljs';
+import { sanitizeStoreSelection } from './config/store-catalog.js';
 
 const envFile = existsSync('.env') ? '.env' : undefined;
 if (envFile) {
@@ -41,39 +42,6 @@ let scraperQueueProcessing = false;
 let currentScraperJob: ScraperJob | null = null;
 let lastFinishedScraperJob: ScraperJob | null = null;
 const MAX_SCRAPER_JOB_HISTORY = 50;
-
-const KNOWN_STORE_NAMES = [
-  'FACENCO',
-  'Camas Olympia Online GT',
-  'La Colchoneria Guatemala',
-  'Sleep Gallery Guatemala',
-  'Serta Guatemala',
-  'Americana 2000 Guatemala',
-  'Mattress Guatemala',
-  'Beds & Dreams',
-  'Furniture City Guatemala',
-  'La Curacao Guatemala',
-  'MAX Guatemala',
-  'Elektra Guatemala',
-  'Walmart Guatemala',
-  'Cemaco Guatemala',
-  'Siman Guatemala',
-  'Suena Center Guatemala',
-  'Dormilandia Guatemala',
-  'Dormisuenos Guatemala',
-  'Bodegangas Guatemala',
-];
-
-function sanitizeStoreSelection(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  const known = new Map(KNOWN_STORE_NAMES.map((name) => [name.toLowerCase(), name]));
-  const selected = value
-    .map((item) => String(item || '').trim())
-    .filter(Boolean)
-    .map((item) => known.get(item.toLowerCase()))
-    .filter((item): item is string => Boolean(item));
-  return [...new Set(selected)];
-}
 
 function readJsonBody(req: import('node:http').IncomingMessage): Promise<Record<string, unknown>> {
   return new Promise((resolveBody) => {
