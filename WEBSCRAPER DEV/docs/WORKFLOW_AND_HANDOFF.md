@@ -16,11 +16,14 @@ El trabajo de arquitectura se realiza exclusivamente en DEV. PROD se mantiene es
 - Se creo un catalogo central en `src/config/store-catalog.ts`.
 - Las pruebas ejecutables viven en `src/specs/`.
 - Las specs permanentes viven en `specs/`.
+- Los contratos actuales de la API Node viven en `docs/API_CONTRACTS.md`.
 - FastAPI es la arquitectura objetivo para la API, no una reescritura inmediata.
 
 ## Siguiente trabajo
 
-Continuar desde el primer pendiente de `docs/MIGRATION_PLAN.md`. La siguiente etapa recomendada es registrar los contratos actuales de la API y luego extraer tipos, configuracion, persistencia y servicios mediante cambios pequenos con pruebas.
+Continuar desde el primer pendiente de `docs/MIGRATION_PLAN.md`. Los contratos de
+la API actual ya estan registrados; el siguiente trabajo es extraer tipos y
+normalizacion de productos mediante cambios pequenos con pruebas.
 
 ## Flujo local en Windows PowerShell
 

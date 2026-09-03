@@ -8,7 +8,7 @@
     "catalog": "node node_modules/typescript/bin/tsc && node dist/catalog-server.js",
     "build": "tsc",
     "scrape": "npm run build && node dist/scrape-facenco-energy.js",
-    "test": "npm run build && node --test dist/specs/store-catalog.test.js"
+    "test": "npm run build && node --test dist/specs/store-catalog.test.js dist/specs/api-contracts.test.js"
   },
   "dependencies": {
     "@types/pg": "^8.20.0",

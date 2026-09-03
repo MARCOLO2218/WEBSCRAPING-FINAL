@@ -24,6 +24,9 @@ docs/           vision, arquitectura y decisiones
 
 Esta etapa conserva las rutas, comandos y puertos. Los archivos grandes se separaran de manera incremental despues de cubrir su comportamiento con pruebas.
 
+Los contratos observables del servidor Node que deben protegerse durante la
+migracion estan registrados en `docs/API_CONTRACTS.md`.
+
 ## Arquitectura objetivo
 
 ```text

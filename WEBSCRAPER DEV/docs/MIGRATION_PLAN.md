@@ -6,7 +6,7 @@
 - [x] Crear catalogo tipado de tiendas y pais.
 - [x] Agregar primeras especificaciones ejecutables.
 - [x] Establecer registro permanente de specs y flujo de continuidad.
-- [ ] Registrar contratos actuales de la API.
+- [x] Registrar contratos actuales de la API.
 
 ## Etapa 2 - Modularizacion TypeScript
 
