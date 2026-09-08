@@ -51,3 +51,4 @@ Este directorio conserva las especificaciones funcionales y tecnicas del product
 | `SPEC-028-exportacion-csv-fastapi.md` | Completada | Descarga CSV con filtros y pruebas de paridad con Node. |
 | `SPEC-029-datos-pais-moneda-y-filtros.md` | Propuesta | Datos GT/GTQ, HN/HNL, SV/USD y NC/NIO; filtros y selecciones recordadas por país. |
 | `SPEC-030-herramienta-paridad-dev.md` | Completada | Comparador HTTP probado con simulación; ejecución real DEV pendiente. |
+| `SPEC-031-panel-carga-espacio-y-cierre.md` | Completada | Espaciado, cierre y visibilidad de confirmación en carga FACENCO. |

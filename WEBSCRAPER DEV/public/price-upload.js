@@ -1,4 +1,9 @@
 (() => {
+  const details = document.querySelector('#priceUploadDetails');
+  document.querySelector('#closePrices').addEventListener('click', () => {
+    details.open = false;
+    details.querySelector('summary').focus();
+  });
   const fileInput = document.querySelector('#priceFile');
   const validate = document.querySelector('#validatePrices');
   const confirm = document.querySelector('#confirmPrices');

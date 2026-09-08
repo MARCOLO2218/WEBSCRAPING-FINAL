@@ -725,3 +725,60 @@ tbody tr:hover {
 .scraper-options select {
   min-height: 150px;
 }
+
+.price-upload-panel {
+  margin: 18px 0 24px;
+}
+
+.price-upload-body {
+  margin-top: 14px;
+  padding: 24px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+  gap: 20px;
+}
+
+.price-upload-heading,
+.price-upload-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.price-upload-heading {
+  justify-content: space-between;
+}
+
+.price-upload-heading h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.price-upload-body p { margin: 0; line-height: 1.5; }
+.price-upload-file { display: grid; gap: 10px; max-width: 640px; }
+.price-upload-file input { width: 100%; min-width: 0; box-sizing: border-box; }
+.price-upload-panel [hidden] { display: none !important; }
+
+#priceUploadStatus {
+  margin: 0;
+  padding: 16px;
+  background: var(--surface-strong, #f5f8fc);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+  line-height: 1.6;
+  max-height: 320px;
+  overflow: auto;
+}
+
+#priceUploadStatus:empty { display: none; }
+
+@media (max-width: 600px) {
+  .price-upload-body { padding: 16px; }
+  .price-upload-actions .button { width: 100%; }
+}
