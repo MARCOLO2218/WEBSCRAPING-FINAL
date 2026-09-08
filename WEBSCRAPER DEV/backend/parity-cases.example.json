@@ -1,0 +1,10 @@
+[
+  {"name": "sin-filtros", "params": {}},
+  {"name": "semana", "params": {"semana": "36"}},
+  {"name": "tienda", "params": {"tienda": "FACENCO"}},
+  {"name": "marca", "params": {"marca": "FACENCO"}},
+  {"name": "categoria", "params": {"categoria": "Camas"}},
+  {"name": "disponibilidad", "params": {"disponibilidad": "Disponible"}},
+  {"name": "busqueda", "params": {"q": "Colchón"}},
+  {"name": "combinados", "params": {"semana": "36", "tienda": "FACENCO", "marca": "FACENCO", "categoria": "Camas", "disponibilidad": "Disponible", "q": "Colchón"}}
+]

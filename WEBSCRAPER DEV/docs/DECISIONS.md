@@ -35,3 +35,27 @@
 - Estado: propuesta.
 - Decision: usar una sola base de datos y asociar pais y moneda a tiendas, ejecuciones, productos y publicaciones.
 - Motivo: mantener una operacion general, facilitar reportes regionales y evitar cuatro esquemas y migraciones duplicadas. La aplicacion debera exigir filtros, restricciones e indices por pais.
+
+## ADR-007: Abreviaturas internas de pais
+
+- Estado: aceptada.
+- Decision: usar `GT` para Guatemala, `HN` para Honduras, `SV` para El Salvador y `NC` para Nicaragua dentro de la plataforma.
+- Motivo: conservar las abreviaturas definidas por el negocio para filtros, configuracion y segmentacion.
+
+## ADR-008: Entrada estable y selección de país
+
+- Estado: aceptada; implementación regional pendiente.
+- Decisión: una URL del servidor y un selector GT/HN/SV/NC; la migración interna no exige recrear accesos ni instalar runtimes en equipos usuarios.
+- El acceso local actual no cumple aún el modo remoto: se verificará la URL pública y se adaptará en una siguiente implementación.
+
+## ADR-009: Piloto FastAPI independiente
+
+- Estado: implementación inicial DEV, SPEC-024.
+- Decisión: backend/catalog_api, puerto interno 8000 en loopback, configuración CATALOG_API_* y entorno virtual independiente. Node continúa sirviendo el catálogo mientras se prueban endpoints nuevos.
+
+## ADR-010: Monedas regionales y selecciones recordadas
+
+- Estado: requisito registrado; implementación propuesta en SPEC-029.
+- Decisión: GT/GTQ, HN/HNL, SV/USD y NC/NIO. Los filtros conservan la moneda original sin convertir importes.
+- Recordar país y filtros válidos por país en el mismo navegador; validar aislamiento en API antes de habilitar la pantalla regional.
+- La estructura concreta del formato de entrada queda pendiente de definición; se conserva el flujo de revisión, confirmación y respaldo.

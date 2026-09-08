@@ -25,6 +25,12 @@ Una sola plataforma atendera Guatemala, Honduras, El Salvador y Nicaragua. Costa
 
 ## Principios
 
+La experiencia regional tendrá un selector GT/HN/SV/NC y un único acceso a la dirección estable del servidor. Las actualizaciones no deben exigir reinstalar runtimes o recrear el acceso en los equipos usuarios.
+
+SPEC-029 registra datos y filtros por país/moneda: GT/GTQ, HN/HNL, SV/USD y
+NC/NIO, con selecciones recordadas por país en el navegador. Los precios se
+conservan en su moneda original; la implementación sigue pendiente.
+
 1. No perder comportamiento validado durante la reorganizacion.
 2. Incorporar paises y tiendas mediante configuracion central y extractores aislados.
 3. Separar interfaz, API, ejecucion de scrapers y persistencia.

@@ -17,7 +17,22 @@ paises. Costa Rica queda expresamente fuera del alcance.
 | `GT` | Guatemala | Operativo; 19 tiendas actuales |
 | `HN` | Honduras | Primer piloto futuro |
 | `SV` | El Salvador | Incorporacion posterior al piloto |
-| `NI` | Nicaragua | Incorporacion posterior al piloto |
+| `NC` | Nicaragua | Incorporacion posterior al piloto |
+
+## Primera tienda candidata de Honduras
+
+- Tienda: Tiendas Relax.
+- URL: `https://tiendasrelax.com/`.
+- Plataforma observada: Shopify.
+- Pais y moneda: Honduras (`HN`), lempira (`HNL`).
+- Familias iniciales de camas: Camas Relax, Sealy y Stearns & Foster.
+- Filtros observados: tipo de producto, caracteristicas adicionales, marca y orden.
+- Lineas observadas de Camas Relax: Deluxe, Premium y Standard.
+- Almohadas y accesorios quedan fuera del piloto inicial de camas, a menos que
+  una spec posterior amplie expresamente el catalogo.
+
+El scraper no se implementara hasta que el modelo de pais y moneda impida que
+precios HNL entren en las reglas actuales exclusivas de Guatemala y quetzales.
 
 ## Separacion propuesta de codigo
 
@@ -40,7 +55,7 @@ src/
     gt/
     hn/
     sv/
-    ni/
+    nc/
   services/
   persistence/
   api/
@@ -79,7 +94,18 @@ migraciones, conexiones, monitoreo y reportes que deben mantenerse por separado.
 - Los precios conservan moneda y no se comparan entre monedas diferentes.
 - Guatemala continua funcionando durante la migracion.
 
-## Fuera de alcance
+## Requisito aprobado: selector y acceso único (2026-09-07)
+
+- Una misma interfaz permite elegir GT, HN, SV o NC. Cambiar país actualiza tiendas, productos, moneda, filtros, resumen y trabajos visibles.
+- Al cambiar país se limpian selecciones incompatibles y se descartan respuestas pendientes del país anterior. La API valida país y tienda; no basta con filtrar en pantalla.
+- Países sin tiendas operativas muestran un estado vacío informativo, nunca datos de GT como sustituto.
+- Los usuarios entran mediante una URL estable del servidor, común a todos los países. Actualizar el backend o crear nuevamente el acceso no cambia esa URL.
+- El acceso de usuario abre el navegador hacia el servidor y no instala ni inicia Node, Python, bases de datos o scrapers en su computadora.
+- FastAPI tendrá un puerto interno; el despliegue posterior conservará la URL pública mediante enrutamiento/proxy en el servidor.
+- Prueba de aceptación futura: crear y abrir el acceso en un equipo sin Node/Python, cambiar país y repetir después de actualizar el backend.
+- Hallazgo: crear_acceso_directo.ps1 apunta a INICIAR_CATALOGO.vbs y este a iniciar_catalogo_oculto.ps1, que abre localhost. Ese flujo local todavía no satisface el acceso remoto requerido. Se adaptará con una URL de servidor verificada en una implementación posterior; no se adivinará la IP.
+
+## Fuera de alcance de implementación actual
 
 - Agregar ahora tiendas o scrapers de Honduras, El Salvador o Nicaragua.
 - Ejecutar migraciones de base de datos.
@@ -93,12 +119,12 @@ migraciones, conexiones, monitoreo y reportes que deben mantenerse por separado.
 3. Preparar una migracion compatible que marque los datos existentes como `GT`.
 4. Hacer obligatorio el pais en tiendas, trabajos, consultas y publicaciones.
 5. Separar los scrapers actuales bajo el modulo de Guatemala.
-6. Probar Honduras con dos o tres tiendas.
+6. Probar Honduras comenzando con Tiendas Relax y ampliar luego a dos o tres tiendas.
 7. Incorporar El Salvador y Nicaragua de forma progresiva.
 
 ## Criterios de aceptacion futuros
 
-- Solo existen como paises habilitados `GT`, `HN`, `SV` y `NI`.
+- Solo existen como paises habilitados `GT`, `HN`, `SV` y `NC`.
 - Todos los datos actuales quedan asociados a Guatemala sin perder historial.
 - Las pruebas impiden seleccionar tiendas o comparar productos de paises distintos.
 - Los endpoints y exportaciones filtran por pais.

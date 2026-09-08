@@ -245,7 +245,25 @@ duplican.
 como `comparacion_colchones.csv` cuando existe. Si no existe, la solicitud cae al
 servidor de archivos estaticos y responde `404 Not found`.
 
+## POST /api/facenco-prices (SPEC-026)
+
+Cuerpo binario XLSX, Content-Type application/vnd.openxmlformats-officedocument.spreadsheetml.sheet. Sin confirm=true valida y responde ok/saved=false/count/preview. Con confirm=true valida de nuevo y guarda con respaldo; devuelve ok/saved=true/count/backup. Errores JSON con ok=false/error: 422 datos inválidos, 413 tamaño, 415 formato, 409 carga concurrente, 403 origen distinto, 405 método, 500 fallo al guardar. No ejecuta scraper. Disponible en Node DEV para usuarios con acceso al catálogo; no existe aún control por roles.
+
 ## Consumidores actuales
+
+### FastAPI en paralelo (SPEC-027)
+
+Productos, última ejecución y resumen tienen modelos explícitos en /openapi.json
+y /docs. Conservan los nombres y nulls indicados aquí, IDs string y los rangos
+opcionales ausentes. Productos conserva columnas adicionales de PostgreSQL.
+Las respuestas inválidas del repositorio se convierten en el error genérico 500.
+FastAPI solo admite GET en estas rutas (405 para POST); Node no se modifica.
+La equivalencia contra datos reales DEV sigue pendiente. SPEC-028 incorpora
+GET /api/export.csv en FastAPI con los mismos seis filtros, nombre, 20 columnas,
+BOM, comillas y saltos LF de Node. Sin filas conserva cabecera y linea vacia final.
+OpenAPI documenta CSV 200 y JSON 500; POST devuelve 405. No se modifica el frontend.
+Se conserva texto de celdas sin neutralizar formulas; la compatibilidad del CSV
+no implica que sea seguro ejecutar contenido no confiable como formulas en Excel.
 
 El frontend `public/app.js` consume `/api/products`, `/api/latest-run`,
 `/api/image`, `/api/run-scraper`, `/api/scraper-job` y `/api/scraper-status`.

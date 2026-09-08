@@ -26,6 +26,16 @@
       </header>
       <div id="statusBar" class="status-bar">Listo para consultar. Ejecuta el scraper desde esta pantalla cuando necesites nueva data.</div>
 
+        <section class="price-upload-panel" aria-label="Actualizar precios FACENCO">
+          <details>
+            <summary class="button secondary">Subir precios FACENCO</summary>
+            <p>Elige la plantilla .xlsx actualizada (máximo 5 MB). Se revisará antes de guardar.</p>
+            <label>Archivo de precios <input id="priceFile" type="file" accept=".xlsx" /></label>
+            <button id="validatePrices" class="button secondary" type="button">Revisar archivo</button>
+            <button id="confirmPrices" class="button" type="button" hidden>Confirmar actualización</button>
+            <pre id="priceUploadStatus" role="status" aria-live="polite" style="white-space:pre-wrap"></pre>
+          </details>
+        </section>
       <section class="content-grid">
         <aside class="filters">
           <div class="filter-header">
@@ -200,6 +210,7 @@
       </section>
     </main>
     <script src="/app.js"></script>
+    <script src="/price-upload.js"></script>
   </body>
 </html>
 

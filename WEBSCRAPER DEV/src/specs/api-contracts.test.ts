@@ -3,15 +3,17 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const serverSource = readFileSync('src/catalog-server.ts', 'utf8');
+const routesSource = readFileSync('src/server/routes.ts', 'utf8');
 const contract = readFileSync('docs/API_CONTRACTS.md', 'utf8');
 
 test('todas las rutas API del servidor estan registradas en el contrato', () => {
-  const routes = [...serverSource.matchAll(/url\.pathname === '([^']*\/api\/[^']*)'/g)]
+  const routes = [...`${serverSource}\n${routesSource}`.matchAll(/url\.pathname === '([^']*\/api\/[^']*)'/g)]
     .map((match) => match[1]);
   const uniqueRoutes = [...new Set(routes)].sort();
 
   assert.deepEqual(uniqueRoutes, [
     '/api/export.csv',
+    '/api/facenco-prices',
     '/api/image',
     '/api/latest-run',
     '/api/products',
