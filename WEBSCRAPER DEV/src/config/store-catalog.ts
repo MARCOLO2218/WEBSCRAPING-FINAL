@@ -1,4 +1,5 @@
-export type CountryCode = 'GT';
+import type { CountryCode } from './countries.js';
+export type { CountryCode } from './countries.js';
 
 export type StoreDefinition = {
   id: string;

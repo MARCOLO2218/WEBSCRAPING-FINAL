@@ -38,6 +38,9 @@
 
 ## Etapa 5 - Regionalizacion
 
+- [x] Catálogo central TypeScript de países/monedas y validación de pares (SPEC-032; publicación Ubuntu pendiente).
+- La definición del formato Excel y el aislamiento de datos/API siguen pendientes.
+
 - [ ] Definir formato de entrada y catálogo GT/GTQ, HN/HNL, SV/USD, NC/NIO (SPEC-029).
 - [ ] Agregar modelo de pais y moneda en base de datos.
 - [ ] Adaptar carga y lectores por país/moneda conservando revisión, confirmación y respaldo (SPEC-029).

@@ -52,3 +52,4 @@ Este directorio conserva las especificaciones funcionales y tecnicas del product
 | `SPEC-029-datos-pais-moneda-y-filtros.md` | Propuesta | Datos GT/GTQ, HN/HNL, SV/USD y NC/NIO; filtros y selecciones recordadas por país. |
 | `SPEC-030-herramienta-paridad-dev.md` | Completada | Comparador HTTP probado con simulación; ejecución real DEV pendiente. |
 | `SPEC-031-panel-carga-espacio-y-cierre.md` | Completada | Espaciado, cierre y visibilidad de confirmación en carga FACENCO. |
+| `SPEC-032-catalogo-paises-monedas.md` | Completada | Catálogo GT/GTQ, HN/HNL, SV/USD y NC/NIO y validación de pares; sin selector aún. |

@@ -46,6 +46,13 @@ El trabajo de arquitectura se realiza exclusivamente en DEV. PROD se mantiene es
 
 ## Siguiente trabajo
 
+Actualización 2026-09-08: usuario confirmó SPEC-031 visible en Ubuntu DEV
+(4788bcc). SPEC-032 implementa localmente catálogo TypeScript país/moneda y
+validación de pares; 70 Node y 39 Python aprobadas. Publicación pendiente.
+Siguiente: definir formato Excel y preparar aislamiento regional de datos/API
+antes de habilitar filtros. Paridad real FastAPI pendiente, puerto 8000 ocupado
+por Docker; piloto alternativo no necesario para servir la pantalla Node actual.
+
 SPEC-030 completó la herramienta de comparación HTTP y sus pruebas simuladas.
 Guía: docs/PARIDAD_FASTAPI_DEV.md. Última suite: 67 Node y 39 Python aprobadas,
 dos avisos de dependencias. Falta elegir Windows o Ubuntu DEV y reanudar la
