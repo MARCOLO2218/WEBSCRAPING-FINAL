@@ -1,9 +1,7 @@
-# Adopción pendiente
+# Adopción preparada en SPEC-036
 
-No hay revisiones iniciales inventadas. El entorno impide upgrade/stamp antes de
-revisar el inventario real de DEV. El auditor no modifica la base.
-
-Después de revisar columnas, índices, claves, defaults, secuencias y posibles
-tablas adicionales, se definirá una revisión baseline y su procedimiento de
-adopción. Node todavía administra DDL: coordinar su retirada antes de dar a
-Alembic la propiedad del esquema. No ejecutar autogenerate contra PROD.
+Actualización: 036_existing representa la auditoría Ubuntu v2 recibida. Usar
+scripts/baseline-dev.mjs [--apply]; guía docs/BASELINE_DEV.md. Sólo registra la
+versión y valida previamente. No admite upgrade/downgrade genéricos.
+Node todavía administra DDL: coordinar su retirada antes de cambiar las tablas
+comerciales con Alembic. No ejecutar contra PROD ni instalar sobre una base vacía.

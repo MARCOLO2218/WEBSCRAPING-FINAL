@@ -1,0 +1,565 @@
+{
+  "schema": "catalogo",
+  "audit_version": 2,
+  "baseline_validated": false,
+  "schema_tables": [
+    "catalog_display_snapshots",
+    "productos_catalogo",
+    "scraping_runs"
+  ],
+  "tables": {
+    "catalog_display_snapshots": {
+      "columns": {
+        "store_key": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "run_id": {
+          "type": "BIGINT",
+          "nullable": false
+        },
+        "product_count": {
+          "type": "INTEGER",
+          "nullable": false
+        },
+        "locked_at": {
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "nullable": false
+        },
+        "lock_until": {
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "nullable": false
+        },
+        "updated_at": {
+          "type": "TIMESTAMP WITH TIME ZONE",
+          "nullable": false
+        }
+      },
+      "issues": [],
+      "generation": {
+        "store_key": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "run_id": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "product_count": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "locked_at": {
+          "default": "now()",
+          "identity": null,
+          "computed": null
+        },
+        "lock_until": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "updated_at": {
+          "default": "now()",
+          "identity": null,
+          "computed": null
+        }
+      },
+      "id_sequence": null,
+      "check_constraints": [],
+      "primary_key": {
+        "constrained_columns": [
+          "store_key"
+        ],
+        "name": "catalog_display_snapshots_pkey",
+        "comment": null,
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      },
+      "foreign_keys": [],
+      "indexes": [],
+      "unique_constraints": []
+    },
+    "scraping_runs": {
+      "columns": {
+        "id": {
+          "type": "BIGINT",
+          "nullable": false
+        },
+        "started_at": {
+          "type": "TIMESTAMP WITHOUT TIME ZONE",
+          "nullable": true
+        },
+        "source_process": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "total_products": {
+          "type": "INTEGER",
+          "nullable": true
+        },
+        "run_uuid": {
+          "type": "UUID",
+          "nullable": false
+        },
+        "semana_run": {
+          "type": "INTEGER",
+          "nullable": true
+        },
+        "semana_inicio": {
+          "type": "DATE",
+          "nullable": true
+        }
+      },
+      "issues": [],
+      "generation": {
+        "id": {
+          "default": "nextval('catalogo.scraping_runs_id_seq'::regclass)",
+          "identity": null,
+          "computed": null
+        },
+        "started_at": {
+          "default": "now()",
+          "identity": null,
+          "computed": null
+        },
+        "source_process": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "total_products": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "run_uuid": {
+          "default": "gen_random_uuid()",
+          "identity": null,
+          "computed": null
+        },
+        "semana_run": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "semana_inicio": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        }
+      },
+      "id_sequence": {
+        "schema": "catalogo",
+        "name": "scraping_runs_id_seq",
+        "data_type": "bigint",
+        "start": 1,
+        "increment": 1,
+        "minimum": 1,
+        "maximum": 9223372036854775807,
+        "cache": 1,
+        "cycle": false
+      },
+      "check_constraints": [],
+      "primary_key": {
+        "constrained_columns": [
+          "id"
+        ],
+        "name": "scraping_runs_pkey",
+        "comment": null,
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      },
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "ix_scraping_runs_semana_inicio",
+          "unique": false,
+          "column_names": [
+            "semana_inicio"
+          ],
+          "include_columns": [],
+          "dialect_options": {
+            "postgresql_include": []
+          }
+        },
+        {
+          "name": "ux_scraping_runs_run_uuid",
+          "unique": true,
+          "column_names": [
+            "run_uuid"
+          ],
+          "include_columns": [],
+          "dialect_options": {
+            "postgresql_include": []
+          }
+        }
+      ],
+      "unique_constraints": []
+    },
+    "productos_catalogo": {
+      "columns": {
+        "id": {
+          "type": "BIGINT",
+          "nullable": false
+        },
+        "run_id": {
+          "type": "BIGINT",
+          "nullable": true
+        },
+        "sitio_fuente": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "marca": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "linea": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "categoria": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "producto": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "disponibilidad": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "precio_regular": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "precio_oferta": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "descuento": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "cuotas": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "url_producto": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "url_fuente": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "titulo": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "descripcion": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "garantia": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "beneficios": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "url_imagen": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "texto_imagen": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "fecha_scraping": {
+          "type": "TIMESTAMP WITHOUT TIME ZONE",
+          "nullable": true
+        },
+        "creado_en": {
+          "type": "TIMESTAMP WITHOUT TIME ZONE",
+          "nullable": true
+        },
+        "registro_uuid": {
+          "type": "UUID",
+          "nullable": false
+        },
+        "run_uuid": {
+          "type": "UUID",
+          "nullable": true
+        },
+        "semana_run": {
+          "type": "INTEGER",
+          "nullable": true
+        },
+        "semana_inicio": {
+          "type": "DATE",
+          "nullable": true
+        },
+        "precio_regular_min": {
+          "type": "NUMERIC(12, 2)",
+          "nullable": true
+        },
+        "precio_regular_max": {
+          "type": "NUMERIC(12, 2)",
+          "nullable": true
+        },
+        "precio_oferta_min": {
+          "type": "NUMERIC(12, 2)",
+          "nullable": true
+        },
+        "precio_oferta_max": {
+          "type": "NUMERIC(12, 2)",
+          "nullable": true
+        }
+      },
+      "issues": [],
+      "generation": {
+        "id": {
+          "default": "nextval('catalogo.productos_catalogo_id_seq'::regclass)",
+          "identity": null,
+          "computed": null
+        },
+        "run_id": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "sitio_fuente": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "marca": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "linea": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "categoria": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "producto": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "disponibilidad": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "precio_regular": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "precio_oferta": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "descuento": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "cuotas": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "url_producto": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "url_fuente": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "titulo": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "descripcion": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "garantia": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "beneficios": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "url_imagen": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "texto_imagen": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "fecha_scraping": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "creado_en": {
+          "default": "now()",
+          "identity": null,
+          "computed": null
+        },
+        "registro_uuid": {
+          "default": "gen_random_uuid()",
+          "identity": null,
+          "computed": null
+        },
+        "run_uuid": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "semana_run": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "semana_inicio": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "precio_regular_min": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "precio_regular_max": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "precio_oferta_min": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        },
+        "precio_oferta_max": {
+          "default": null,
+          "identity": null,
+          "computed": null
+        }
+      },
+      "id_sequence": {
+        "schema": "catalogo",
+        "name": "productos_catalogo_id_seq",
+        "data_type": "bigint",
+        "start": 1,
+        "increment": 1,
+        "minimum": 1,
+        "maximum": 9223372036854775807,
+        "cache": 1,
+        "cycle": false
+      },
+      "check_constraints": [],
+      "primary_key": {
+        "constrained_columns": [
+          "id"
+        ],
+        "name": "productos_catalogo_pkey",
+        "comment": null,
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      },
+      "foreign_keys": [
+        {
+          "name": "productos_catalogo_run_id_fkey",
+          "constrained_columns": [
+            "run_id"
+          ],
+          "referred_schema": "catalogo",
+          "referred_table": "scraping_runs",
+          "referred_columns": [
+            "id"
+          ],
+          "options": {},
+          "comment": null
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_productos_catalogo_fecha_id",
+          "unique": false,
+          "column_names": [
+            "fecha_scraping",
+            "id"
+          ],
+          "column_sorting": {
+            "fecha_scraping": [
+              "desc"
+            ],
+            "id": [
+              "desc"
+            ]
+          },
+          "include_columns": [],
+          "dialect_options": {
+            "postgresql_include": []
+          }
+        },
+        {
+          "name": "ix_productos_catalogo_producto",
+          "unique": false,
+          "column_names": [
+            "producto"
+          ],
+          "include_columns": [],
+          "dialect_options": {
+            "postgresql_include": []
+          }
+        },
+        {
+          "name": "ux_productos_catalogo_registro_uuid",
+          "unique": true,
+          "column_names": [
+            "registro_uuid"
+          ],
+          "include_columns": [],
+          "dialect_options": {
+            "postgresql_include": []
+          }
+        }
+      ],
+      "unique_constraints": []
+    }
+  }
+}
