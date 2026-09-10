@@ -1,5 +1,11 @@
 # SPEC-035 — Base ORM y auditoría PostgreSQL
 
+Auditoría Ubuntu recibida: las tres tablas existen. Se ajusta el modelo a
+scraping_runs.run_uuid NOT NULL y productos_catalogo.registro_uuid NOT NULL.
+productos_catalogo.run_uuid permanece nullable. Las demás columnas coinciden;
+claves e índices informados coinciden con los declarados. Defaults y secuencias
+siguen pendientes: baseline_validated=false no es un error ni aprobación de migración.
+
 Estado: Herramientas implementadas; adopción de baseline pendiente de auditoría Ubuntu.
 
 ## Objetivo

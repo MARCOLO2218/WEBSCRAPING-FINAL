@@ -1,4 +1,5 @@
 import pytest
+from uuid import uuid4
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.schema import CreateTable
@@ -39,6 +40,9 @@ def test_declared_postgres_types_preserve_legacy_contract():
     assert not snapshots.c.run_id.foreign_keys
     assert snapshots.c.lock_until.type.timezone
     assert products.c.run_id.nullable
+    assert not runs.c.run_uuid.nullable
+    assert not products.c.registro_uuid.nullable
+    assert products.c.run_uuid.nullable
 
 def test_audit_reports_missing_extra_and_changed_columns():
     assert differences({"a": 1, "b": 2}, {"a": 3, "c": 4}) == [
@@ -50,7 +54,8 @@ def test_orm_reads_latest_id_and_empty_database():
     runs.create(engine)
     with Session(engine) as session:
         assert latest_run(session) is None
-        session.add_all([ScrapingRun(id=8, total_products=10), ScrapingRun(id=3, total_products=99)])
+        session.add_all([ScrapingRun(id=8, run_uuid=uuid4(), total_products=10),
+                        ScrapingRun(id=3, run_uuid=uuid4(), total_products=99)])
         session.commit()
         result = latest_run(session)
         assert (result.id, result.total_products) == (8, 10)

@@ -9,14 +9,14 @@ mapper_registry = registry(metadata=metadata)
 
 runs = Table("scraping_runs", metadata,
     Column("id", BigInteger, primary_key=True),
-    Column("run_uuid", Uuid), Column("semana_run", Integer),
+    Column("run_uuid", Uuid, nullable=False), Column("semana_run", Integer),
     Column("semana_inicio", Date), Column("started_at", DateTime, server_default=func.now()),
     Column("source_process", Text), Column("total_products", Integer))
 
 products = Table("productos_catalogo", metadata,
     Column("id", BigInteger, primary_key=True),
     Column("run_id", BigInteger, ForeignKey("catalogo.scraping_runs.id")),
-    Column("run_uuid", Uuid), Column("registro_uuid", Uuid),
+    Column("run_uuid", Uuid), Column("registro_uuid", Uuid, nullable=False),
     Column("semana_run", Integer), Column("semana_inicio", Date),
     *(Column(name, Text) for name in (
         "sitio_fuente", "marca", "linea", "categoria", "producto", "disponibilidad",
