@@ -9,6 +9,9 @@ siguen pendientes: baseline_validated=false no es un error ni aprobación de mig
 Estado: Herramientas implementadas; adopción de baseline pendiente de auditoría Ubuntu.
 
 ## Ampliación de auditoría
+Corrección tras fallo remoto de versión 2: tipar explícitamente parámetros TEXT
+de format y emitir SQLSTATE/etapa sin mensaje del driver. Causa remota aún no
+confirmada; evitar atribuir un fallo de consulta a credenciales.
 Incluir defaults, identity, columnas calculadas, checks, lista de tablas del
 esquema y secuencias asociadas a los IDs. Leer configuración desde pg_sequence,
 sin consultar valores de registros ni ejecutar nextval/setval. No certificar

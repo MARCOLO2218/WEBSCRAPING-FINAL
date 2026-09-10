@@ -14,6 +14,8 @@ def test_sequence_query_is_parameterized_and_does_not_advance_ids():
             assert "nextval" not in sql and "setval" not in sql
             assert params == {"schema": "custom", "table": "scraping_runs", "column": "id"}
             assert ":schema" in sql and ":table" in sql
+            assert "CAST(:schema AS TEXT)" in sql
+            assert "CAST(:table AS TEXT)" in sql
             return Result()
     assert audit.sequence_metadata(Connection(), "custom", "scraping_runs", "id") == {
         "name": "runs_id_seq", "increment": 1}
@@ -48,3 +50,15 @@ def test_inventory_reports_generation_checks_and_missing_tables(monkeypatch):
     assert run["check_constraints"][0]["name"] == "positive"
     assert "Columna adicional: extra" in run["issues"]
     assert report["tables"]["productos_catalogo"]["issues"] == ["Falta tabla"]
+
+
+def test_error_diagnostic_does_not_expose_driver_message(monkeypatch, capsys):
+    class DriverError(Exception):
+        sqlstate = "42P18"
+    def fail():
+        raise DriverError("secret password host username")
+    monkeypatch.setattr(audit, "readonly_engine", fail)
+    assert audit.main() == 2
+    output = capsys.readouterr().out
+    assert "42P18" in output and "configuracion" in output
+    assert "secret" not in output and "username" not in output

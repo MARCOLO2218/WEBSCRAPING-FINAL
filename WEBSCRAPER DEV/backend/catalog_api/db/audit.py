@@ -1,5 +1,6 @@
 """python -m catalog_api.db.audit: metadatos solamente, sin baseline automático."""
 import json
+import re
 from sqlalchemy import inspect, text
 from sqlalchemy.dialects.postgresql import dialect
 from .connection import readonly_engine, schema_name
@@ -30,7 +31,8 @@ def sequence_metadata(connection, schema, table, column):
         JOIN pg_catalog.pg_class c ON c.oid = s.seqrelid
         JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
         WHERE s.seqrelid = pg_catalog.pg_get_serial_sequence(
-            format('%I.%I', :schema, :table), :column)::regclass
+            format('%I.%I', CAST(:schema AS TEXT), CAST(:table AS TEXT)),
+            CAST(:column AS TEXT))::regclass
     """), {"schema": schema, "table": table, "column": column}).mappings().first()
     return dict(row) if row is not None else None
 
@@ -63,15 +65,21 @@ def inventory(connection, schema):
 
 def main():
     engine = None
+    phase = "configuracion"
     try:
         engine = readonly_engine()
+        phase = "conexion"
         with engine.connect() as connection:
+            phase = "metadatos"
             report = inventory(connection, schema_name())
         print(json.dumps(report, indent=2, ensure_ascii=False, default=str))
         return 1 if any(t["issues"] for t in report["tables"].values()) else 0
-    except Exception:
+    except Exception as error:
         # Los mensajes del driver pueden incluir host, usuario o credenciales.
-        print("No se pudo auditar PostgreSQL. Revisa variables PG, conectividad y permisos de DEV.")
+        state = getattr(getattr(error, "orig", error), "sqlstate", None)
+        state = state if isinstance(state, str) and re.fullmatch(r"[A-Z0-9]{5}", state) else None
+        print(json.dumps({"error": "No se pudo completar la auditoría",
+                          "phase": phase, "sqlstate": state}, ensure_ascii=False))
         return 2
     finally:
         if engine is not None:
