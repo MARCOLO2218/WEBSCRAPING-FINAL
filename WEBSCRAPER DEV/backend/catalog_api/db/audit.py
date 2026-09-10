@@ -1,6 +1,6 @@
 """python -m catalog_api.db.audit: metadatos solamente, sin baseline automático."""
 import json
-from sqlalchemy import inspect
+from sqlalchemy import inspect, text
 from sqlalchemy.dialects.postgresql import dialect
 from .connection import readonly_engine, schema_name
 from .models import metadata
@@ -18,10 +18,27 @@ def differences(expected, actual):
     issues.extend(f"Columna adicional: {name}" for name in actual.keys() - expected.keys())
     return sorted(issues)
 
+def sequence_metadata(connection, schema, table, column):
+    # Identificadores citados por PostgreSQL; parámetros nunca interpolados.
+    row = connection.execute(text("""
+        SELECT n.nspname AS schema, c.relname AS name,
+               format_type(s.seqtypid, NULL) AS data_type,
+               s.seqstart AS start, s.seqincrement AS increment,
+               s.seqmin AS minimum, s.seqmax AS maximum,
+               s.seqcache AS cache, s.seqcycle AS cycle
+        FROM pg_catalog.pg_sequence s
+        JOIN pg_catalog.pg_class c ON c.oid = s.seqrelid
+        JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+        WHERE s.seqrelid = pg_catalog.pg_get_serial_sequence(
+            format('%I.%I', :schema, :table), :column)::regclass
+    """), {"schema": schema, "table": table, "column": column}).mappings().first()
+    return dict(row) if row is not None else None
+
 def inventory(connection, schema):
     inspector = inspect(connection)
     existing = set(inspector.get_table_names(schema=schema))
-    report = {"schema": schema, "baseline_validated": False, "tables": {}}
+    report = {"schema": schema, "audit_version": 2, "baseline_validated": False,
+              "schema_tables": sorted(existing), "tables": {}}
     for table in metadata.sorted_tables:
         if table.name not in existing:
             report["tables"][table.name] = {"issues": ["Falta tabla"]}
@@ -31,6 +48,13 @@ def inventory(connection, schema):
         actual = {c["name"]: {"type": type_name(c["type"]), "nullable": c["nullable"]} for c in columns}
         report["tables"][table.name] = {
             "columns": actual, "issues": differences(expected, actual),
+            "generation": {c["name"]: {
+                "default": c.get("default"), "identity": c.get("identity"),
+                "computed": c.get("computed")
+            } for c in columns},
+            "id_sequence": sequence_metadata(connection, schema, table.name, "id")
+                if "id" in actual else None,
+            "check_constraints": inspector.get_check_constraints(table.name, schema=schema),
             "primary_key": inspector.get_pk_constraint(table.name, schema=schema),
             "foreign_keys": inspector.get_foreign_keys(table.name, schema=schema),
             "indexes": inspector.get_indexes(table.name, schema=schema),

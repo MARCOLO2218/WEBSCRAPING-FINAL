@@ -1,7 +1,7 @@
 # SPEC-035: preparar y auditar DEV
 
 SQLAlchemy 2.0.52 y Alembic 1.19.2 quedan fijados en requirements.txt.
-Pruebas locales: 74 Node y 45 Python aprobadas (dos advertencias previas de dependencias).
+Pruebas locales: 74 Node y 47 Python aprobadas (dos advertencias previas de dependencias).
 Modelos basados en el DDL Node, no todavía certificados contra Ubuntu.
 No cambia el servidor web, Excel, datos ni rutas actuales.
 
@@ -45,7 +45,9 @@ node --input-type=module -e 'import dotenv from "dotenv"; import {spawnSync} fro
 Compartir la salida para definir el baseline. Código 0: columnas/tipos/nulabilidad
 coinciden; 1: diferencias; 2: no se pudo auditar. Incluso con 0,
 baseline_validated sigue false: claves e índices requieren revisión, al igual que
-defaults y secuencias (estos últimos no están incluidos en esta primera auditoría).
+defaults y secuencias. La versión 2 incluye generation, id_sequence,
+check_constraints y schema_tables para revisar esos metadatos. No lee ni avanza
+el valor actual de las secuencias. La salida de Ubuntu versión 2 sigue pendiente.
 No ejecutar upgrade/stamp; están bloqueados. No hace falta reiniciar PM2.
 
 ## Siguiente entrega

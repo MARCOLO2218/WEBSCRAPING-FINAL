@@ -8,6 +8,12 @@ siguen pendientes: baseline_validated=false no es un error ni aprobación de mig
 
 Estado: Herramientas implementadas; adopción de baseline pendiente de auditoría Ubuntu.
 
+## Ampliación de auditoría
+Incluir defaults, identity, columnas calculadas, checks, lista de tablas del
+esquema y secuencias asociadas a los IDs. Leer configuración desde pg_sequence,
+sin consultar valores de registros ni ejecutar nextval/setval. No certificar
+baseline automáticamente: los defaults deben revisarse con la salida real.
+
 ## Objetivo
 Preparar SQLAlchemy 2 y Alembic en el backend existente, preservando datos e IDs.
 La primera entrega inventaría únicamente metadatos de las tres tablas existentes.
@@ -26,5 +32,5 @@ No cambia rutas ni activa Nuxt/login todavía (SPEC-034).
 Pruebas de tipos PostgreSQL, configuración, diferencias de esquema y consulta ORM;
 regresión Node/Python. Validación real y baseline son pendientes explícitos.
 
-Validación local: 74 pruebas Node y 45 Python aprobadas. No se conectó a la base
+Validación local: 74 pruebas Node y 47 Python aprobadas. No se conectó a la base
 operativa. Consulta piloto comprobada con SQLite; tipos compilados para PostgreSQL.
