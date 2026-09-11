@@ -22,7 +22,7 @@ def comparable(value):
     if isinstance(value, dict):
         return {k: comparable(v) for k, v in value.items()
                 if k not in {"comment", "issues"} and v not in (None, [], {})}
-    if isinstance(value, list):
+    if isinstance(value, (list, tuple)):
         items = [comparable(v) for v in value]
         return sorted(items, key=lambda v: v["name"]) if items and all(
             isinstance(v, dict) and "name" in v for v in items) else items

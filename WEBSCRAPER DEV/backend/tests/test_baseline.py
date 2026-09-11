@@ -18,6 +18,15 @@ def test_observed_reference_passes_and_alembic_table_is_allowed():
     report["schema_tables"].append("alembic_version")
     assert baseline.validate(report) == []
 
+def test_inspector_index_sorting_tuples_match_json_but_direction_matters():
+    report = baseline.reference()
+    index = next(item for item in report["tables"]["productos_catalogo"]["indexes"]
+                 if item["name"] == "ix_productos_catalogo_fecha_id")
+    index["column_sorting"] = {key: tuple(value) for key, value in index["column_sorting"].items()}
+    assert baseline.validate(report) == []
+    index["column_sorting"]["id"] = ("asc",)
+    assert baseline.validate(report) == ["Metadatos diferentes: productos_catalogo"]
+
 @pytest.mark.parametrize("section", ["columns", "generation", "id_sequence",
     "primary_key", "foreign_keys", "indexes", "check_constraints"])
 def test_adoption_rejects_changed_metadata(section):

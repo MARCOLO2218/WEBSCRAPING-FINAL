@@ -1,5 +1,8 @@
 # SPEC-036 — Registro del esquema existente en Alembic
 
+Corrección: normalizar tuplas del inspector (orden descendente de índices) a
+listas JSON. Conservar orden y valores: ASC vs DESC continúa bloqueando adopción.
+
 Estado: Implementada localmente; aplicación Ubuntu pendiente.
 
 Validación: 74 pruebas Node y 60 Python aprobadas; registro probado en SQLite,
