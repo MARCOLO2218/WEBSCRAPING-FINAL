@@ -2,6 +2,16 @@
 
 Estado: En progreso; preparación y validación DEV. PROD todavía sin modificar.
 
+Actualización: usuario confirmó funcionamiento y SPEC-041 en Ubuntu DEV 9334ed1
+y autorizó promoción. Adaptación local PROD preparada: panel y plantilla, módulo
+de carga y catálogo de monedas, ruta en servidor monolítico y filtro Excel GT.
+Sin cambios de esquema, workers, .env, Excel operativo ni package-lock.
+PROD compila y pasan 3 pruebas de carga/preview/respaldo con archivos temporales.
+Despliegue Ubuntu pendiente. PROD_FACENCO_SERVER.patch contiene sólo los cambios
+del servidor de este corte para staging selectivo; se conserva el cambio local
+previo de latest-run sin publicarlo. Usar git apply --cached --ignore-space-change
+por finales de línea del archivo histórico. No git add del servidor completo.
+
 ## Objetivo y alcance candidato
 
 El usuario solicita validar DEV y promover un corte pequeño antes de continuar

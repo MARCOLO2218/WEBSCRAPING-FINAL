@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process';
 import { config as loadEnv } from 'dotenv';
 import { Pool } from 'pg';
 import ExcelJS from 'exceljs';
+import { handlePriceUpload } from './server/facenco-upload.js';
 
 const envFile = existsSync('.env') ? '.env' : undefined;
 if (envFile) {
@@ -225,6 +226,10 @@ async function loadFacencoPriceRows(templateRows: DbProduct[]): Promise<DbProduc
 
     const active = (getCellText(row, headerMap, 'activo') || 'SI').toUpperCase();
     if (active === 'NO') return;
+
+    const country = headerMap.has('pais') ? (getCellText(row, headerMap, 'pais') || '').toUpperCase() : 'GT';
+    const currency = (getCellText(row, headerMap, 'moneda') || (headerMap.has('pais') ? '' : 'GTQ')).toUpperCase();
+    if (country !== 'GT' || currency !== 'GTQ') return;
 
     const product = getCellText(row, headerMap, 'producto');
     if (!product) return;
@@ -775,6 +780,11 @@ function serveStatic(pathname: string, res: import('node:http').ServerResponse):
 const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url || '/', `http://${req.headers.host}`);
+
+    if (url.pathname === '/api/facenco-prices') {
+      await handlePriceUpload(req, res, url.searchParams.get('confirm') === 'true');
+      return;
+    }
 
     if (url.pathname === '/api/products') {
       const products = await getProducts(url.searchParams);
