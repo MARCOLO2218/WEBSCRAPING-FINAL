@@ -28,11 +28,28 @@ def summarize(products, runs, snapshots):
     groups = {}
     anomalies = Counter()
     samples = {}
+    routes = {}
+    ambiguous_portal = []
     for row in products:
         run_id = row["run_id"]
         counts[run_id] += 1
         source, source_path = url_evidence(row["url_fuente"])
         product, product_path = url_evidence(row["url_producto"])
+        # Contabilizar TODOS los prefijos, no inferir país a partir de 3 ejemplos.
+        prefix = product_path.partition('/')[2].split('/')[0].lower()
+        route_key = (row["sitio_fuente"], source_path, product, prefix)
+        route = routes.setdefault(route_key, {"tienda": row["sitio_fuente"],
+            "ruta_fuente": source_path, "host_producto": product,
+            "primer_segmento_producto": prefix, "productos": 0, "ejemplos_ids": []})
+        route["productos"] += 1
+        if len(route["ejemplos_ids"]) < 3:
+            route["ejemplos_ids"].append(row["id"])
+        if source == "paises.sleepgalleryca.com" and not (
+                product == "sleepgalleryca.com" and prefix == "gt"):
+            ambiguous_portal.append({"id": row["id"], "run_id": run_id,
+                "ruta_fuente": source_path, "ruta_producto": product_path,
+                "producto": row.get("producto"), "precio_regular": row.get("precio_regular"),
+                "precio_oferta": row.get("precio_oferta")})
         key = (run_id, row["sitio_fuente"], source, product)
         group = groups.setdefault(key, {"run_id": run_id, "tienda": row["sitio_fuente"],
             "origen_fuente": source, "origen_producto": product, "productos": 0,
@@ -65,6 +82,8 @@ def summarize(products, runs, snapshots):
         "productos_total": sum(counts.values()), "anomalias": dict(anomalies),
         "ejemplos_ids_anomalos": samples, "grupos_origen": list(groups.values()),
         "ejecuciones": list(run_map.values()), "publicaciones": publications,
+        "rutas_completas_agrupadas": list(routes.values()),
+        "portal_sleepgallery_sin_ruta_gt": ambiguous_portal,
         "advertencia": "Dominios y ejemplos no prueban país; revisar rutas regionales y ejecuciones mixtas."}
 
 
@@ -77,7 +96,8 @@ def audit(connection):
     runs = connection.execute(text("SELECT id, run_uuid, source_process, started_at, total_products "
                                    "FROM catalogo.scraping_runs ORDER BY id")).mappings().all()
     snapshots = connection.execute(text("SELECT * FROM catalogo.catalog_display_snapshots ORDER BY store_key")).mappings().all()
-    with connection.execute(text("SELECT id, run_id, run_uuid, sitio_fuente, url_fuente, url_producto "
+    with connection.execute(text("SELECT id, run_id, run_uuid, sitio_fuente, url_fuente, url_producto, "
+                                 "producto, precio_regular, precio_oferta "
                                  "FROM catalogo.productos_catalogo ORDER BY id").execution_options(yield_per=2000)) as result:
         report = summarize(result.mappings(), runs, snapshots)
     report.update(revision=revision[0], captured_at=captured)

@@ -2,6 +2,10 @@
 
 Estado: En progreso. Primera entrega: auditoría readonly; evidencia Ubuntu pendiente.
 
+Actualización: informe Ubuntu recibido y revisado en docs/SPEC-038_REVISION_INFORME.md.
+173772 productos; sin anomalías referenciales detectadas. Origen de Sleep Gallery
+requiere detalle de rutas antes de backfill. Auditor ampliado, migración pendiente.
+
 ## Objetivo
 
 Relacionar productos, ejecuciones y publicaciones con países del catálogo en la

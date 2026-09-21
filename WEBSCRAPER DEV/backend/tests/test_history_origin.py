@@ -45,3 +45,17 @@ def test_audit_establishes_readonly_snapshot_before_reading_and_rejects_revision
     assert connection.calls == [
         'SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY',
         'SELECT version_num FROM catalogo.alembic_version']
+
+
+def test_routes_count_country_path_even_after_first_three_samples():
+    rows = [dict(id=i, run_id=1, run_uuid='u', sitio_fuente='Sleep Gallery Guatemala',
+        url_fuente='https://paises.sleepgalleryca.com/',
+        url_producto=f'https://sleepgalleryca.com/{country}/producto/{i}',
+        producto='Cama', precio_regular='Q100', precio_oferta=None)
+        for i, country in enumerate(['gt', 'gt', 'gt', 'sv'], 1)]
+    report = summarize(rows, [dict(id=1, run_uuid='u')], [])
+    assert len(report['grupos_origen']) == 1
+    assert [(r['primer_segmento_producto'], r['productos'])
+            for r in report['rutas_completas_agrupadas']] == [('gt', 3), ('sv', 1)]
+    assert [r['id'] for r in report['portal_sleepgallery_sin_ruta_gt']] == [4]
+    assert report['pais_asignado'] is False
