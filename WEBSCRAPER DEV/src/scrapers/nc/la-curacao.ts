@@ -3,6 +3,9 @@ const base = 'https://www.lacuracaonline.com';
 export const LA_CURACAO_NC = {
   key: 'la-curacao-nc', name: 'La Curacao Nicaragua',
   country: 'NC', currency: 'NIO', operational: false,
+  // Categoría superior: verificar cobertura separadamente de los tamaños de camas.
+  categoryUrl: `${base}/nicaragua/c/muebles/camas-y-colchones`,
+  categoryReferenceUrl: `${base}/nicaragua/c/muebles/camas-y-colchones?product_list_order=product_price_asc`,
   sources: {
     principal: `${base}/nicaragua/c/muebles/camas-y-colchones/camas`,
     individuales: `${base}/nicaragua/camas-individuales`,
@@ -19,6 +22,22 @@ export type SourceCoverage = {
   productIds: readonly string[];
   complete: boolean;
 };
+
+export function compareCuracaoNcCategory(
+  category: { productIds: readonly string[]; complete: boolean },
+  observations: readonly SourceCoverage[],
+) {
+  const beds = compareCuracaoNcCoverage(observations);
+  if (category.productIds.some(id => !id.trim())) throw new Error('Identidad de producto vacía.');
+  const categoryIds = new Set(category.productIds);
+  const bedIds = new Set(observations.flatMap(source => [...source.productIds]));
+  const onlyCategory = [...categoryIds].filter(id => !bedIds.has(id)).sort();
+  const onlyBeds = [...bedIds].filter(id => !categoryIds.has(id)).sort();
+  const complete = category.complete && beds.complete;
+  return { complete, onlyCategory, onlyBeds,
+    categoryCoversBeds: complete ? onlyBeds.length === 0 : null,
+    equivalent: complete ? onlyCategory.length === 0 && onlyBeds.length === 0 : null };
+}
 
 export function isNicaraguaCuracaoUrl(value: string): boolean {
   try {

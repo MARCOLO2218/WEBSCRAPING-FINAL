@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LA_CURACAO_NC, compareCuracaoNcCoverage, isNicaraguaCuracaoUrl,
+import { LA_CURACAO_NC, compareCuracaoNcCoverage, compareCuracaoNcCategory, isNicaraguaCuracaoUrl,
   type SourceCoverage } from '../scrapers/nc/la-curacao.js';
 
 function coverage(): SourceCoverage[] {
@@ -12,6 +12,15 @@ function coverage(): SourceCoverage[] {
     { source: 'matrimoniales', productIds: [], complete: true },
   ];
 }
+
+test('categoría superior puede cubrir camas sin ser el mismo conjunto', () => {
+  const result = compareCuracaoNcCategory({ productIds: ['a', 'b', 'colchon'], complete: true }, coverage());
+  assert.equal(result.categoryCoversBeds, true);
+  assert.equal(result.equivalent, false);
+  assert.deepEqual(result.onlyCategory, ['colchon']);
+  assert.equal(compareCuracaoNcCategory({ productIds: ['a'], complete: true }, coverage()).categoryCoversBeds, false);
+  assert.equal(compareCuracaoNcCategory({ productIds: ['a', 'b'], complete: false }, coverage()).categoryCoversBeds, null);
+});
 
 test('Curacao NC mantiene moneda y URLs propias sin habilitar el worker', () => {
   assert.equal(LA_CURACAO_NC.country, 'NC');

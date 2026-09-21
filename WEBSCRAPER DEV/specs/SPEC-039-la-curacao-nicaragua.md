@@ -27,6 +27,26 @@ de paginación ni igualdad de conjuntos. No inventar selectores o asumir `?page=
 
 ## Diseño de extracción y aceptación pendiente
 
+### Ampliación: categoría superior aportada por el usuario
+
+Registrar /nicaragua/c/muebles/camas-y-colchones y conservar como referencia
+el enlace con ?product_list_order=product_price_asc. Por su nombre el parámetro
+indica orden por precio ascendente; su comportamiento real queda por verificar.
+La ruta superior no termina en /camas: puede incluir categorías adicionales.
+La herramienta web no pudo acceder al enlace; no se verificaron filtros nuevos,
+conteos ni cobertura. No afirmar que incluye todos los productos o tamaños.
+
+Mantener las cinco fuentes de camas existentes. Comparar separadamente la
+categoría superior contra su unión, con paginación completa en ambas partes:
+cobertura no es igualdad (puede haber colchones u otros artículos adicionales).
+La comparación devuelve resultado desconocido si falta una fuente o es parcial.
+Los exclusivos de la categoría se clasifican antes de incorporarlos; no extraer
+automáticamente accesorios por pertenecer a esta categoría. No multiplicar
+fuentes por orden de precio ni por combinaciones de filtros.
+
+categoryUrl y categoryReferenceUrl registran la ampliación; compareCuracaoNcCategory
+compara identidades ya extraídas, no realiza navegación. Extractor NC sigue pendiente.
+
 1. Recorrer principal y cuatro páginas por tamaño con adaptador NC. Capturar
    navegación real siguiente/cargar más y esperar cambio de productos. Registrar
    páginas visitadas, conteos y causa de fin; ciclos, timeout, bloqueo o límite
