@@ -758,8 +758,11 @@ tbody tr:hover {
 }
 
 .price-upload-body p { margin: 0; line-height: 1.5; }
-.price-upload-file { display: grid; gap: 10px; max-width: 640px; }
-.price-upload-file input { width: 100%; min-width: 0; box-sizing: border-box; }
+#openPrices { width: fit-content; max-width: 100%; }
+.price-upload-step { border-top: 1px solid var(--line); padding-top: 20px; display: grid; gap: 12px; min-width: 0; }
+.price-upload-step h3 { margin: 0; font-size: 16px; }
+.price-upload-step > .button { justify-self: start; }
+#priceFileName { overflow-wrap: anywhere; color: var(--muted); }
 .price-upload-panel [hidden] { display: none !important; }
 
 #priceUploadStatus {

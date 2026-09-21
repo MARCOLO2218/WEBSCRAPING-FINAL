@@ -27,24 +27,34 @@
       <div id="statusBar" class="status-bar">Listo para consultar. Ejecuta el scraper desde esta pantalla cuando necesites nueva data.</div>
 
         <section class="price-upload-panel" aria-label="Actualizar precios FACENCO">
-          <details id="priceUploadDetails">
-            <summary class="button secondary">Subir precios FACENCO</summary>
-            <div class="price-upload-body">
+            <button id="openPrices" class="button secondary" type="button" aria-expanded="false" aria-controls="priceUploadBody">Subir precios FACENCO</button>
+            <div id="priceUploadBody" class="price-upload-body" hidden>
               <div class="price-upload-heading">
                 <h2>Actualizar precios FACENCO</h2>
                 <button id="closePrices" class="button secondary" type="button">Cerrar</button>
               </div>
               <p>Elige la plantilla .xlsx actualizada (máximo 5 MB). Se revisará antes de guardar.</p>
               <p>El archivo puede incluir GT/GTQ, HN/HNL, SV/USD y NC/NIO. Por ahora el catálogo muestra solo Guatemala. Al confirmar se reemplaza el archivo completo: incluye todos los productos y países que quieras conservar.</p>
-              <a class="button secondary" href="/templates/precios_facenco_regional.xlsx" download>Descargar plantilla por país</a>
-              <label class="price-upload-file">Archivo de precios <input id="priceFile" type="file" accept=".xlsx" /></label>
-              <div class="price-upload-actions">
-            <button id="validatePrices" class="button secondary" type="button">Revisar archivo</button>
-            <button id="confirmPrices" class="button" type="button" hidden>Confirmar actualización</button>
+              <div class="price-upload-step">
+                <h3>1. Preparar precios</h3>
+                <a class="button secondary" href="/templates/precios_facenco_regional.xlsx" download>Descargar plantilla por país</a>
+              </div>
+              <div class="price-upload-step">
+                <h3>2. Seleccionar archivo</h3>
+                <input id="priceFile" type="file" accept=".xlsx" hidden />
+                <button id="choosePriceFile" class="button secondary" type="button">Seleccionar archivo .xlsx</button>
+                <span id="priceFileName" role="status">Ningún archivo seleccionado</span>
+              </div>
+              <div class="price-upload-step">
+                <h3>3. Revisar y confirmar</h3>
+                <p>Revisar no guarda cambios. La confirmación aparece después de validar el archivo.</p>
+                <div class="price-upload-actions">
+                  <button id="validatePrices" class="button secondary" type="button" disabled>Revisar archivo</button>
+                  <button id="confirmPrices" class="button" type="button" hidden>Confirmar actualización</button>
+                </div>
               </div>
               <pre id="priceUploadStatus" role="status" aria-live="polite"></pre>
             </div>
-          </details>
         </section>
       <section class="content-grid">
         <aside class="filters">
