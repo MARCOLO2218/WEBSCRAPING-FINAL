@@ -84,6 +84,10 @@ def excel_rows(template, path):
                 return str(value).strip() if value is not None and str(value).strip() else None
             if (get("activo") or "SI").upper() == "NO" or not get("producto"):
                 continue
+            country = (get("pais") or "").upper() if "pais" in headers else "GT"
+            currency = (get("moneda") or ("" if "pais" in headers else "GTQ")).upper()
+            if country != "GT" or currency != "GTQ":
+                continue
             product, code = get("producto"), get("codigo_producto")
             def money(key):
                 text = get(key)

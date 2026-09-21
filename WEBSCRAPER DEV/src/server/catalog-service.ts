@@ -70,11 +70,11 @@ function getCellText(row: ExcelJS.Row, headerMap: Map<string, number>, headerNam
   return cleanCell(value);
 }
 
-async function loadFacencoPriceRows(templateRows: DbProduct[]): Promise<DbProduct[]> {
-  if (!existsSync(FACENCO_PRICE_FILE)) return [];
+export async function loadFacencoPriceRows(templateRows: DbProduct[], priceFile = FACENCO_PRICE_FILE): Promise<DbProduct[]> {
+  if (!existsSync(priceFile)) return [];
 
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.readFile(FACENCO_PRICE_FILE);
+  await workbook.xlsx.readFile(priceFile);
   const sheet = workbook.getWorksheet('Precios FACENCO') || workbook.worksheets[0];
   if (!sheet) return [];
 
@@ -97,6 +97,11 @@ async function loadFacencoPriceRows(templateRows: DbProduct[]): Promise<DbProduc
 
     const active = (getCellText(row, headerMap, 'activo') || 'SI').toUpperCase();
     if (active === 'NO') return;
+
+    // La pantalla y PostgreSQL actuales siguen limitados a Guatemala.
+    const country = headerMap.has('pais') ? (getCellText(row, headerMap, 'pais') || '').toUpperCase() : 'GT';
+    const currency = (getCellText(row, headerMap, 'moneda') || (headerMap.has('pais') ? '' : 'GTQ')).toUpperCase();
+    if (country !== 'GT' || currency !== 'GTQ') return;
 
     const product = getCellText(row, headerMap, 'producto');
     if (!product) return;

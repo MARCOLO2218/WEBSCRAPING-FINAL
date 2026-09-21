@@ -30,15 +30,16 @@
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'No se pudo procesar el archivo.');
+      const byCountry = Object.entries(result.countries || {}).map(([country, count]) => `${country}: ${count}`).join(', ');
       if (save) {
-        status.textContent = `${result.count} productos actualizados. Respaldo: ${result.backup || 'primer archivo'}.`;
+        status.textContent = `${result.count} productos guardados (${byCountry}). Respaldo: ${result.backup || 'primer archivo'}. El catálogo actual muestra solo GT/GTQ.`;
         checkedFile = null;
         fileInput.value = '';
         if (typeof loadProducts === 'function') await loadProducts();
         else status.textContent += ' Recarga el catálogo para ver los precios.';
       } else {
         checkedFile = file;
-        status.textContent = `${result.count} productos válidos. Muestra:\n` + result.preview.map(row => `${row.producto}: regular ${row.precio_regular || '-'}, oferta ${row.precio_oferta || '-'}`).join('\n') + '\nConfirma para reemplazar los precios actuales.';
+        status.textContent = `${result.count} productos válidos (${byCountry}). Muestra:\n` + result.preview.map(row => `${row.pais} / ${row.moneda} — ${row.producto}: regular ${row.precio_regular || '-'}, oferta ${row.precio_oferta || '-'}`).join('\n') + '\nConfirma para reemplazar el archivo completo, incluidos los países no presentes en esta carga. El catálogo actual muestra solo GT/GTQ.';
         confirm.hidden = false;
       }
     } catch (error) {

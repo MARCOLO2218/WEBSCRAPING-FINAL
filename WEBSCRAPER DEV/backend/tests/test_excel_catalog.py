@@ -2,6 +2,24 @@ from openpyxl import Workbook
 from catalog_api.catalog import excel_rows, merge, compare
 
 
+def test_regional_excel_never_mixes_countries_or_currencies(tmp_path):
+    path = tmp_path / "regional.xlsx"
+    book = Workbook()
+    sheet = book.active
+    sheet.title = "Precios FACENCO"
+    for i, header in enumerate(["pais", "moneda", "producto", "precio_regular", "precio_oferta"], 1):
+        sheet.cell(4, i, header)
+    pairs = [("GT", "GTQ"), ("HN", "HNL"), ("SV", "USD"), ("NC", "NIO"),
+             (None, "GTQ"), ("GT", "HNL"), ("GT", None), ("NI", "NIO")]
+    for r, (country, currency) in enumerate(pairs, 5):
+        for c, value in enumerate([country, currency, "Cama", r * 100, r * 90], 1):
+            sheet.cell(r, c, value)
+    book.save(path)
+    loaded = excel_rows([], path)
+    assert len(loaded) == 1
+    assert loaded[0]["precio_regular"] == "Q500"
+
+
 def test_excel_price_merge_keeps_identity_and_reference(tmp_path):
     path = tmp_path / "prices.xlsx"
     book = Workbook()
