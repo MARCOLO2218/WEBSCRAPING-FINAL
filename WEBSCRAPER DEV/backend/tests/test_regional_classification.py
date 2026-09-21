@@ -1,6 +1,6 @@
 import pytest
 from catalog_api.db.regional_classification import classify_product
-from catalog_api.db.regional_plan import build_plan
+from catalog_api.db.regional_plan import build_plan, diagnostic_url
 
 
 def product(**changes):
@@ -62,3 +62,34 @@ def test_full_plan_preserves_mixed_run_and_accounts_for_every_row():
     assert result['aplicable'] is False
     assert result['huella_datos'] == build_plan(rows, runs, snapshots)['huella_datos']
     assert result['huella_datos'] != build_plan(rows[:-1], runs, snapshots)['huella_datos']
+
+
+def test_detail_counts_every_row_and_separates_published_from_history():
+    rows = [product(id=i, run_id=2 if i <= 6 else 3, producto=f'Cama {i}',
+                    precio_regular='Q500') for i in range(1, 11)]
+    runs = [dict(id=2, run_uuid='u', total_products=6), dict(id=3, run_uuid='u', total_products=4)]
+    snapshots = [dict(store_key='Sleep Gallery Guatemala', run_id=3)]
+    plain = build_plan(rows, runs, snapshots)
+    report = build_plan(iter(rows), runs, snapshots, True)
+    group = report['detalle_pendientes'][0]
+    assert group['total'] == 10
+    assert group['publicados'] == 4
+    assert [r['id'] for r in group['muestras_historicas']] == [1, 5, 6]
+    assert [r['id'] for r in group['muestras_publicadas']] == [7, 9, 10]
+    assert group['muestras_publicadas'][0]['precio_regular'] == 'Q500'
+    assert report['huella_datos'] == plain['huella_datos']
+    assert report['estados'] == plain['estados']
+    assert 'detalle_pendientes' not in plain
+
+
+def test_details_deduplicate_samples_without_losing_counts():
+    rows = [product(id=i, precio_regular='Q500') for i in range(1, 10)]
+    report = build_plan(rows, [dict(id=2, run_uuid='u', total_products=9)], [], True)
+    assert report['detalle_pendientes'][0]['total'] == 9
+    assert len(report['detalle_pendientes'][0]['muestras_historicas']) == 1
+
+
+def test_diagnostic_urls_do_not_disclose_auth_or_parameters():
+    assert diagnostic_url('https://user:secret@example.com/gt/cama?token=secret#secret') == 'https://example.com/gt/cama'
+    assert diagnostic_url('https://[bad') == '[URL inválida]'
+    assert diagnostic_url(None) is None

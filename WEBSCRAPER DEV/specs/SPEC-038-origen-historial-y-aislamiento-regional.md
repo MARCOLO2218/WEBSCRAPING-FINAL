@@ -1,6 +1,38 @@
 # SPEC-038 — Origen del historial y aislamiento regional
 
-Estado: En progreso. Primera entrega: auditoría readonly; evidencia Ubuntu pendiente.
+Estado: En progreso. Auditorías y clasificador ejecutados en Ubuntu DEV;
+migración, adaptación de workers y aislamiento de consultas pendientes.
+
+## Estado vigente y siguiente trabajo
+
+Informe confirmado por usuario: 2026-09-21 15:26:48 -06:00, código da61860,
+reglas 038-origin-v1, esquema 037_countries. Huella:
+f90f7fb8ee8ebb0c2f58b3acff3f5e0d18d8b83d9bcffecd9ef747e4e06c18ad.
+
+- [x] Auditar esquema/origen y detectar ejecuciones históricas mixtas.
+- [x] Clasificar todas las 180382 filas mediante consulta readonly en Ubuntu.
+  Resultado provisional: GT 163729, SV 377, revisión 14453, no_producto 1823.
+  245 ejecuciones, 13 mixtas GT/SV; sin anomalías referenciales reportadas.
+- [x] Probar contrato ORM candidato aislado y restricciones ejecución/país.
+  Validación local de la entrega da61860: 79 Node y 86 Python aprobadas.
+- [ ] Siguiente inmediato: obtener ejemplos con URLs y precios originales de
+  los pendientes por tienda/motivo y de las publicaciones activas. Priorizar
+  FACENCO (13 filas publicadas pendientes), La Curacao (24), Mattress (16)
+  y Sleep Gallery (16). No deducir errores reales sólo por el conteo pendiente.
+  Herramienta preparada: `regional-plan-dev.mjs --details`; hasta 3 muestras
+  distintas históricas y 3 publicadas por tienda/motivo, con conteos completos.
+  Ejecución Ubuntu de esta ampliación pendiente. No se relajaron reglas sin evidencia.
+- [ ] Diferenciar precios sin símbolo, placeholders y moneda incompatible;
+  resolver fuentes sin precio usando evidencia independiente de país.
+- [ ] Acordar/documentar tratamiento de pendientes sin borrar historia ni
+  ocultar silenciosamente productos vigentes. Revalidar clasificador con pruebas.
+- [ ] Implementar Alembic y backfill revalidado; retirar DDL heredado y adaptar
+  escrituras, snapshots, API Node/FastAPI y CSV de manera coordinada.
+- [ ] Validar paridad GT, aislamiento por país y planes SQL en Ubuntu DEV.
+
+No repetir 036/037. No habilitar SV por historia detectada. No implementar login
+o selector operativo sobre consultas sin aislamiento. Informes anteriores abajo
+son evidencia histórica, no resultados vigentes.
 
 Actualización: informe Ubuntu recibido y revisado en docs/SPEC-038_REVISION_INFORME.md.
 173772 productos; sin anomalías referenciales detectadas. Origen de Sleep Gallery
@@ -75,8 +107,8 @@ ya están aplicadas; no volver a registrar baseline.
    defecto ni dividir una ejecución histórica cambiando su identidad.
 3. Preparar migración 037 -> 038 transaccional con precondiciones que vuelvan a
    verificar la evidencia antes del backfill. Añadir pais_codigo referenciado a
-   paises; unicidad (pais_codigo,id) en runs y FK compuesta desde productos y
-   publicaciones. Productos sin run_id conservan esa nulabilidad. Publicaciones
+   paises; tabla scraping_run_paises y FK compuesta desde productos y
+   publicaciones a esa asociación. Productos sin run_id conservan esa nulabilidad. Publicaciones
    pasan a PK (pais_codigo,store_key). Sin default global GT; sin borrar historia.
 4. Retirar DDL heredado de worker y lectores Node/FastAPI en la misma entrega que
    migre el esquema. La actualización requiere pausar escritores DEV, migrar y
@@ -86,7 +118,7 @@ ya están aplicadas; no volver a registrar baseline.
    llamadores actuales para enviar GT explícitamente; rechazar país ausente o
    deshabilitado. No habilitar otros países todavía.
 6. Índices candidatos: productos (pais_codigo,fecha_scraping DESC,id DESC),
-   productos (pais_codigo,run_id), runs (pais_codigo,id DESC). Evaluar EXPLAIN
+   productos (pais_codigo,run_id), scraping_run_paises (pais_codigo,run_id DESC). Evaluar EXPLAIN
    real y paginación SQL sin alterar resultados antes de fijar índices finales.
 7. Probar aislamiento entre países, FK cruzadas, migración repetida, bloqueo
    ante evidencia nueva/ambigua y paridad GT; npm test y suite Python completas.

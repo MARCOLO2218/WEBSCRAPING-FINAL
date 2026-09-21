@@ -27,6 +27,15 @@ No importar este metadata en Alembic ni llamar create_all en la base DEV.
 
 ## Herramienta nueva
 
+Ampliación de diagnóstico: `node scripts/regional-plan-dev.mjs --details`.
+Incluye nombre de producto y precios originales, URLs sin credenciales/query/
+fragmentos y conteo por tienda/motivo. Separa las muestras de filas publicadas
+de las históricas; hasta tres casos distintos de cada clase (primero y últimos
+dos por ID). Los conteos no se limitan ni deduplican. No cambia clasificación.
+El formato de plan pasa a 2 al añadir producto a la evidencia/huella; comparar
+huellas sólo entre informes del mismo formato y reglas. Sin --details se conserva
+la salida resumida. No existe flag --apply; no se modifica base, Excel ni PROD.
+
 `node scripts/regional-plan-dev.mjs` usa PostgreSQL readonly y REPEATABLE READ,
 clasifica todas las filas en lotes y devuelve resumen por motivo, país y tienda,
 ejecuciones mixtas, revisión de publicaciones y huella de la evidencia usada.
