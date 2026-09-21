@@ -6,6 +6,57 @@ Actualización: informe Ubuntu recibido y revisado en docs/SPEC-038_REVISION_INF
 173772 productos; sin anomalías referenciales detectadas. Origen de Sleep Gallery
 requiere detalle de rutas antes de backfill. Auditor ampliado, migración pendiente.
 
+## Revisión por evidencia detallada (prevalece sobre el diseño inicial inferior)
+
+Informe completo recibido: 178723 productos, 244 ejecuciones, capturado el
+2026-09-21 09:46:13 -06:00. Sin anomalías referenciales reportadas. Se identifican
+377 filas de producto Sleep Gallery /sv/producto/ con precios USD en ejecuciones
+2,3,4,5,6,11,13,14,15,16,17,18,19. El nombre histórico Guatemala no prueba su país.
+Quedan 130 filas del portal sin esa evidencia concordante (navegación, enlaces,
+URLs malformadas u otros casos). No reasignarlas por nombre ni borrarlas.
+
+Se sustituye la propuesta de país único obligatorio en scraping_runs por una
+relación scraping_run_paises(run_id,pais_codigo), PK compuesta y FK a runs/paises.
+Productos y publicaciones referencian el par (run_id,pais_codigo). Una ejecución
+histórica conserva ID/UUID aunque contenga varios países; workers futuros reciben
+un solo país explícito y crean su asociación. Ninguna autorización se concede
+por run_id solo: consultar productos exige país y permiso.
+
+Antes del backfill final se necesita clasificación completa, incluyendo filas
+sin producto real; mantenerlas pendientes de revisión sin exponerlas como datos
+de otro país. No crear país ficticio ni habilitar SV por encontrar historia SV.
+No aplicar NOT NULL hasta resolver el tratamiento de pendientes. Los índices,
+claves de publicación y lectores deben seguir este modelo, no el país único
+de ejecución planteado inicialmente. La política de publicación sigue por
+(pais_codigo,store_key); conservar IDs y precios textuales originales.
+
+history_resolution.py genera plan offline parcial, sin conectar a DB. Resultado
+reproducible del informe recibido en docs/SPEC-038_PLAN_EXCEPCIONES.json; contiene
+IDs propuestos y pendientes, no SQL ejecutable ni autorización para migrar.
+
+## Clasificación integral antes de migración
+
+regional_classification.py clasifica cada fila original (no sólo muestras):
+asignado, revision o no_producto. Nunca borra filas ni habilita países. Rutas
+regionales explícitas o dominios nacionales conocidos sustentan país; fuentes
+genéricas requieren combinación tienda/origen registrada y precio monetario
+concordante. Conflictos de moneda, origen desconocido y evidencia insuficiente
+quedan en revisión. Menús regionales, redes sociales y cuentas se separan de
+productos antes de derivar país. No convertir campos numéricos históricos.
+
+regional-plan-dev.mjs ofrece resumen readonly compacto con conteos, ejemplos,
+ejecuciones mixtas y publicaciones pendientes. Toda fila tiene resultado; sin
+embargo clasificar una fila como revisión no equivale a resolverla. La huella
+del conjunto de filas y reglas permite identificar el informe que se revisó,
+sin autorizar automáticamente aplicación ni garantizar frescura posterior.
+
+El modelo candidato regional_schema.py define productos con país nullable y
+estado explícito durante transición, asociación ejecución/país y publicaciones
+con clave país/tienda. Se prueba aislado; no modifica los modelos ni migraciones
+del esquema 037. Se aplicará sólo con lectores/escritores compatibles y una
+política explícita para pendientes. Las pruebas ORM no sustituyen validación
+PostgreSQL real. Esta entrega no cambia todavía consultas del catálogo.
+
 ## Objetivo
 
 Relacionar productos, ejecuciones y publicaciones con países del catálogo en la

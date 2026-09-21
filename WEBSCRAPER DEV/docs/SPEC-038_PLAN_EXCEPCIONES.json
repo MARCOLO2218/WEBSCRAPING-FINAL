@@ -1,0 +1,2846 @@
+{
+  "status": "plan_parcial_no_aplicable",
+  "captured_at": "2026-09-21 09:46:13.367930-06:00",
+  "productos_auditados": 178723,
+  "candidatos_sv": [
+    {
+      "id": 308,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 309,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 310,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 311,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 312,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 313,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 314,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 315,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 316,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 317,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 318,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 319,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 320,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 321,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 322,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 323,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 324,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 325,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 326,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 327,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 328,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 329,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 330,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 331,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 332,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 333,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 334,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 335,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 336,
+      "run_id": 2,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 465,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 466,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 467,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 468,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 469,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 470,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 471,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 472,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 473,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 474,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 475,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 476,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 477,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 478,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 479,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 480,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 481,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 482,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 483,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 484,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 485,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 486,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 487,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 488,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 489,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 490,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 491,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 492,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 493,
+      "run_id": 3,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 622,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 623,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 624,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 625,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 626,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 627,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 628,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 629,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 630,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 631,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 632,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 633,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 634,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 635,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 636,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 637,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 638,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 639,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 640,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 641,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 642,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 643,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 644,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 645,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 646,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 647,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 648,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 649,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 650,
+      "run_id": 4,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 762,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 763,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 764,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 765,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 766,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 767,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 768,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 769,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 770,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 771,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 772,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 773,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 774,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 775,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 776,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 777,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 778,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 779,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 780,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 781,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 782,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 783,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 784,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 785,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 786,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 787,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 788,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 789,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 790,
+      "run_id": 5,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 902,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 903,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 904,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 905,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 906,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 907,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 908,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 909,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 910,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 911,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 912,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 913,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 914,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 915,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 916,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 917,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 918,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 919,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 920,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 921,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 922,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 923,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 924,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 925,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 926,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 927,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 928,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 929,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 930,
+      "run_id": 6,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1907,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1908,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1909,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1910,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1911,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1912,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1913,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1914,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1915,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1916,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1917,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1918,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1919,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1920,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1921,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1922,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1923,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1924,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1925,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1926,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1927,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1928,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1929,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1930,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1931,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1932,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1933,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1934,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 1935,
+      "run_id": 11,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2274,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2275,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2276,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2277,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2278,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2279,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2280,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2281,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2282,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2283,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2284,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2285,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2286,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2287,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2288,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2289,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2290,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2291,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2292,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2293,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2294,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2295,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2296,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2297,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2298,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2299,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2300,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2301,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2302,
+      "run_id": 13,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2430,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2431,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2432,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2433,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2434,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2435,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2436,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2437,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2438,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2439,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2440,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2441,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2442,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2443,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2444,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2445,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2446,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2447,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2448,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2449,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2450,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2451,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2452,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2453,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2454,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2455,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2456,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2457,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2458,
+      "run_id": 14,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2617,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2618,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2619,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2620,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2621,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2622,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2623,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2624,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2625,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2626,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2627,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2628,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2629,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2630,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2631,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2632,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2633,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2634,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2635,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2636,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2637,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2638,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2639,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2640,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2641,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2642,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2643,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2644,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2645,
+      "run_id": 15,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2804,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2805,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2806,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2807,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2808,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2809,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2810,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2811,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2812,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2813,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2814,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2815,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2816,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2817,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2818,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2819,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2820,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2821,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2822,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2823,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2824,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2825,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2826,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2827,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2828,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2829,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2830,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2831,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2832,
+      "run_id": 16,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2988,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2989,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2990,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2991,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2992,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2993,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2994,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2995,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2996,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2997,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2998,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 2999,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3000,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3001,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3002,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3003,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3004,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3005,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3006,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3007,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3008,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3009,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3010,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3011,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3012,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3013,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3014,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3015,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3016,
+      "run_id": 17,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3172,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3173,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3174,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3175,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3176,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3177,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3178,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3179,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3180,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3181,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3182,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3183,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3184,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3185,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3186,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3187,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3188,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3189,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3190,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3191,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3192,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3193,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3194,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3195,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3196,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3197,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3198,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3199,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3200,
+      "run_id": 18,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3356,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3357,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3358,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3359,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3360,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3361,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3362,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3363,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3364,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3365,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3366,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3367,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3368,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3369,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3370,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3371,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3372,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3373,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3374,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3375,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3376,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3377,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3378,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3379,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3380,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3381,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3382,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3383,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    },
+    {
+      "id": 3384,
+      "run_id": 19,
+      "pais_propuesto": "SV",
+      "moneda_propuesta": "USD",
+      "evidencia": "Ruta regional de producto y precios USD concordantes"
+    }
+  ],
+  "portal_pendiente_ids": [
+    84051,
+    84052,
+    85632,
+    85633,
+    85634,
+    85635,
+    85637,
+    85638,
+    85639,
+    85640,
+    85641,
+    85642,
+    85643,
+    85644,
+    85645,
+    85646,
+    85647,
+    85648,
+    85649,
+    85650,
+    85651,
+    85652,
+    85653,
+    85654,
+    85655,
+    85656,
+    85657,
+    85658,
+    85659,
+    85660,
+    85661,
+    85662,
+    85663,
+    85664,
+    91500,
+    91501,
+    91502,
+    91503,
+    91505,
+    91506,
+    91507,
+    91508,
+    91509,
+    91510,
+    91511,
+    91512,
+    91513,
+    91514,
+    91515,
+    91516,
+    91517,
+    91518,
+    91519,
+    91520,
+    91521,
+    91522,
+    91523,
+    91524,
+    91525,
+    91526,
+    91527,
+    91528,
+    91529,
+    91530,
+    91531,
+    91532,
+    93131,
+    93132,
+    93133,
+    93134,
+    93136,
+    93137,
+    93138,
+    93139,
+    93140,
+    93141,
+    93142,
+    93143,
+    93144,
+    93145,
+    93146,
+    93147,
+    93148,
+    93149,
+    93150,
+    93151,
+    93152,
+    93153,
+    93154,
+    93155,
+    93156,
+    93157,
+    93158,
+    93159,
+    93160,
+    93161,
+    93162,
+    93163,
+    93252,
+    93253,
+    93254,
+    93255,
+    93257,
+    93258,
+    93259,
+    93260,
+    93261,
+    93262,
+    93263,
+    93264,
+    93265,
+    93266,
+    93267,
+    93268,
+    93269,
+    93270,
+    93271,
+    93272,
+    93273,
+    93274,
+    93275,
+    93276,
+    93277,
+    93278,
+    93279,
+    93280,
+    93281,
+    93282,
+    93283,
+    93284
+  ],
+  "ejecuciones_con_sv": [
+    {
+      "run_id": 2,
+      "candidatos_sv": 29,
+      "productos_observados": 157
+    },
+    {
+      "run_id": 3,
+      "candidatos_sv": 29,
+      "productos_observados": 157
+    },
+    {
+      "run_id": 4,
+      "candidatos_sv": 29,
+      "productos_observados": 157
+    },
+    {
+      "run_id": 5,
+      "candidatos_sv": 29,
+      "productos_observados": 140
+    },
+    {
+      "run_id": 6,
+      "candidatos_sv": 29,
+      "productos_observados": 140
+    },
+    {
+      "run_id": 11,
+      "candidatos_sv": 29,
+      "productos_observados": 157
+    },
+    {
+      "run_id": 13,
+      "candidatos_sv": 29,
+      "productos_observados": 156
+    },
+    {
+      "run_id": 14,
+      "candidatos_sv": 29,
+      "productos_observados": 187
+    },
+    {
+      "run_id": 15,
+      "candidatos_sv": 29,
+      "productos_observados": 187
+    },
+    {
+      "run_id": 16,
+      "candidatos_sv": 29,
+      "productos_observados": 184
+    },
+    {
+      "run_id": 17,
+      "candidatos_sv": 29,
+      "productos_observados": 184
+    },
+    {
+      "run_id": 18,
+      "candidatos_sv": 29,
+      "productos_observados": 184
+    },
+    {
+      "run_id": 19,
+      "candidatos_sv": 29,
+      "productos_observados": 184
+    }
+  ],
+  "advertencia": "No cubre el resto del historial. Revalidar filas en PostgreSQL antes de migrar; no habilita SV."
+}

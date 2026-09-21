@@ -1,0 +1,64 @@
+import pytest
+from catalog_api.db.regional_classification import classify_product
+from catalog_api.db.regional_plan import build_plan
+
+
+def product(**changes):
+    value = dict(id=1, run_id=2, run_uuid='u', sitio_fuente='Sleep Gallery Guatemala',
+        url_fuente='https://paises.sleepgalleryca.com/',
+        url_producto='https://sleepgalleryca.com/sv/producto/cama/',
+        precio_regular='$500', precio_oferta='$400 - $450')
+    return value | changes
+
+
+def test_sv_uses_real_route_not_guatemala_label():
+    result = classify_product(product())
+    assert (result.status, result.country) == ('asignado', 'SV')
+
+
+@pytest.mark.parametrize('changes,reason', [
+    ({'precio_regular': 'Q500'}, 'moneda_ausente_o_conflictiva'),
+    ({'url_fuente': 'https://sleepgalleryca.com/gt/'}, 'conflicto_pais_fuente_producto'),
+    ({'url_producto': 'https://sleepgalleryca.com/cr/producto/cama/'}, 'ruta_regional_no_verificada'),
+    ({'url_producto': 'https://sleepgalleryca.com.evil.test/sv/producto/cama/'}, 'origen_no_verificado'),
+    ({'url_producto': 'https://sleepgalleryca.com/sv/%2e%2e/gt/cama'}, 'url_ausente_o_invalida'),
+    ({'url_producto': None}, 'url_ausente_o_invalida'),
+])
+def test_ambiguous_or_conflicting_evidence_stays_pending(changes, reason):
+    result = classify_product(product(**changes))
+    assert (result.status, result.country, result.reason) == ('revision', None, reason)
+
+
+@pytest.mark.parametrize('url', ['https://www.instagram.com/sleepgallerysv',
+    'https://sleepgalleryca.com/nc/', 'https://sleepgalleryca.com/sv/mi-cuenta/edit-account/',
+    'https://sleepgalleryca.com/sv/categoria-producto/colchones/',
+    'https://sleepgalleryca.com/sv/mi-cuenta-2/'])
+def test_navigation_does_not_create_country_products(url):
+    result = classify_product(product(url_producto=url))
+    assert (result.status, result.country) == ('no_producto', None)
+
+
+def test_generic_domain_needs_store_and_currency_evidence():
+    row = product(sitio_fuente='FACENCO', url_fuente='https://camasfacenco.com/linea-energy/',
+                  url_producto='https://camasfacenco.com/energy/', precio_regular='Q500', precio_oferta=None)
+    assert classify_product(row).country == 'GT'
+    assert classify_product(row | {'precio_regular': None}).status == 'revision'
+    assert classify_product(row | {'sitio_fuente': 'Otra tienda'}).status == 'revision'
+
+
+def test_full_plan_preserves_mixed_run_and_accounts_for_every_row():
+    rows = [product(), product(id=2, sitio_fuente='MAX Guatemala',
+        url_fuente='https://www.max.com.gt/search?q=cama', url_producto='https://www.max.com.gt/cama',
+        precio_regular='Q500', precio_oferta=None),
+        product(id=3, url_producto=None)]
+    runs = [dict(id=2, run_uuid='u', total_products=3)]
+    snapshots = [dict(store_key='Sleep Gallery Guatemala', run_id=2)]
+    result = build_plan(rows, runs, snapshots)
+    assert result['estados'] == {'asignado': 2, 'revision': 1}
+    assert result['productos_total'] == 3
+    assert result['ejecuciones_mixtas'] == [dict(run_id=2, paises=['GT', 'SV'])]
+    assert result['publicaciones'][0]['requiere_revision'] is True
+    assert result['anomalias'] == {}
+    assert result['aplicable'] is False
+    assert result['huella_datos'] == build_plan(rows, runs, snapshots)['huella_datos']
+    assert result['huella_datos'] != build_plan(rows[:-1], runs, snapshots)['huella_datos']
