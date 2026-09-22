@@ -46,6 +46,24 @@ def test_generic_domain_needs_store_and_currency_evidence():
     assert classify_product(row | {'sitio_fuente': 'Otra tienda'}).status == 'revision'
 
 
+def test_embedded_currency_text_is_verified_and_navigation_is_excluded():
+    curacao = product(sitio_fuente='La Curacao Guatemala',
+        url_fuente='https://www.lacuracaonline.com/guatemala/c/muebles/camas-y-colchones',
+        url_producto='https://www.lacuracaonline.com/guatemala/cama-facenco/p',
+        precio_regular='Precio habitual Q3,099.00',
+        precio_oferta='Precio especial Q2,377.00')
+    assert (classify_product(curacao).status, classify_product(curacao).country) == ('asignado', 'GT')
+    root = product(sitio_fuente='Mattress Guatemala',
+        url_fuente='https://mattress.com.gt/', url_producto='https://mattress.com.gt/',
+        producto='Q400 - Q450', precio_oferta='Q400 - Q450')
+    assert classify_product(root) == classify_product(root | {'url_producto': 'https://mattress.com.gt/'})
+    assert classify_product(root).status == 'no_producto'
+    nav = product(sitio_fuente='Beds & Dreams',
+        url_fuente='https://www.bedsndreams.com/',
+        url_producto='https://www.bedsndreams.com/account/register', producto='Crear cuenta')
+    assert classify_product(nav).status == 'no_producto'
+
+
 def test_full_plan_preserves_mixed_run_and_accounts_for_every_row():
     rows = [product(), product(id=2, sitio_fuente='MAX Guatemala',
         url_fuente='https://www.max.com.gt/search?q=cama', url_producto='https://www.max.com.gt/cama',

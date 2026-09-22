@@ -79,3 +79,15 @@ observado no demuestra por sí solo que PostgreSQL se haya caído.
 Usar un archivo temporal y renombrarlo sólo si el comando termina con código 0.
 El informe de muestras de be5eb58 quedó interrumpido; sigue pendiente recibirlo.
 No repetir baseline, aplicar migraciones ni reiniciar PM2 para este diagnóstico.
+
+## Resolución de pendientes — reglas 038-origin-v2
+
+La revisión de muestras confirmó tres señales seguras adicionales: precios
+embebidos con texto comercial siguen demostrando GTQ cuando contienen `Q` junto
+a una cifra; las rutas raíz de Mattress sin producto son navegación/filtros; y
+las rutas `account`/`pages` de Beds & Dreams son navegación. FACENCO sin precio,
+Sleep Gallery con ruta no verificable y URLs inválidas permanecen en `revision`.
+Las reglas sólo asignan GT cuando coinciden dominio/origen y moneda; no usan el
+nombre de la tienda como evidencia única. La nueva huella de reglas es
+`038-origin-v2` y debe validarse con un informe completo en Ubuntu antes de
+cerrar la spec.

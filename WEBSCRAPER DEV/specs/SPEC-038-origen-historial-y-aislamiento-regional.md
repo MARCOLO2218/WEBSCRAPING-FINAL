@@ -151,3 +151,12 @@ emitir su propio aviso de cancelación). Guardar a un archivo temporal y renombr
 al destino final sólo con salida 0; no usar informes parciales para migrar.
 Pruebas: progreso no altera resultados ni huella; salida JSON separada de progreso;
 interrupción sin informe de éxito y liberación del engine. Validación Ubuntu pendiente.
+
+## Resolución de pendientes 2026-09-22
+
+Se añadió `038-origin-v2` para reconocer moneda GTQ escrita dentro de etiquetas
+comerciales (`Precio habitual Q...`), excluir raíces de Mattress y navegación de
+Beds & Dreams, manteniendo pendientes conservadores para FACENCO sin precio,
+Sleep Gallery no verificable y URLs inválidas. Se agregaron pruebas de estas
+señales. El cierre requiere ejecutar el informe final en Ubuntu y comparar su
+huella y conteos; no incluye migración, backfill ni escrituras.

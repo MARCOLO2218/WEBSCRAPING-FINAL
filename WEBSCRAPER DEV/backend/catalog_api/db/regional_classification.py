@@ -4,7 +4,7 @@ from urllib.parse import urlsplit, unquote
 import re
 import unicodedata
 
-RULE_VERSION = '038-origin-v1'
+RULE_VERSION = '038-origin-v2'
 MONEY = {'GT': 'GTQ', 'SV': 'USD', 'HN': 'HNL', 'NC': 'NIO'}
 # Pares observados en el informe y configuración de extractores GT.
 GENERIC_GT = {
@@ -63,10 +63,10 @@ def price_currency(value):
     value = str(value or '').strip()
     if not value:
         return None
-    for pattern, currency in ((r'^(?:GTQ|Q)\s*\d', 'GTQ'),
-            (r'^(?:USD|\$)\s*\d', 'USD'), (r'^(?:NIO|C\$)\s*\d', 'NIO'),
-            (r'^(?:HNL|L)\s*\d', 'HNL')):
-        if re.match(pattern, value, re.I):
+    for pattern, currency in ((r'(?:GTQ|Q)\s*[\d,.]', 'GTQ'),
+            (r'(?:USD|\$)\s*[\d,.]', 'USD'), (r'(?:NIO|C\$)\s*[\d,.]', 'NIO'),
+            (r'(?:HNL|L)\s*[\d,.]', 'HNL')):
+        if re.search(pattern, value, re.I):
             return currency
     # Sólo números no prueban moneda. Símbolos no reconocidos tampoco.
     return 'sin_moneda_verificable'
@@ -86,6 +86,9 @@ def classify_product(row):
     if host in REGIONAL and (not parts or len(parts) == 1):
         return Classification('no_producto', None, 'enlace_portada_o_pais')
     if route_parts and route_parts[0] in NAVIGATION:
+        return Classification('no_producto', None, 'enlace_navegacion')
+    if host in {'bedsndreams.com'} and route_parts and route_parts[0] in {
+            'account', 'pages'}:
         return Classification('no_producto', None, 'enlace_navegacion')
     if host == 'sleepgalleryca.com' and route_parts:
         if route_parts[0] in {'categoria-producto', 'colchones', 'accesorios',
@@ -110,12 +113,12 @@ def classify_product(row):
         country, reason = 'GT', 'tienda_origen_y_moneda_concordantes'
     else:
         return review('origen_no_verificado')
+    if not parts:
+        return Classification('no_producto', None, 'enlace_navegacion')
     currencies = {price_currency(row.get(key)) for key in ('precio_regular', 'precio_oferta')}
     currencies.discard(None)
     if currencies and currencies != {MONEY[country]}:
         return review('moneda_ausente_o_conflictiva')
     if reason == 'tienda_origen_y_moneda_concordantes' and not currencies:
         return review('fuente_generica_sin_moneda')
-    if not parts:
-        return review('url_producto_sin_ruta')
     return Classification('asignado', country, reason)
