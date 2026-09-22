@@ -4,8 +4,9 @@ from alembic import context
 config = context.config
 connection = config.attributes.get("connection")
 if connection is None or not (config.attributes.get("baseline_registration") or
-                              config.attributes.get("countries_migration")):
-    raise RuntimeError("Usar los comandos DEV de baseline o countries")
+                              config.attributes.get("countries_migration") or
+                              config.attributes.get("regional_migration")):
+    raise RuntimeError("Usar los comandos DEV controlados de baseline, countries o regional-migration")
 context.configure(connection=connection,
                   version_table_schema=config.attributes["baseline_schema"])
 with context.begin_transaction():

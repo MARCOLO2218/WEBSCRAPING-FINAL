@@ -1,8 +1,16 @@
 # Continuidad y flujo de trabajo
 
-Para traspasar el proyecto completo a otro chat, leer primero
-`docs/HANDOFF_COMPLETO.md`. Ese documento consolida arquitectura, archivos,
-scrapers, decisiones, estado Git, comandos y pendientes hasta SPEC-028.
+Estado vigente: SPEC-042/043 completadas en copia PostgreSQL y revertidas a
+`037_countries`. Revisar `docs/SPEC-042-043_CIERRE_COPIA.md`.
+
+Flujo pendiente: revisión selectiva del diff, confirmación del usuario y luego
+publicación Windows→Git. No hay permiso de commit/push en esta fase ni de aplicar
+migraciones a la base DEV original o PROD. La próxima migración será una etapa
+separada con un plan y respaldo propios.
+
+Los handoffs y apartados de progreso que siguen en este documento describen
+estados anteriores; consultar el encabezado y `docs/MIGRATION_PLAN.md` para el
+estado vigente. Conservarlos como historial, no como órdenes actuales.
 
 ## Ubicacion oficial
 
@@ -45,6 +53,12 @@ El trabajo de arquitectura se realiza exclusivamente en DEV. PROD se mantiene es
 - La pantalla Node incluye carga de precios FACENCO con revisión, confirmación y respaldo (SPEC-026). Guía: docs/CARGA_PRECIOS_FACENCO.md. 67 pruebas Node aprobadas.
 
 ## Siguiente trabajo
+
+Revisar y publicar selectivamente el cambio cerrado de SPEC-042/043 después de la
+confirmación del usuario. Después, definir etapa y autorización para la migración
+de la base original. SPEC-034/Nuxt/login y el piloto NC quedan como etapas aparte.
+
+Los bloques de prioridad fechados debajo son notas históricas preservadas.
 
 Actualización 2026-09-08: usuario confirmó SPEC-031 visible en Ubuntu DEV
 (4788bcc). SPEC-032 implementa localmente catálogo TypeScript país/moneda y

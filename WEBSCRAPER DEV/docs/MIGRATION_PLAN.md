@@ -1,5 +1,30 @@
 # Plan de ordenamiento y migracion
 
+## Estado vigente — cierre del ensayo SPEC-042/043
+
+SPEC-042 y SPEC-043 están completadas para la copia PostgreSQL `webscraper_dev`.
+Se aplicó, verificó, repitió y revirtió a `037_countries`; la base original y PROD
+no se migraron. Informe: `docs/SPEC-042-043_CIERRE_COPIA.md`.
+
+No hay autorización para commit/push ni para migrar la base original. Próximo
+paso de trabajo: revisar y aprobar un conjunto selectivo de cambios Windows→Git.
+Sólo después de esa publicación se planificará como etapa separada la migración
+original: backup/recuperación, plan readonly fresco, ventana sin escritores y
+autorización expresa. No reutilizar el hash calculado para `webscraper_dev`.
+
+El resto de este archivo se conserva como **plan histórico**; sus prioridades,
+estados y secuencias anteriores no describen el estado actual.
+
+## Prioridad actualizada 2026-09-10 — SPEC-034
+
+Migración solicitada a Nuxt/FastAPI/SQLAlchemy/Alembic con login y país obligatorio.
+Administrador asigna países por usuario. Iniciales GT/HN/SV/NC; CR futuro permitido.
+Orden: cerrar SPEC-033 -> baseline ORM sobre base existente -> aislamiento regional
+y autenticación -> Nuxt -> cargas/trabajos autorizados -> proxy HTTPS y transición
+en Ubuntu DEV. El plan histórico inferior se conserva; este orden guía la próxima etapa.
+SPEC-032 validada por usuario en Ubuntu (70 Node); SPEC-033 local (74 Node/40 Python),
+pendiente de publicar. Paridad real FastAPI continúa pendiente.
+
 ## Etapa 1 - Base segura
 
 - [x] Crear vision del producto y arquitectura.

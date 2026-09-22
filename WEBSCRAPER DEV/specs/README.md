@@ -62,3 +62,5 @@ Este directorio conserva las especificaciones funcionales y tecnicas del product
 | `SPEC-039-la-curacao-nicaragua.md` | En progreso | Fuentes y comparación de cobertura preparadas; extractor y piloto NC pendientes. |
 | `SPEC-040-corte-facenco-dev-prod.md` | En progreso | Corte PROD publicado en 8284762 y descargado; verificación final de ejecución no recibida. |
 | `SPEC-041-panel-carga-clic-delimitado.md` | Completada | Panel y acciones sólo mediante botones, validados por usuario en DEV. |
+| `SPEC-042-expansion-regional.md` | Completada | Expansión validada en copia PostgreSQL y revertida a 037; original/PROD no migradas. |
+| `SPEC-043-backfill-controlado.md` | Completada | Backfill de 180382 productos, integridad, idempotencia y rollback validados en copia; informe final recibido. |

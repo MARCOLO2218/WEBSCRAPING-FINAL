@@ -1,5 +1,22 @@
 # Registro de decisiones
 
+## ADR-013: Ampliación regional complementaria antes de activar lectores
+
+- Estado: implementada y validada en copia PostgreSQL por SPEC-042/043;
+  rollback a 037 comprobado. Original/PROD no migradas. Ver informe de cierre.
+- La PK store_key heredada y el DDL Node siguen activos. Alterarlos ahora cambia
+  el contrato de los escritores y expone publicaciones con pendientes.
+- Crear cinco tablas complementarias, una clasificación por producto original
+  y una evaluación por publicación. Conservar historia y países sin UPDATE.
+- Asociaciones ejecución/país conservan runs mixtas GT/SV. PK/FK y huella integral
+  impiden duplicados o reasignación silenciosa. Datos sin evidencia siguen nulos.
+- Países habilitados, permisos y consumo de estas tablas no cambian. El modelo
+  candidato de SPEC-038 expresa destino; 042 es sólo la fase de ampliación.
+- Revisión monetaria adicional bloquea posibles falsos positivos de 038-v2
+  (C$ frente a $, o monedas mezcladas). No modificar el informe cerrado.
+- Rollback exacto sólo si no hubo cambios posteriores; nunca restauración
+  indiscriminada sobre un sistema que siguió escribiendo.
+
 ## ADR-001: Refactorizacion incremental
 
 - Estado: aceptada.

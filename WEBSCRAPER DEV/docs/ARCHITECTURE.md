@@ -1,5 +1,10 @@
 # Arquitectura
 
+SPEC-042/043: expansión complementaria ensayada en PostgreSQL webscraper_dev,
+con backfill, idempotencia y rollback satisfactorios. Copia devuelta a 037;
+no activa lectores regionales ni cambia arquitectura operativa original/PROD.
+Evidencia: docs/SPEC-042-043_CIERRE_COPIA.md.
+
 ## Estado actual
 
 ```text
@@ -68,6 +73,25 @@ SPEC-029 amplía el diseño con GT/GTQ, HN/HNL, SV/USD y NC/NIO en el formato
 de datos y filtros. El aislamiento y validación de país/moneda en el servidor
 precederán a la memoria de selecciones por país en el navegador. No se convierte
 moneda al filtrar. La estructura de archivos de entrada sigue por definir.
+
+SPEC-042/043 prepara una fase de ampliación compatible: productos_paises se
+relaciona 1:1 por ID con productos_catalogo; scraping_run_paises y tiendas_paises
+definen asociaciones; publicaciones_paises conserva el payload original y una
+evaluación nullable por país. regional_lotes registra huellas. Los cinco modelos
+ORM están en db/regional_models.py. No reemplazan los lectores actuales.
+La expansión y el backfill se confirman atómicamente y preservan las cuatro
+tablas históricas sin ALTER. Revisión 042 y backfill se aplicaron y revirtieron
+en ensayo PostgreSQL sobre la copia restaurada; el destino regresó a 037.
+Activar escritura/lectura regional y convertir las publicaciones a operación
+por país sigue requiriendo una etapa coordinada posterior.
+
+Actualización SPEC-038: se comprobaron ejecuciones históricas mixtas GT/SV.
+El modelo candidato usa scraping_run_paises(run_id,pais_codigo), conservando
+ID/UUID de ejecución; productos y publicaciones referencian ese par. Nuevos
+workers recibirán un país explícito. Los registros de origen pendiente se
+conservan sin país ficticio ni asignación global GT. Este contrato está probado
+en la copia PostgreSQL mediante SPEC-042/043. Los lectores/escritores regionales
+y su sincronización siguen pendientes de una etapa posterior.
 
 SPEC-025 incorpora lecturas PostgreSQL y Excel desde backend/catalog_api/catalog.py, con filtros ligados y cierre de conexiones. SPEC-026 añade carga XLSX en el catálogo Node: vista previa, validación de plantilla y guardado atómico con respaldo en data/backups. Ambas implementaciones siguen limitadas a Guatemala en DEV.
 

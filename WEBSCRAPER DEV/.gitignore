@@ -1,0 +1,8 @@
+# Evidencia operativa local y respaldos; nunca publicar credenciales/datos.
+.env
+.env.*
+!.env.example
+*.dump
+*.backup
+backups/
+.regional-validation/
