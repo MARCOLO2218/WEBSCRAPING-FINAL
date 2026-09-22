@@ -53,3 +53,12 @@ Este directorio conserva las especificaciones funcionales y tecnicas del product
 | `SPEC-030-herramienta-paridad-dev.md` | Completada | Comparador HTTP probado con simulación; ejecución real DEV pendiente. |
 | `SPEC-031-panel-carga-espacio-y-cierre.md` | Completada | Espaciado, cierre y visibilidad de confirmación en carga FACENCO. |
 | `SPEC-032-catalogo-paises-monedas.md` | Completada | Catálogo GT/GTQ, HN/HNL, SV/USD y NC/NIO y validación de pares; sin selector aún. |
+| `SPEC-033-formato-excel-regional.md` | Completada | Plantilla regional, validación y lectores GT; validada por usuario en DEV. |
+| `SPEC-034-migracion-nuxt-orm-login-regional.md` | Propuesta | Nuxt, ORM, login y países asignados por administrador; expansión futura. |
+| `SPEC-035-base-orm-auditoria.md` | Completada | ORM y auditoría del esquema existente; adopción cerrada mediante SPEC-036. |
+| `SPEC-036-adopcion-baseline.md` | Completada | 036_existing confirmado en Ubuntu DEV; no repetir baseline. |
+| `SPEC-037-tabla-paises.md` | Completada | 037_countries confirmado en Ubuntu DEV; sólo GT habilitado. |
+| `SPEC-038-origen-historial-y-aislamiento-regional.md` | Completada | Auditoría y clasificación de origen finalizadas en DEV; migración y aislamiento quedan para la siguiente etapa. |
+| `SPEC-039-la-curacao-nicaragua.md` | En progreso | Fuentes y comparación de cobertura preparadas; extractor y piloto NC pendientes. |
+| `SPEC-040-corte-facenco-dev-prod.md` | En progreso | Corte PROD publicado en 8284762 y descargado; verificación final de ejecución no recibida. |
+| `SPEC-041-panel-carga-clic-delimitado.md` | Completada | Panel y acciones sólo mediante botones, validados por usuario en DEV. |

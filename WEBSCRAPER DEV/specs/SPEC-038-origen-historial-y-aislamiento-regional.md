@@ -1,7 +1,7 @@
 # SPEC-038 — Origen del historial y aislamiento regional
 
-Estado: En progreso. Auditorías y clasificador ejecutados en Ubuntu DEV;
-migración, adaptación de workers y aislamiento de consultas pendientes.
+Estado: Completada. Auditoría y clasificación ejecutadas en Ubuntu DEV;
+migración, adaptación de workers y aislamiento de consultas quedan fuera de esta spec.
 
 ## Estado vigente y siguiente trabajo
 
@@ -158,5 +158,19 @@ Se añadió `038-origin-v2` para reconocer moneda GTQ escrita dentro de etiqueta
 comerciales (`Precio habitual Q...`), excluir raíces de Mattress y navegación de
 Beds & Dreams, manteniendo pendientes conservadores para FACENCO sin precio,
 Sleep Gallery no verificable y URLs inválidas. Se agregaron pruebas de estas
-señales. El cierre requiere ejecutar el informe final en Ubuntu y comparar su
-huella y conteos; no incluye migración, backfill ni escrituras.
+señales. La clasificación final se validó en Ubuntu; no incluye migración,
+backfill ni escrituras.
+
+## Informe final 2026-09-22
+
+`spec-038-final.json` se generó con reglas `038-origin-v2`, formato 2 y huella
+`7b95f34181bb3ab9c27c23457ed6e6268c068a8f5f589f70b24156e637f081c5`.
+Procesó 180382 productos de 245 ejecuciones: 172909 asignados (172532 GT y
+377 SV), 3467 `no_producto` y 4006 `revision`. La operación fue readonly y
+`aplicable` permanece `false`. Los pendientes ambiguos se conservan sin borrar
+ni asignar un país ficticio.
+
+Pruebas locales: 79 Node y 94 Python aprobadas; permanecen dos warnings de
+Starlette/httpx ya existentes. Validación DEV: informe completo en 69 segundos,
+sin escrituras. Migración Alembic, backfill, cambios PostgreSQL, login y
+aislamiento productivo quedan explícitamente fuera de alcance.

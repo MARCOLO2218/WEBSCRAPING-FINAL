@@ -91,3 +91,7 @@ Las reglas sólo asignan GT cuando coinciden dominio/origen y moneda; no usan el
 nombre de la tienda como evidencia única. La nueva huella de reglas es
 `038-origin-v2` y debe validarse con un informe completo en Ubuntu antes de
 cerrar la spec.
+
+La validación final ya fue realizada: 180382 productos, 172909 asignados
+(172532 GT y 377 SV), 3467 `no_producto` y 4006 `revision`, en 245 ejecuciones.
+El plan conserva `aplicable: false`; no autoriza migración ni backfill.
