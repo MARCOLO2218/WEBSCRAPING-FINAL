@@ -136,3 +136,18 @@ evidencia real. Esta primera entrega no completa el aislamiento regional.
 - scripts/history-origin-dev.mjs: entrada DEV sin opción de escritura.
 - backend/tests/test_history_origin.py: evidencia, URLs y anomalías.
 - docs/SPEC-038_DEV.md: ejecución y siguiente paso.
+
+## Seguimiento de lectura e interrupciones (2026-09-21)
+
+El pull de be5eb58 se confirmó en Ubuntu. La generación de muestras se interrumpió
+con Ctrl+C durante fetchmany; el intento de cancelación de PostgreSQL también
+falló. No se recibió un informe terminado ni evidencia suficiente de caída del
+servidor. La operación sigue siendo de solo lectura.
+
+El CLI muestra fases, tiempo transcurrido y conteos cada 2000 productos en stderr;
+stdout queda reservado al JSON. Una espera de red no incrementa esos conteos.
+Ctrl+C termina con código 130 sin traceback de la aplicación (el driver puede
+emitir su propio aviso de cancelación). Guardar a un archivo temporal y renombrar
+al destino final sólo con salida 0; no usar informes parciales para migrar.
+Pruebas: progreso no altera resultados ni huella; salida JSON separada de progreso;
+interrupción sin informe de éxito y liberación del engine. Validación Ubuntu pendiente.

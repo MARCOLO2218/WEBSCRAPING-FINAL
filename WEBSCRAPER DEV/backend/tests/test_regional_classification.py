@@ -93,3 +93,51 @@ def test_diagnostic_urls_do_not_disclose_auth_or_parameters():
     assert diagnostic_url('https://user:secret@example.com/gt/cama?token=secret#secret') == 'https://example.com/gt/cama'
     assert diagnostic_url('https://[bad') == '[URL inválida]'
     assert diagnostic_url(None) is None
+
+@pytest.mark.parametrize('count', [0, 2001])
+def test_progress_does_not_change_report(count):
+    rows = [product(id=i) for i in range(count)]
+    runs = [dict(id=2, run_uuid='u', total_products=count)]
+    events = []
+    report = build_plan(iter(rows), runs, [], progress=events.append)
+    assert report == build_plan(rows, runs, [])
+    assert events[-1] == f'Lectura terminada: {count} productos; preparando informe'
+    assert len(events) == count // 2000 + 1
+
+
+@pytest.mark.parametrize('interrupted', [False, True])
+def test_cli_progress_and_cancellation(monkeypatch, capsys, interrupted):
+    import json
+    from contextlib import nullcontext
+    from catalog_api.db import regional_plan
+
+    class Engine:
+        disposed = False
+
+        def connect(self):
+            return nullcontext(object())
+
+        def dispose(self):
+            self.disposed = True
+
+    engine = Engine()
+    monkeypatch.setattr(regional_plan, 'schema_name', lambda: 'catalogo')
+    monkeypatch.setattr(regional_plan, 'readonly_engine', lambda: engine)
+
+    def run(connection, details, progress):
+        progress('Leyendo datos')
+        if interrupted:
+            raise KeyboardInterrupt
+        return {'status': 'plan_readonly'}
+
+    monkeypatch.setattr(regional_plan, 'run', run)
+    assert regional_plan.main([]) == (130 if interrupted else 0)
+    output = capsys.readouterr()
+    assert engine.disposed
+    assert 'Leyendo datos' in output.err
+    assert 'Traceback' not in output.err
+    if interrupted:
+        assert output.out == ''
+        assert 'Cancelado' in output.err
+    else:
+        assert json.loads(output.out) == {'status': 'plan_readonly'}

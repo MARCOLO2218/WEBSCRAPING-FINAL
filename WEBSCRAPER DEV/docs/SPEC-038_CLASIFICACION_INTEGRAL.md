@@ -69,3 +69,13 @@ con evidencia, conservar pendientes para revisión y diseñar migración transac
 con su política de acceso. Adaptar DDL heredado, workers y lectores Node/FastAPI
 antes de ejecutar esa migración. SPEC-038 continúa En progreso; login y Nuxt aún
 no están implementados. PROD no forma parte de esta entrega.
+
+## Si la lectura parece detenida
+
+El CLI ahora escribe progreso a stderr, visible aunque stdout se redirija a JSON:
+fases, segundos y productos revisados cada 2000 filas. No es un heartbeat durante
+esperas de PostgreSQL. Ctrl+C cancela el informe; el aviso de cancelación fallida
+observado no demuestra por sí solo que PostgreSQL se haya caído.
+Usar un archivo temporal y renombrarlo sólo si el comando termina con código 0.
+El informe de muestras de be5eb58 quedó interrumpido; sigue pendiente recibirlo.
+No repetir baseline, aplicar migraciones ni reiniciar PM2 para este diagnóstico.

@@ -3,6 +3,8 @@ import argparse
 import hashlib
 import json
 import re
+import sys
+import time
 from collections import Counter, defaultdict
 from urllib.parse import urlsplit, urlunsplit
 from sqlalchemy import text
@@ -45,7 +47,7 @@ def add_sample(samples, sample, limit=3):
         samples.pop(1)
 
 
-def build_plan(products, runs, snapshots, include_details=False):
+def build_plan(products, runs, snapshots, include_details=False, progress=None):
     runs = [dict(row) for row in runs]
     snapshots = [dict(row) for row in snapshots]
     run_map = {row['id']: row for row in runs}
@@ -59,6 +61,7 @@ def build_plan(products, runs, snapshots, include_details=False):
     stores = defaultdict(Counter)
     anomalies = Counter()
     digest = hashlib.sha256(('plan-v2:' + RULE_VERSION).encode())
+    processed = 0
     for row in products:
         row = dict(row)
         digest.update(json.dumps(row, sort_keys=True, default=str, ensure_ascii=False).encode())
@@ -94,6 +97,11 @@ def build_plan(products, runs, snapshots, include_details=False):
             publication['pending'] += 1
         else:
             publication['non_product'] += 1
+        processed += 1
+        if progress and processed % 2000 == 0:
+            progress(f'Productos revisados: {processed}')
+    if progress:
+        progress(f'Lectura terminada: {processed} productos; preparando informe')
     for row in runs:
         if run_counts[row['id']] != row['total_products']:
             anomalies['total_run_discordante'] += 1
@@ -125,7 +133,9 @@ def build_plan(products, runs, snapshots, include_details=False):
     return report
 
 
-def run(connection, include_details=False):
+def run(connection, include_details=False, progress=None):
+    if progress:
+        progress('Conexión abierta; leyendo revisión, ejecuciones y publicaciones')
     connection.execute(text('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY'))
     revision = list(connection.execute(text('SELECT version_num FROM catalogo.alembic_version')).scalars())
     if revision != ['037_countries']:
@@ -133,10 +143,12 @@ def run(connection, include_details=False):
     captured = connection.execute(text('SELECT CURRENT_TIMESTAMP')).scalar_one()
     runs = connection.execute(text('SELECT id, run_uuid, total_products FROM catalogo.scraping_runs ORDER BY id')).mappings().all()
     snapshots = connection.execute(text('SELECT * FROM catalogo.catalog_display_snapshots ORDER BY store_key')).mappings().all()
+    if progress:
+        progress('Leyendo productos en lotes de 2000 (solo lectura)')
     with connection.execute(text('SELECT id, run_id, run_uuid, sitio_fuente, producto, url_fuente, url_producto, '
                                  'precio_regular, precio_oferta FROM catalogo.productos_catalogo ORDER BY id')
                             .execution_options(yield_per=2000)) as cursor:
-        report = build_plan(cursor.mappings(), runs, snapshots, include_details)
+        report = build_plan(cursor.mappings(), runs, snapshots, include_details, progress)
     report.update(captured_at=str(captured), revision=revision[0])
     return report
 
@@ -146,14 +158,24 @@ def main(argv=None):
     parser.add_argument('--details', action='store_true', help='Muestras de pendientes por tienda y motivo')
     args = parser.parse_args(argv)
     engine = None
+    started = time.monotonic()
+
+    def progress(message):
+        print(f'[SPEC-038 {time.monotonic() - started:.0f}s] {message}', file=sys.stderr, flush=True)
+
     try:
         if schema_name() != 'catalogo':
             raise ValueError('Sólo catalogo está auditado')
         engine = readonly_engine()
+        progress('Conectando a PostgreSQL DEV')
         with engine.connect() as connection:
-            report = run(connection, args.details)
+            report = run(connection, args.details, progress)
         print(json.dumps(report, ensure_ascii=False, indent=2))
+        progress('Informe completo')
         return 0
+    except KeyboardInterrupt:
+        progress('Cancelado por el usuario; informe incompleto. Sin escrituras en la base.')
+        return 130
     except Exception as error:
         state = getattr(getattr(error, 'orig', error), 'sqlstate', None)
         state = state if isinstance(state, str) and re.fullmatch(r'[A-Z0-9]{5}', state) else None
