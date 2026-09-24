@@ -38,6 +38,36 @@ migracion estan registrados en `docs/API_CONTRACTS.md`.
 
 ## Arquitectura objetivo
 
+SPEC-034 amplía el destino: Nuxt en frontend/, FastAPI por capas, SQLAlchemy y
+Alembic sobre PostgreSQL existente. Login obligatorio y países asignados por
+administrador, autorizados en cada petición. Proxy HTTPS en Ubuntu y protección
+de rutas heredadas antes de habilitar login. Integración operativa pendiente.
+
+SPEC-044 incorpora `backend/catalog_api/access/`: política pura en `policy.py`
+y adaptador de dependencias FastAPI en `dependencies.py`. Un proveedor futuro
+leerá sesión, usuario, asignaciones y países vigentes por petición; no existe
+proveedor real por defecto. Las dependencias niegan el acceso si falta. Se
+prueban con rutas y datos en memoria y no se importan desde `main.py`.
+No constituye login ni protege todavía las rutas heredadas. La selección de
+país pertenece a la petición, no a un campo global mutable de la sesión.
+Guía y frontera de integración: `docs/ACCESO_REGIONAL_DEV.md`.
+
+SPEC-045 añade modelos preparados `catalogo.usuarios`, `usuario_paises` y
+`sesiones_app`, repositorio Argon2id y router HTTPS con cookies de sesión/CSRF.
+Se prueba en SQLite aislado y no se importa desde `main.py`. La revisión 043
+depende de 042, tiene guardas explícitas y no se ha ejecutado. No hay alta web
+ni bootstrap administrativo. Antes de exponer login hacen falta rate-limit
+compartido, HTTPS/orígenes del proxy, auditoría, lectores regionales y cierre de
+rutas heredadas. Guía: `docs/AUTENTICACION_REGIONAL_DEV.md`.
+
+SPEC-046 prepara un limitador de login con contadores HMAC por identidad y
+dirección de conexión en una tabla compartida PostgreSQL; el diseño reserva
+cada intento bajo bloqueo antes de Argon2. La revisión aditiva 044 depende de
+043 y no se ha ejecutado. SQLite aislado no valida el bloqueo concurrente real.
+El router exige limitador; si falta o su storage falla, rechaza el login. Usa sólo la IP
+del socket, no confía en `X-Forwarded-For`; la resolución tras proxy y la limpieza
+periódica deben configurarse antes de exponerlo. Sin montaje operativo.
+
 ```text
 Frontend -> FastAPI -> PostgreSQL
                |
@@ -69,11 +99,6 @@ crea archivos de exportacion en el servidor. Node conserva su descarga actual.
 
 ## Regionalizacion propuesta
 
-SPEC-029 amplía el diseño con GT/GTQ, HN/HNL, SV/USD y NC/NIO en el formato
-de datos y filtros. El aislamiento y validación de país/moneda en el servidor
-precederán a la memoria de selecciones por país en el navegador. No se convierte
-moneda al filtrar. La estructura de archivos de entrada sigue por definir.
-
 SPEC-042/043 prepara una fase de ampliación compatible: productos_paises se
 relaciona 1:1 por ID con productos_catalogo; scraping_run_paises y tiendas_paises
 definen asociaciones; publicaciones_paises conserva el payload original y una
@@ -93,12 +118,17 @@ conservan sin país ficticio ni asignación global GT. Este contrato está proba
 en la copia PostgreSQL mediante SPEC-042/043. Los lectores/escritores regionales
 y su sincronización siguen pendientes de una etapa posterior.
 
+SPEC-029 amplía el diseño con GT/GTQ, HN/HNL, SV/USD y NC/NIO en el formato
+de datos y filtros. El aislamiento y validación de país/moneda en el servidor
+precederán a la memoria de selecciones por país en el navegador. No se convierte
+moneda al filtrar. La estructura de archivos de entrada sigue por definir.
+
 SPEC-025 incorpora lecturas PostgreSQL y Excel desde backend/catalog_api/catalog.py, con filtros ligados y cierre de conexiones. SPEC-026 añade carga XLSX en el catálogo Node: vista previa, validación de plantilla y guardado atómico con respaldo en data/backups. Ambas implementaciones siguen limitadas a Guatemala en DEV.
 
 FastAPI inicia en paralelo desde backend/catalog_api en 127.0.0.1:8000. La guía docs/FASTAPI_DEV.md describe configuración y pruebas. La futura entrada pública conservará su URL mediante enrutamiento en el servidor; los accesos de usuario no deben apuntar al puerto interno. El selector de país y esa integración siguen pendientes.
 
 La plataforma se organizara para Guatemala (`GT`), Honduras (`HN`), El Salvador
-(`SV`) y Nicaragua (`NC`). Costa Rica no forma parte del alcance.
+(`SV`) y Nicaragua (`NC`). SPEC-034 admite incorporar Costa Rica en el futuro.
 
 - Se mantendra una sola aplicacion y, de preferencia, una sola base de datos.
 - Paises y tiendas se definiran en catalogos centrales.
