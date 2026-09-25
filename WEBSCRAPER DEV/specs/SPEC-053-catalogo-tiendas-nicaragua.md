@@ -1,6 +1,6 @@
 # SPEC-053 - Registro central de tiendas de Nicaragua
 
-Estado: En progreso.
+Estado: Completada en DEV; `npm test` aprobado en Ubuntu el 2026-09-25 (123 pruebas).
 
 ## Objetivo
 

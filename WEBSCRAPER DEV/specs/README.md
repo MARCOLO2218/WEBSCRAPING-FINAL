@@ -73,4 +73,4 @@ Este directorio conserva las especificaciones funcionales y tecnicas del product
 | `SPEC-050-siman-nicaragua.md` | Piloto DEV validado | 77 productos únicos con precio; 23 repetidos entre búsquedas; sigue fuera del ejecutor principal. |
 | `SPEC-051-walmart-nicaragua.md` | Piloto y diagnóstico validados; cobertura por certificar | 114 únicos (19 camas/colchones, 95 accesorios), 102 con precio; 12 sin oferta activa (`Price=0`, `AvailableQuantity=0`, `IsAvailable=false`). |
 | `SPEC-052-maxipali-nicaragua.md` | Piloto DEV | Seis fichas útiles, cero precios publicados; confirmado nuevamente en modo de solo lectura. |
-| `SPEC-053-catalogo-tiendas-nicaragua.md` | En progreso | Registrar cinco tiendas NC deshabilitadas en el catálogo central sin cambiar la operación de GT. |
+| `SPEC-053-catalogo-tiendas-nicaragua.md` | Completada | Cinco tiendas NC registradas deshabilitadas; suite Ubuntu aprobada (123 pruebas), GT sin cambios. |
