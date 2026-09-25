@@ -71,5 +71,5 @@ Este directorio conserva las especificaciones funcionales y tecnicas del product
 | `SPEC-048-bootstrap-administrador-dev.md` | Completada | Primer administrador global creado y verificado en `webscraper_dev`; login aún sin montar. |
 | `SPEC-049-el-gallo-nicaragua.md` | Piloto DEV validado | 40 productos observados por consulta, 40 únicos y con precio; conteo coincide con páginas visibles. |
 | `SPEC-050-siman-nicaragua.md` | Piloto DEV validado | 77 productos únicos con precio; 23 repetidos entre búsquedas; sigue fuera del ejecutor principal. |
-| `SPEC-051-walmart-nicaragua.md` | Diagnóstico pendiente | 114 únicos, 102 con precio; próximo piloto mostrará categoría y muestras de 12 sin precio. |
+| `SPEC-051-walmart-nicaragua.md` | Diagnóstico pendiente | 114 únicos (19 camas/colchones, 95 accesorios), 102 con precio; inspeccionar ofertas API de 12 sin precio. |
 | `SPEC-052-maxipali-nicaragua.md` | Piloto DEV | Seis fichas útiles, cero precios publicados; confirmado nuevamente en modo de solo lectura. |

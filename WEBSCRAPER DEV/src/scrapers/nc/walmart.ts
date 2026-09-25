@@ -66,7 +66,27 @@ export type WalmartNcScraperOptions = {
   pageSize?: number;
   maxProductsPerSearch?: number;
   searchTerms?: readonly string[];
+  onUnpricedProducts?: (products: WalmartNcUnpricedDiagnostic[]) => void;
 };
+
+export type WalmartNcUnpricedDiagnostic = {
+  productName: string;
+  category: string;
+  productUrl: string;
+  offers: Array<{
+    seller: string;
+    price: number | null;
+    listPrice: number | null;
+    availableQuantity: number | null;
+    isAvailable: boolean | null;
+    fields: string[];
+  }>;
+};
+
+function numericOrNull(value: unknown): number | null {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount : null;
+}
 
 function formatNio(value: unknown): string {
   const amount = typeof value === 'number' ? value : Number(value);
@@ -97,6 +117,7 @@ export function createWalmartNicaraguaScraper(options: WalmartNcScraperOptions =
 
   return async function scrapeWalmartNc(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
     const rows = new Map<string, CsvProduct>();
+    const offersByUrl = new Map<string, WalmartNcUnpricedDiagnostic['offers']>();
     for (const term of searchTerms) {
       for (let from = 0; from < maxProductsPerSearch; from += pageSize) {
         const response = await page.goto(walmartNcApiUrl(term, from, pageSize), {
@@ -132,6 +153,17 @@ export function createWalmartNicaraguaScraper(options: WalmartNcScraperOptions =
           const image = Array.isArray(item?.images) ? item.images[0] : undefined;
           const price = Number(offer.Price || 0);
           const listPrice = Number(offer.ListPrice || 0);
+          offersByUrl.set(productUrl, sellers.map((entry: any) => {
+            const sellerOffer = entry?.commertialOffer || {};
+            return {
+              seller: cleanProductText(entry?.sellerName || entry?.sellerId || ''),
+              price: numericOrNull(sellerOffer.Price),
+              listPrice: numericOrNull(sellerOffer.ListPrice),
+              availableQuantity: numericOrNull(sellerOffer.AvailableQuantity),
+              isAvailable: typeof sellerOffer.IsAvailable === 'boolean' ? sellerOffer.IsAvailable : null,
+              fields: Object.keys(sellerOffer).slice(0, 20),
+            };
+          }));
           const salePrice = formatNio(price);
           const regularPrice = formatNio(listPrice > 0 ? listPrice : price);
           rows.set(productUrl, {
@@ -159,6 +191,14 @@ export function createWalmartNicaraguaScraper(options: WalmartNcScraperOptions =
         if (products.length < pageSize) break;
       }
     }
-    return [...rows.values()];
+    const result = [...rows.values()];
+    const unpriced = result.filter((row) => !row.regular_price && !row.sale_price);
+    options.onUnpricedProducts?.(unpriced.map((row) => ({
+      productName: row.product_name,
+      category: row.category,
+      productUrl: row.product_url,
+      offers: offersByUrl.get(row.product_url) || [],
+    })));
+    return result;
   };
 }

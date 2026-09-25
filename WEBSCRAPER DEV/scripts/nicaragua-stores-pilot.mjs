@@ -76,10 +76,13 @@ const extractMaxipaliProduct = async (page, productUrl, scrapedAt) => page.evalu
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ locale: 'es-NI' });
 const scrapedAt = new Date().toISOString();
+const walmartUnpricedDiagnostics = [];
 const runners = {
   'el-gallo': createElGalloNicaraguaScraper({ navigate, extractCards }),
   siman: createSimanNicaraguaScraper({ navigate, extractCards }),
-  walmart: createWalmartNicaraguaScraper(),
+  walmart: createWalmartNicaraguaScraper({
+    onUnpricedProducts: (products) => walmartUnpricedDiagnostics.splice(0, walmartUnpricedDiagnostics.length, ...products),
+  }),
   maxipali: createMaxipaliNicaraguaScraper({ navigate, extractProduct: extractMaxipaliProduct }),
 };
 
@@ -160,6 +163,7 @@ try {
             .slice(0, 12).map((row) => ({
               name: row.product_name, category: row.category, availability: row.availability, url: row.product_url,
             })),
+          offerDiagnostics: walmartUnpricedDiagnostics.slice(0, 12),
         } : {}),
         ...(pageResults.length ? { pages: pageResults } : {}),
         ...(diagnostic ? { diagnostic } : {}),

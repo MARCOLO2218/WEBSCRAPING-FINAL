@@ -73,3 +73,29 @@ test('extractor API filtra falsos positivos, pagina y deduplica', async () => {
   assert.equal(rows[0].product_url, WALMART_NC.controlProductUrl);
   assert.equal(rows[0].source_site, 'Walmart Nicaragua');
 });
+
+test('diagnostica ofertas API ausentes de productos Walmart sin precio', async () => {
+  const payload = [{ productName: 'Cama King Koil matrimonial', brand: 'King Koil',
+    link: 'https://www.walmart.com.ni/cama-king-koil/p',
+    categories: ['/Artículos para el hogar/Colchones y Blancos/Colchones/'],
+    items: [{ sellers: [{ sellerName: 'Walmart', commertialOffer: {
+      Price: 0, ListPrice: 0, AvailableQuantity: 0, IsAvailable: false, SellerStockKeepingUnitId: '123',
+    } }] }],
+  }];
+  let diagnostic: any[] = [];
+  const page = {
+    goto: async () => ({ ok: () => true }),
+    locator: () => ({ innerText: async () => JSON.stringify(payload) }),
+  } as any;
+  const scraper = createWalmartNicaraguaScraper({ pageSize: 1, maxProductsPerSearch: 1,
+    searchTerms: ['cama'], onUnpricedProducts: (rows) => { diagnostic = rows; } });
+  const rows = await scraper(page, '2026-09-25T12:00:00.000Z');
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].regular_price, '');
+  assert.deepEqual(diagnostic, [{
+    productName: 'Cama King Koil matrimonial', category: 'Camas y colchones',
+    productUrl: 'https://www.walmart.com.ni/cama-king-koil/p',
+    offers: [{ seller: 'Walmart', price: 0, listPrice: 0, availableQuantity: 0,
+      isAvailable: false, fields: ['Price', 'ListPrice', 'AvailableQuantity', 'IsAvailable', 'SellerStockKeepingUnitId'] }],
+  }]);
+});
