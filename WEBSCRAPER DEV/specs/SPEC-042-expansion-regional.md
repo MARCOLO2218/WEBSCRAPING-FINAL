@@ -1,7 +1,8 @@
 # SPEC-042 — Expansión regional compatible
 
-Estado: **Completada en ensayo reversible sobre la copia PostgreSQL `webscraper_dev`.**
-La copia volvió a `037_countries`. La base DEV original y PROD no se migraron.
+Estado: **Completada y aplicada en la copia PostgreSQL `webscraper_dev`.**
+La copia avanzó a `042_regional` el 24 de septiembre de 2026. La base DEV
+original `WEBSCRAPING_CAMAS_DEV` y PROD no se migraron.
 
 ## Alcance y contrato
 
@@ -34,6 +35,17 @@ Proyección durante apply: 257 run/país, 19 país/tienda, 180382 productos,
 
 79 pruebas Node y 137 Python aprobadas. Evidencia y límites en
 `docs/SPEC-042-043_CIERRE_COPIA.md`. El ensayo no autoriza migrar la base original.
+
+## Aplicación final en la copia DEV
+
+El plan readonly actualizado produjo `plan_hash`
+`7412f80b7ea7bf23f0224bbccefc55c7b87bac7fc3a3b896e5d0a1da40b80e7b`
+y conservó `source_hash`
+`769f817c0ae3d41600f9e474b335414dd350470e19936be1db81f530adc334e7`.
+La aplicación terminó con código 0, estado `validado` y los mismos conteos,
+clasificaciones, países y publicaciones del ensayo. Se usó el respaldo
+`webscraper_dev_pre_042_20260924_162345.dump`, de 31010990 bytes y SHA-256
+`626bfa7f974d6b72761f9d4805b5dbce834a0124fecc6b499cbc73ff77bd73ed`.
 
 ## Historial de preparación
 

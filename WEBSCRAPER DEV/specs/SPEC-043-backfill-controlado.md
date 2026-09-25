@@ -1,7 +1,8 @@
 # SPEC-043 — Backfill controlado y prueba de conservación
 
-Estado: **Completada en ensayo reversible sobre la copia PostgreSQL `webscraper_dev`.**
-La copia volvió a `037_countries`; base DEV original y PROD permanecen intactas.
+Estado: **Completada y aplicada en la copia PostgreSQL `webscraper_dev`.**
+La copia conserva la proyección regional; la base DEV original
+`WEBSCRAPING_CAMAS_DEV` y PROD permanecen intactas.
 
 ## Contrato
 
@@ -46,6 +47,15 @@ dump contra todas las filas del original actual.
 79 pruebas Node y 137 Python aprobadas; dos avisos preexistentes de Starlette/httpx
 y anyio. Informe completo del ensayo en `docs/SPEC-042-043_CIERRE_COPIA.md`;
 JSON con métricas en `docs/SPEC-043_RESULTADO_POSTGRESQL.json`.
+
+## Aplicación final en la copia DEV
+
+El 24 de septiembre de 2026 se aplicó el backfill controlado con el plan
+`7412f80b7ea7bf23f0224bbccefc55c7b87bac7fc3a3b896e5d0a1da40b80e7b`.
+Terminó con código 0 y `escritura_ejecutada: true`: 257 relaciones run/país,
+19 tienda/país, 180382 producto/país, 19 publicación/país y un lote. Los estados
+fueron 172909 asignados, 3467 `no_producto` y 4006 en `revision`; GT conservó
+172532 y SV 377. La activación regional permaneció deshabilitada.
 
 ## Límites y siguiente etapa
 

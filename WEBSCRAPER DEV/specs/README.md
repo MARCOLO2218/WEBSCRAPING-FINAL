@@ -62,9 +62,9 @@ Este directorio conserva las especificaciones funcionales y tecnicas del product
 | `SPEC-039-la-curacao-nicaragua.md` | Cerrada para el lote piloto | Camas 53/54 y categoría superior 67/68 observados; diferencia de uno en cada conjunto, sin identificar si es el mismo producto. Omisión autorizada sólo para este lote; `count_mismatch` permanece. NC no operativo. |
 | `SPEC-040-corte-facenco-dev-prod.md` | En progreso | Corte PROD publicado en 8284762 y descargado; verificación final de ejecución no recibida. |
 | `SPEC-041-panel-carga-clic-delimitado.md` | Completada | Panel y acciones sólo mediante botones, validados por usuario en DEV. |
-| `SPEC-042-expansion-regional.md` | Completada | Expansión validada en copia PostgreSQL y revertida a 037; original/PROD no migradas. |
-| `SPEC-043-backfill-controlado.md` | Completada | Backfill de 180382 productos, integridad, idempotencia y rollback validados en copia; informe final recibido. |
+| `SPEC-042-expansion-regional.md` | Completada | Expansión aplicada y validada en `webscraper_dev`; base original y PROD no migradas. |
+| `SPEC-043-backfill-controlado.md` | Completada | Backfill de 180382 productos aplicado en `webscraper_dev`; integridad, idempotencia y respaldo validados. |
 | `SPEC-044-politica-acceso-regional.md` | Completada | Política y dependencias FastAPI locales: 93 pruebas nuevas, 230 Python + 96 Node aprobadas. Sin login ni integración operativa. |
 | `SPEC-045-sesiones-y-login-api.md` | Completada (preparación aislada) | Servicio Argon2id, sesiones revocables y revisión 043 probados en SQLite; router sin montar ni migrar. |
 | `SPEC-046-limitador-login-compartido.md` | En progreso | Protección compartida contra repetición/password spraying, aislada de rutas operativas y sin migración real. |
-| `SPEC-047-migracion-esquema-autenticacion-dev.md` | En progreso | Flujo controlado para aplicar y verificar 043/044 únicamente en la copia PostgreSQL DEV. |
+| `SPEC-047-migracion-esquema-autenticacion-dev.md` | Completada | Esquema de autenticación aplicado y verificado vacío en `webscraper_dev`; revisión `044_login_throttle`. |

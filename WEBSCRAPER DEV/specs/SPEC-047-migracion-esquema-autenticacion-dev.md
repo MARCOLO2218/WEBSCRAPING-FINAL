@@ -2,7 +2,7 @@
 
 ## Estado
 
-En progreso.
+Completada y validada en la copia PostgreSQL DEV el 24 de septiembre de 2026.
 
 ## Objetivo
 
@@ -50,3 +50,22 @@ con respaldo validado y sin crear usuarios ni habilitar el login.
 6. El comando se publica por Windows→GitHub→Ubuntu antes de ejecutarlo en DEV.
 7. Tras ejecutar en PostgreSQL DEV, se registran revisión, tablas y filas; la
    SPEC permanece en progreso hasta esa evidencia.
+
+## Resultado PostgreSQL DEV
+
+- Destino verificado: copia `webscraper_dev` con el rol `webscraper_user`.
+- Revisión aplicada: `042_regional` → `044_login_throttle`; código de salida 0.
+- Tablas creadas: `usuarios`, `usuario_paises`, `sesiones_app` y
+  `login_intentos`.
+- Conteo inicial: cero filas en las cuatro tablas; no se creó ningún usuario.
+- Lote regional confirmado con `plan_hash`
+  `7412f80b7ea7bf23f0224bbccefc55c7b87bac7fc3a3b896e5d0a1da40b80e7b`.
+- Respaldo confirmado con SHA-256
+  `626bfa7f974d6b72761f9d4805b5dbce834a0124fecc6b499cbc73ff77bd73ed`.
+- Verificación posterior readonly: revisión estable en `044_login_throttle`,
+  esquema y conteos válidos, `escritura_ejecutada: false`; código de salida 0.
+- Pruebas antes de publicar: 7 específicas y 266 Python aprobadas; una prueba
+  PostgreSQL concurrente permanece omitida por requerir una base desechable.
+
+El esquema quedó preparado, pero el login continúa sin montar y no existe una
+cuenta administradora. Esas acciones pertenecen a la siguiente SPEC.
