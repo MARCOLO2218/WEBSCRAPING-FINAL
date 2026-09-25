@@ -29,9 +29,12 @@ test('paginación respeta límites distintos por búsqueda', () => {
 
 test('precio NC exige un importe único en córdobas', () => {
   assert.equal(parseSimanNcPrice('C$ 26,999.00'), 26999);
+  assert.equal(parseSimanNcPrice('C$25,799.00-50%'), 25799);
+  assert.equal(parseSimanNcPrice('C$ 9,000.00 - 10%'), 9000);
   assert.equal(parseSimanNcPrice('C$8999'), 8999);
   assert.equal(parseSimanNcPrice('$ 8,999'), null);
   assert.equal(parseSimanNcPrice('C$8,999 C$10,999'), null);
+  assert.equal(parseSimanNcPrice('C$8,999-Oferta'), null);
 });
 
 test('productos repetidos entre camas y colchones usan URL canónica', () => {
@@ -53,7 +56,7 @@ test('extractor pagina ambas búsquedas y deduplica productos', async () => {
       if (sourceUrl.includes('page=') && !sourceUrl.includes('page=2')) return [];
       return [{ source_site: 'otro', brand: 'Siman', line: '', category: 'Camas',
         product_name: 'Cama Siman prueba', availability: 'Disponible', regular_price: 'C$ 10,000.00',
-        sale_price: 'C$ 9,000.00', discount: '10%', installment: '',
+        sale_price: 'C$ 9,000.00-10%', discount: '10%', installment: '',
         product_url: `${productUrl}?origen=${extracted}`, source_url: sourceUrl, headline: '', description: '',
         warranty: '', benefits: '', image_url: '', image_alt: '', scraped_at: '' }];
     },
@@ -64,6 +67,7 @@ test('extractor pagina ambas búsquedas y deduplica productos', async () => {
   assert.equal(rows.length, 1);
   assert.equal(rows[0].product_url, productUrl);
   assert.equal(rows[0].source_site, SIMAN_NC.name);
+  assert.equal(rows[0].sale_price, 'C$ 9,000.00');
   assert.equal(rows[0].scraped_at, '2026-09-25T12:00:00.000Z');
   assert.ok(pageStats.some(({ duplicates }) => duplicates > 0));
   assert.ok(pageStats.every(({ extracted, accepted }) => extracted >= accepted));

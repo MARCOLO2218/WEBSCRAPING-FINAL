@@ -1,6 +1,6 @@
 # SPEC-050 - Siman Nicaragua
 
-Estado: Piloto Ubuntu DEV con desglose ejecutado; falta inspeccionar precios descartados y explicar una variación de un producto antes de integrar.
+Estado: Causa principal de exclusión de precios identificada y corregida localmente; requiere nuevo piloto Ubuntu DEV antes de integrar.
 
 ## Objetivo
 
@@ -28,7 +28,8 @@ Incorporar los resultados de camas y colchones de Siman Nicaragua al catálogo r
 - El piloto previo produjo 38 URLs únicas; la ejecución con diagnóstico produjo 37 únicas y 37 con precio, también de solo lectura (`databaseWrites: false`). La diferencia de un producto está pendiente de explicación.
 - En la ejecución diagnóstica: 26 tarjetas irrelevantes, 54 con texto de precio no interpretable, 9 repetidas y 37 URLs únicas conservadas. Las categorías de tarjeta suman 126; las 9 repeticiones están dentro de las 46 tarjetas aceptadas antes de deduplicar.
 - La muestra contiene productos identificados como camas y colchones, incluyendo una cama inflable.
-- El cambio local agrega por página los conteos de tarjetas irrelevantes, URL inválida, precio ilegible, URLs repetidas y aceptadas, más hasta dos ejemplos del texto de precio no interpretable; inspeccionar esos ejemplos en la siguiente ejecución.
+- Los ejemplos de tarjetas descartadas muestran que Siman concatena el porcentaje de descuento al monto, por ejemplo `C$25,799.00-50%`; el validador esperaba sólo el precio y descartaba tarjetas cuyo monto sí era legible.
+- El cambio local acepta ese sufijo porcentual y normaliza el campo de precio a `C$25,799.00`, manteniendo el descuento separado; las pruebas cubren ese formato. Aún falta confirmar los conteos corregidos en Ubuntu DEV.
 
 ## Implementación
 
@@ -36,4 +37,4 @@ Incorporar los resultados de camas y colchones de Siman Nicaragua al catálogo r
 - Usa las tarjetas Algolia vigentes de Siman, moneda NIO, URL canónica y deduplicación entre consultas.
 - Se detiene de forma segura ante una página posterior sin productos y sigue fuera del ejecutor principal.
 - Piloto Ubuntu DEV: la regla excluye cunas y mini camas; la última ejecución no las mostró en la muestra.
-- El reporte incluye conteos brutos y motivos de descarte por página. Mantener la tienda fuera del ejecutor principal hasta inspeccionar los textos de precio y conciliar por qué el total único varió de 38 a 37.
+- El reporte incluye conteos brutos, motivos de descarte por página y muestras del texto de precio no interpretable. Mantener la tienda fuera del ejecutor principal hasta repetir el piloto, confirmar que los importes quedaron normalizados y revisar la variación previa de 38 a 37 productos.

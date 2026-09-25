@@ -44,10 +44,16 @@ export function simanNcPageUrl(source: SimanNcSource, page: number): string {
 
 export function parseSimanNcPrice(value: string | null | undefined): number | null {
   const text = (value ?? '').replace(/\s+/g, ' ').trim();
-  const match = text.match(/^C\$\s*((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?)$/i);
+  const match = text.match(/^C\$\s*((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?)(?:\s*-\s*\d{1,3}(?:\.\d+)?%)?$/i);
   if (!match) return null;
   const amount = Number(match[1].replace(/,/g, ''));
   return Number.isFinite(amount) && amount > 0 ? amount : null;
+}
+
+function normalizeSimanNcPrice(value: string): string | null {
+  const text = value.replace(/\s+/g, ' ').trim();
+  const match = text.match(/^(C\$\s*(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?)(?:\s*-\s*\d{1,3}(?:\.\d+)?%)?$/i);
+  return match ? match[1].replace(/\s+/g, ' ').trim() : null;
 }
 
 export function canonicalSimanNcProductUrl(value: string): string {
@@ -136,7 +142,9 @@ export function createSimanNicaraguaScraper(dependencies: SimanNcScraperDependen
             continue;
           }
           const prices = [row.regular_price, row.sale_price].filter(Boolean);
-          if (prices.some((price) => parseSimanNcPrice(price) === null)) {
+          const regularPrice = row.regular_price ? normalizeSimanNcPrice(row.regular_price) : '';
+          const salePrice = row.sale_price ? normalizeSimanNcPrice(row.sale_price) : '';
+          if (prices.some((price) => parseSimanNcPrice(price) === null) || (row.regular_price && !regularPrice) || (row.sale_price && !salePrice)) {
             stats.invalidPrice += 1;
             if (stats.invalidPriceSamples.length < 2) {
               stats.invalidPriceSamples.push({
@@ -151,6 +159,8 @@ export function createSimanNicaraguaScraper(dependencies: SimanNcScraperDependen
           rows.set(productUrl, {
             ...row,
             source_site: SIMAN_NC.name,
+            regular_price: regularPrice ?? '',
+            sale_price: salePrice ?? '',
             product_url: productUrl,
             source_url: pageUrl,
             scraped_at: scrapedAt,
