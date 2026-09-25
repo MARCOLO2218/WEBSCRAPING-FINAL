@@ -1,6 +1,6 @@
 # SPEC-052 - Maxi Pali Nicaragua
 
-Estado: Piloto Ubuntu DEV completado; seis fichas útiles detectadas, sin precios publicados.
+Estado: Piloto Ubuntu DEV repetido; seis fichas útiles detectadas, sin precios publicados.
 
 ## Objetivo
 
@@ -28,3 +28,4 @@ Incorporar los pocos resultados útiles de camas, colchones y cubrecamas publica
 
 - Se visitaron las seis fichas confirmadas; se conservaron seis productos y cero precios, según lo publicado por el sitio.
 - La ejecución fue de solo lectura y no escribió en PostgreSQL.
+- La ejecución Ubuntu DEV del 2026-09-25 volvió a detectar los mismos seis productos y cero precios (`databaseWrites: false`); no se infieren precios ausentes.

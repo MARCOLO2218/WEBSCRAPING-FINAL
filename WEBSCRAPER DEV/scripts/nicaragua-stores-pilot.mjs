@@ -81,7 +81,7 @@ try {
     runners['el-gallo'] = createElGalloNicaraguaScraper({ navigate, extractCards,
       onPageResult: (source, pageNumber, count) => pageResults.push({ source, page: pageNumber, extracted: count }) });
     runners.siman = createSimanNicaraguaScraper({ navigate, extractCards,
-      onPageResult: (source, pageNumber, count) => pageResults.push({ source, page: pageNumber, extracted: count }) });
+      onPageResult: (source, pageNumber, stats) => pageResults.push({ source, page: pageNumber, ...stats }) });
     try {
       const rows = await runners[store](page, scrapedAt);
       const diagnostic = rows.length === 0 ? await page.evaluate(() => ({

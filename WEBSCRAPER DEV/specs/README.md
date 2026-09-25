@@ -69,7 +69,7 @@ Este directorio conserva las especificaciones funcionales y tecnicas del product
 | `SPEC-046-limitador-login-compartido.md` | Completada | Concurrencia PostgreSQL validada: 8 permitidos, 24 bloqueados y limpieza final en cero. |
 | `SPEC-047-migracion-esquema-autenticacion-dev.md` | Completada | Esquema de autenticación aplicado y verificado vacío en `webscraper_dev`; revisión `044_login_throttle`. |
 | `SPEC-048-bootstrap-administrador-dev.md` | Completada | Primer administrador global creado y verificado en `webscraper_dev`; login aún sin montar. |
-| `SPEC-049-el-gallo-nicaragua.md` | Piloto inicial ejecutado | 40 productos únicos; normalización de URL y desglose por página listos para revalidación. |
-| `SPEC-050-siman-nicaragua.md` | Piloto inicial ejecutado | 57 productos únicos; exclusión de cunas y desglose por página listos para revalidación. |
-| `SPEC-051-walmart-nicaragua.md` | Piloto inicial ejecutado | 114 productos únicos y 102 con precio; revisión de coincidencias y faltantes pendiente. |
-| `SPEC-052-maxipali-nicaragua.md` | Piloto completado | Seis fichas visitadas; no publican precio. |
+| `SPEC-049-el-gallo-nicaragua.md` | Piloto DEV; conciliación pendiente | 40 únicos/preciados; cada búsqueda entrega 40 tarjetas frente a 43 y 42 declaradas. |
+| `SPEC-050-siman-nicaragua.md` | Piloto DEV; revisión pendiente | 38 únicos/preciados desde 126 tarjetas brutas; hace falta detallar filtros y duplicados. |
+| `SPEC-051-walmart-nicaragua.md` | Piloto DEV; revisión pendiente | 114 únicos, 102 con precio; revisar 12 sin precio y clasificación por categoría. |
+| `SPEC-052-maxipali-nicaragua.md` | Piloto DEV | Seis fichas útiles, cero precios publicados; confirmado nuevamente en modo de solo lectura. |

@@ -45,6 +45,7 @@ test('productos repetidos entre camas y colchones usan URL canónica', () => {
 test('extractor pagina ambas búsquedas y deduplica productos', async () => {
   const productUrl = 'https://ni.siman.com/cama-siman-prueba/p';
   let extracted = 0;
+  const pageStats: Array<{ source: string; page: number; extracted: number; irrelevant: number; duplicates: number; accepted: number }> = [];
   const dependencies = {
     navigate: async () => undefined,
     extractCards: async (_page: unknown, sourceUrl: string) => {
@@ -56,6 +57,7 @@ test('extractor pagina ambas búsquedas y deduplica productos', async () => {
         product_url: `${productUrl}?origen=${extracted}`, source_url: sourceUrl, headline: '', description: '',
         warranty: '', benefits: '', image_url: '', image_alt: '', scraped_at: '' }];
     },
+    onPageResult: (source: string, pageNumber: number, stats: any) => pageStats.push({ source, page: pageNumber, ...stats }),
   } as any;
   const page = { mouse: { wheel: async () => undefined }, waitForTimeout: async () => undefined } as any;
   const rows = await createSimanNicaraguaScraper(dependencies)(page, '2026-09-25T12:00:00.000Z');
@@ -63,5 +65,30 @@ test('extractor pagina ambas búsquedas y deduplica productos', async () => {
   assert.equal(rows[0].product_url, productUrl);
   assert.equal(rows[0].source_site, SIMAN_NC.name);
   assert.equal(rows[0].scraped_at, '2026-09-25T12:00:00.000Z');
+  assert.ok(pageStats.some(({ duplicates }) => duplicates > 0));
+  assert.ok(pageStats.every(({ extracted, accepted }) => extracted >= accepted));
   assert.ok(extracted >= 4);
+});
+
+test('diagnostica exclusiones irrelevantes, URL no válida y precio ilegible', async () => {
+  const valid = (name: string, url: string, price = 'C$ 10,000') => ({
+    source_site: 'otro', brand: 'Siman', line: '', category: 'Camas',
+    product_name: name, availability: 'Disponible', regular_price: price,
+    sale_price: '', discount: '', installment: '', product_url: url, source_url: '',
+    headline: '', description: '', warranty: '', benefits: '', image_url: '', image_alt: '', scraped_at: '',
+  });
+  const stats: any[] = [];
+  const dependencies = {
+    navigate: async () => undefined,
+    extractCards: async () => [
+      valid('Cuna mini cama', 'https://ni.siman.com/cuna/p'),
+      valid('Cama sin URL propia', 'https://ni.siman.com/search'),
+      valid('Colchón precio ilegible', 'https://ni.siman.com/colchon/p', 'Consultar precio'),
+    ],
+    onPageResult: (_source: string, _page: number, result: unknown) => stats.push(result),
+  } as any;
+  const page = { mouse: { wheel: async () => undefined }, waitForTimeout: async () => undefined } as any;
+  const rows = await createSimanNicaraguaScraper(dependencies)(page, '2026-09-25T12:00:00.000Z');
+  assert.deepEqual(rows, []);
+  assert.deepEqual(stats[0], { extracted: 3, irrelevant: 1, invalidUrl: 1, invalidPrice: 1, duplicates: 0, accepted: 0 });
 });

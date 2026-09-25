@@ -1,6 +1,6 @@
 # SPEC-051 - Walmart Nicaragua
 
-Estado: Piloto Ubuntu DEV completado inicialmente; conteo único 114, 102 con precio.
+Estado: Piloto Ubuntu DEV repetido; 114 productos únicos y 102 con precio. Pendiente revisar los 12 sin precio y separación por categoría.
 
 ## Objetivo
 
@@ -26,10 +26,11 @@ Incorporar camas, colchones y accesorios de descanso de Walmart Nicaragua al cat
 
 - Revisar el total único de 114 frente a las tres vistas observadas; el extractor excluye mascotas y categorías ajenas.
 - Revisar los 12 productos listados sin precio, que pueden estar agotados o sin oferta pública.
+- El piloto Ubuntu DEV del 2026-09-25 mantuvo 114 productos únicos y 102 con precio en modo de solo lectura (`databaseWrites: false`).
 
 ## Implementación
 
 - El extractor consulta la API pública por rangos cerrados de hasta 50 productos.
 - Descarta coincidencias ajenas a descanso, valida URLs `/p`, normaliza NIO y deduplica entre búsquedas.
 - No está registrado todavía en el ejecutor principal.
-- El piloto fue de solo lectura y devolvió 114 productos únicos, con 102 precios.
+- El piloto fue de solo lectura y devolvió 114 productos únicos, con 102 precios; la ejecución del 2026-09-25 confirmó el mismo conteo.

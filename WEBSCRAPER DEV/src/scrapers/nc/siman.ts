@@ -75,7 +75,16 @@ function isRelevantSimanNcProduct(name: string): boolean {
 export type SimanNcScraperDependencies = {
   navigate: (page: Page, url: string) => Promise<void>;
   extractCards: (page: Page, sourceUrl: string, config: ProductSelectorConfig) => Promise<CsvProduct[]>;
-  onPageResult?: (source: SimanNcSource, page: number, count: number) => void;
+  onPageResult?: (source: SimanNcSource, page: number, stats: SimanNcPageStats) => void;
+};
+
+export type SimanNcPageStats = {
+  extracted: number;
+  irrelevant: number;
+  invalidUrl: number;
+  invalidPrice: number;
+  duplicates: number;
+  accepted: number;
 };
 
 const selectors: ProductSelectorConfig = {
@@ -104,18 +113,32 @@ export function createSimanNicaraguaScraper(dependencies: SimanNcScraperDependen
           await page.waitForTimeout(500);
         }
         const extracted = await dependencies.extractCards(page, pageUrl, selectors);
-        dependencies.onPageResult?.(source, pageNumber, extracted.length);
-        let accepted = 0;
+        const stats: SimanNcPageStats = {
+          extracted: extracted.length,
+          irrelevant: 0,
+          invalidUrl: 0,
+          invalidPrice: 0,
+          duplicates: 0,
+          accepted: 0,
+        };
         for (const row of extracted) {
-          if (!isRelevantSimanNcProduct(row.product_name)) continue;
+          if (!isRelevantSimanNcProduct(row.product_name)) {
+            stats.irrelevant += 1;
+            continue;
+          }
           let productUrl: string;
           try {
             productUrl = canonicalSimanNcProductUrl(row.product_url);
           } catch {
+            stats.invalidUrl += 1;
             continue;
           }
           const prices = [row.regular_price, row.sale_price].filter(Boolean);
-          if (prices.some((price) => parseSimanNcPrice(price) === null)) continue;
+          if (prices.some((price) => parseSimanNcPrice(price) === null)) {
+            stats.invalidPrice += 1;
+            continue;
+          }
+          if (rows.has(productUrl)) stats.duplicates += 1;
           rows.set(productUrl, {
             ...row,
             source_site: SIMAN_NC.name,
@@ -123,9 +146,10 @@ export function createSimanNicaraguaScraper(dependencies: SimanNcScraperDependen
             source_url: pageUrl,
             scraped_at: scrapedAt,
           });
-          accepted += 1;
+          stats.accepted += 1;
         }
-        if (pageNumber > 1 && accepted === 0) break;
+        dependencies.onPageResult?.(source, pageNumber, stats);
+        if (pageNumber > 1 && stats.accepted === 0) break;
       }
     }
     return [...rows.values()];
