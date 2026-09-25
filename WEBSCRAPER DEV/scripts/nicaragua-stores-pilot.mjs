@@ -77,6 +77,11 @@ const report = { status: 'piloto', databaseWrites: false, scrapedAt, stores: {} 
 try {
   for (const store of stores) {
     const started = Date.now();
+    const pageResults = [];
+    runners['el-gallo'] = createElGalloNicaraguaScraper({ navigate, extractCards,
+      onPageResult: (source, pageNumber, count) => pageResults.push({ source, page: pageNumber, extracted: count }) });
+    runners.siman = createSimanNicaraguaScraper({ navigate, extractCards,
+      onPageResult: (source, pageNumber, count) => pageResults.push({ source, page: pageNumber, extracted: count }) });
     try {
       const rows = await runners[store](page, scrapedAt);
       const diagnostic = rows.length === 0 ? await page.evaluate(() => ({
@@ -131,6 +136,7 @@ try {
         priced: rows.filter((row) => clean(row.regular_price) || clean(row.sale_price)).length,
         seconds: Number(((Date.now() - started) / 1000).toFixed(2)),
         sample: rows.slice(0, 3).map((row) => ({ name: row.product_name, price: row.sale_price || row.regular_price, url: row.product_url })),
+        ...(pageResults.length ? { pages: pageResults } : {}),
         ...(diagnostic ? { diagnostic } : {}),
       };
     } catch (error) {

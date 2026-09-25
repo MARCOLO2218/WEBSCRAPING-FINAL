@@ -66,9 +66,16 @@ export function dedupeSimanNcProductUrls(values: readonly string[]): string[] {
   return [...new Set(values.map(canonicalSimanNcProductUrl))].sort();
 }
 
+function isRelevantSimanNcProduct(name: string): boolean {
+  const normalized = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  if (/\bcuna\b|mini cama|mascota|perro|gato/.test(normalized)) return false;
+  return /cama|colchon|protector|cubrecama|sabana|almohada|base|box/.test(normalized);
+}
+
 export type SimanNcScraperDependencies = {
   navigate: (page: Page, url: string) => Promise<void>;
   extractCards: (page: Page, sourceUrl: string, config: ProductSelectorConfig) => Promise<CsvProduct[]>;
+  onPageResult?: (source: SimanNcSource, page: number, count: number) => void;
 };
 
 const selectors: ProductSelectorConfig = {
@@ -97,8 +104,10 @@ export function createSimanNicaraguaScraper(dependencies: SimanNcScraperDependen
           await page.waitForTimeout(500);
         }
         const extracted = await dependencies.extractCards(page, pageUrl, selectors);
+        dependencies.onPageResult?.(source, pageNumber, extracted.length);
         let accepted = 0;
         for (const row of extracted) {
+          if (!isRelevantSimanNcProduct(row.product_name)) continue;
           let productUrl: string;
           try {
             productUrl = canonicalSimanNcProductUrl(row.product_url);

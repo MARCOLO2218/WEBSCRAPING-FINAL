@@ -1,6 +1,6 @@
 # SPEC-050 - Siman Nicaragua
 
-Estado: Implementación preparada; piloto pendiente.
+Estado: Piloto inicial ejecutado; exclusión de cunas y revalidación pendientes.
 
 ## Objetivo
 
@@ -29,5 +29,7 @@ Incorporar los resultados de camas y colchones de Siman Nicaragua al catálogo r
 ## Implementación
 
 - El extractor recorre por separado las cinco páginas de camas y las dos de colchones.
-- Usa selectores VTEX, moneda NIO, URL canónica y deduplicación entre consultas.
+- Usa las tarjetas Algolia vigentes de Siman, moneda NIO, URL canónica y deduplicación entre consultas.
 - Se detiene de forma segura ante una página posterior sin productos y sigue fuera del ejecutor principal.
+- Piloto Ubuntu DEV inicial: 57 productos únicos, 57 con precio. Una cuna apareció en la búsqueda de camas por contener “mini cama”; el extractor ahora excluye cunas y mini camas.
+- La próxima salida incluirá conteos por búsqueda y página para comparar con los 94 resultados de camas y 32 de colchones declarados.

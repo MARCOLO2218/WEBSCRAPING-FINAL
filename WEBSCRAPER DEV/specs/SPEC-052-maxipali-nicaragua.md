@@ -1,6 +1,6 @@
 # SPEC-052 - Maxi Pali Nicaragua
 
-Estado: Implementación preparada; piloto pendiente.
+Estado: Piloto Ubuntu DEV completado; seis fichas útiles detectadas, sin precios publicados.
 
 ## Objetivo
 
@@ -23,3 +23,8 @@ Incorporar los pocos resultados útiles de camas, colchones y cubrecamas publica
 - No inventar precios, descuentos, cuotas ni disponibilidad de inventario.
 - Deduplicar por identificador publicado.
 - Mantener la tienda fuera del ejecutor principal hasta completar el piloto en Ubuntu DEV.
+
+## Resultado del piloto
+
+- Se visitaron las seis fichas confirmadas; se conservaron seis productos y cero precios, según lo publicado por el sitio.
+- La ejecución fue de solo lectura y no escribió en PostgreSQL.

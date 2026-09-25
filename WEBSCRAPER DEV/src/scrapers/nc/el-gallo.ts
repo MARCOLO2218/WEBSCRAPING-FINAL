@@ -53,6 +53,13 @@ export function canonicalElGalloNcProductUrl(value: string): string {
   url.search = '';
   url.hash = '';
   url.pathname = url.pathname.replace(/\/+$/, '') || '/';
+  url.pathname = url.pathname.split('/').map((segment) => {
+    if (segment.length % 2 === 0) {
+      const midpoint = segment.length / 2;
+      if (segment.slice(0, midpoint) === segment.slice(midpoint)) return segment.slice(0, midpoint);
+    }
+    return segment;
+  }).join('/');
   if (url.pathname === '/' || url.pathname.startsWith('/catalogsearch/')) {
     throw new Error('La URL no identifica un producto de El Gallo Nicaragua.');
   }
@@ -66,6 +73,7 @@ export function dedupeElGalloNcProductUrls(values: readonly string[]): string[] 
 export type ElGalloNcScraperDependencies = {
   navigate: (page: Page, url: string) => Promise<void>;
   extractCards: (page: Page, sourceUrl: string, config: ProductSelectorConfig) => Promise<CsvProduct[]>;
+  onPageResult?: (source: ElGalloNcSource, page: number, count: number) => void;
 };
 
 const selectors: ProductSelectorConfig = {
@@ -90,6 +98,7 @@ export function createElGalloNicaraguaScraper(dependencies: ElGalloNcScraperDepe
         const pageUrl = elGalloNcPageUrl(source, pageNumber);
         await dependencies.navigate(page, pageUrl);
         const extracted = await dependencies.extractCards(page, pageUrl, selectors);
+        dependencies.onPageResult?.(source, pageNumber, extracted.length);
         let accepted = 0;
         for (const row of extracted) {
           let productUrl: string;
