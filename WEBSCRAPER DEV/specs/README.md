@@ -67,3 +67,4 @@ Este directorio conserva las especificaciones funcionales y tecnicas del product
 | `SPEC-044-politica-acceso-regional.md` | Completada | Política y dependencias FastAPI locales: 93 pruebas nuevas, 230 Python + 96 Node aprobadas. Sin login ni integración operativa. |
 | `SPEC-045-sesiones-y-login-api.md` | Completada (preparación aislada) | Servicio Argon2id, sesiones revocables y revisión 043 probados en SQLite; router sin montar ni migrar. |
 | `SPEC-046-limitador-login-compartido.md` | En progreso | Protección compartida contra repetición/password spraying, aislada de rutas operativas y sin migración real. |
+| `SPEC-047-migracion-esquema-autenticacion-dev.md` | En progreso | Flujo controlado para aplicar y verificar 043/044 únicamente en la copia PostgreSQL DEV. |
