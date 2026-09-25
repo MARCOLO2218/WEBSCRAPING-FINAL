@@ -89,3 +89,11 @@ Desktop no tiene motor iniciado, no hay PostgreSQL local y WSL devolvió acceso
 denegado. No se conectó al NAS ni a una base existente. SQLite ignora `FOR
 UPDATE`; falta ejecutar el ensayo PostgreSQL aislado antes de cerrar esta SPEC.
 La clave HMAC y la limpieza periódica aún requieren integración de despliegue.
+
+Tras aplicar 044 en `webscraper_dev`, se preparó un ensayo operativo adicional
+en `backend/catalog_api/db/auth_throttle_probe.py`. Sólo acepta esa copia, el rol
+`webscraper_user`, revisión 044, huella regional revisada y las cuatro tablas de
+autenticación vacías. Ejecuta 32 reservas simultáneas con identidad/IP sintéticas,
+espera 8 permitidas y 24 bloqueadas, comprueba ambos contadores en 9 y elimina
+exactamente sus dos hashes bajo una guarda advisory. SPEC-046 permanece en
+progreso hasta recibir el resultado PostgreSQL y confirmar el conteo final cero.
