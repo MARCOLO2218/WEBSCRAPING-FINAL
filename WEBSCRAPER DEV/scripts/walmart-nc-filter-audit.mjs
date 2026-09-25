@@ -42,13 +42,19 @@ try {
 
       const observed = await page.evaluate(() => {
         const clean = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
+        const isProductUrl = (value) => {
+          try {
+            const url = new URL(value, location.href);
+            return url.hostname === 'www.walmart.com.ni' && /\/p\/?$/.test(url.pathname);
+          } catch { return false; }
+        };
         const links = [...document.querySelectorAll('a[href]')]
           .map((anchor) => ({
             href: anchor.href,
             text: clean(anchor.innerText || anchor.textContent),
             parentText: clean(anchor.closest('article, .product-item, [class*="product-item"], [class*="productCard"], [class*="ProductCard"], [class*="galleryItem"]')?.innerText),
           }))
-          .filter((item) => /^https:\/\/www\.walmart\.com\.ni\/[^?#]+\/p\/?$/.test(item.href));
+          .filter((item) => isProductUrl(item.href));
         const body = clean(document.body?.innerText);
         const counts = [...body.matchAll(/\b([\d,]+)\s+productos?\b/gi)]
           .map((match) => Number(match[1].replace(/,/g, ''))).filter(Number.isFinite);
@@ -57,7 +63,18 @@ try {
         const facetText = [...document.querySelectorAll('input[type="checkbox"]:checked')]
           .map((input) => clean(input.closest('label')?.innerText || input.parentElement?.innerText || input.value))
           .filter(Boolean).slice(0, 40);
-        return { title: document.title, links, totalHint: counts[0] ?? null, next, facetText, bodyStart: body.slice(0, 300) };
+        return {
+          title: document.title,
+          currentUrl: location.href,
+          links,
+          productLikeLinks: [...document.querySelectorAll('a[href]')]
+            .filter((anchor) => /\/p(?:[/?#]|$)/.test(anchor.href)).slice(0, 12)
+            .map((anchor) => ({ href: anchor.href, text: clean(anchor.innerText || anchor.textContent) })),
+          totalHint: counts[0] ?? null,
+          next,
+          facetText,
+          bodyStart: body.slice(0, 500),
+        };
       });
 
       if (!response?.ok()) {
@@ -83,7 +100,14 @@ try {
         productLinks: observed.links.length,
         uniqueOnPage: pageUnique.size,
         newUnique,
-        ...(pageNumber === 1 ? { title: observed.title, totalHint, selectedFacetsVisible: observed.facetText, bodyStart: observed.bodyStart } : {}),
+        ...(pageNumber === 1 ? {
+          title: observed.title,
+          currentUrl: observed.currentUrl,
+          totalHint,
+          selectedFacetsVisible: observed.facetText,
+          candidateProductLinks: observed.productLikeLinks,
+          bodyStart: observed.bodyStart,
+        } : {}),
         nextLink: observed.next || null,
         httpStatus: response.status(),
       });
@@ -94,7 +118,6 @@ try {
 
       if (!observed.links.length) { stopReason = 'no_product_links'; break; }
       if (pageNumber > 1 && newUnique === 0) { stopReason = 'page_repeated'; break; }
-      if (!observed.next && pageNumber > 1 && observed.links.length < 10) { stopReason = 'last_short_page'; break; }
     }
 
     report.sources[sourceName] = {

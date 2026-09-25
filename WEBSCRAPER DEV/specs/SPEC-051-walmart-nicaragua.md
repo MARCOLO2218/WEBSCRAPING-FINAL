@@ -35,6 +35,7 @@ Incorporar camas, colchones y accesorios de descanso de Walmart Nicaragua al cat
 - Dos HTML filtrados guardados muestran rutas canónicas con los filtros esperados, pero su estado serializado de VTEX contiene `selectedFacets=[]`, `recordsFiltered=16407` y productos de abarrotes. Esas capturas no certifican los resultados filtrados; se validarán las URLs actuales durante el piloto.
 - Pendiente para cerrar cobertura: ejecutar, en solo lectura, cada fuente seleccionada por separado, registrar conteo/páginas por fuente, total bruto, total deduplicado, intersecciones y discrepancias respecto a las cifras visibles. No ampliar automáticamente las facetas más allá de las combinaciones máximas confirmadas por el usuario.
 - Se agregó `scripts/walmart-nc-filter-audit.mjs` para hacer esa auditoría en el navegador, recorrer páginas hasta que no aparezcan productos nuevos (con tope configurable), reportar facetas visibles y contar intersecciones. Es una prueba de navegación de solo lectura; no importa conexión a PostgreSQL.
+- La primera ejecución del auditor no certifica cobertura: detectó 175 resultados en la fuente amplia, pero solo 16 URLs en dos páginas; tres fuentes no produjeron enlaces reconocidos. Se corrigió la detección para aceptar URLs con query string y ya no detenerse por una página corta. Repetir auditoría antes de registrar conteos.
 
 ## Implementación
 
