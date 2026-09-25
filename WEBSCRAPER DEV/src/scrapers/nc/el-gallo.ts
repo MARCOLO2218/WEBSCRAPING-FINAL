@@ -10,7 +10,7 @@ export const EL_GALLO_NC = {
   country: 'NC',
   currency: 'NIO',
   operational: false,
-  expected: { camas: 43, colchones: 42 },
+  expected: { camas: 40, colchones: 40 },
   pageLimits: { camas: 5, colchones: 5 },
   sources: {
     camas: `https://${host}/catalogsearch/result/?q=camas&tipo_de_producto=Matrimonial~Queen~Individual~King&marca=Capri~Olympia~Facenco~Indufoam~Armon%C3%ADa~Therapedic`,

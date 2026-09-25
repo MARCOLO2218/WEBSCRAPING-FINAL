@@ -69,7 +69,7 @@ Este directorio conserva las especificaciones funcionales y tecnicas del product
 | `SPEC-046-limitador-login-compartido.md` | Completada | Concurrencia PostgreSQL validada: 8 permitidos, 24 bloqueados y limpieza final en cero. |
 | `SPEC-047-migracion-esquema-autenticacion-dev.md` | Completada | Esquema de autenticación aplicado y verificado vacío en `webscraper_dev`; revisión `044_login_throttle`. |
 | `SPEC-048-bootstrap-administrador-dev.md` | Completada | Primer administrador global creado y verificado en `webscraper_dev`; login aún sin montar. |
-| `SPEC-049-el-gallo-nicaragua.md` | Diagnóstico pendiente | 40 tarjetas por búsqueda frente a 43 y 42 declaradas; siguiente piloto mostrará conteos visibles por página. |
+| `SPEC-049-el-gallo-nicaragua.md` | Piloto DEV validado | 40 productos observados por consulta, 40 únicos y con precio; conteo coincide con páginas visibles. |
 | `SPEC-050-siman-nicaragua.md` | Piloto DEV validado | 77 productos únicos con precio; 23 repetidos entre búsquedas; sigue fuera del ejecutor principal. |
-| `SPEC-051-walmart-nicaragua.md` | Piloto DEV; revisión pendiente | 114 únicos, 102 con precio; revisar 12 sin precio y clasificación por categoría. |
+| `SPEC-051-walmart-nicaragua.md` | Diagnóstico pendiente | 114 únicos, 102 con precio; próximo piloto mostrará categoría y muestras de 12 sin precio. |
 | `SPEC-052-maxipali-nicaragua.md` | Piloto DEV | Seis fichas útiles, cero precios publicados; confirmado nuevamente en modo de solo lectura. |

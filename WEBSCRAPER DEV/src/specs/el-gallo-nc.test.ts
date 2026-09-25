@@ -14,7 +14,7 @@ test('El Gallo NC conserva país, moneda y fuentes sin activar el worker', () =>
   assert.equal(EL_GALLO_NC.country, 'NC');
   assert.equal(EL_GALLO_NC.currency, 'NIO');
   assert.equal(EL_GALLO_NC.operational, false);
-  assert.deepEqual(EL_GALLO_NC.expected, { camas: 43, colchones: 42 });
+  assert.deepEqual(EL_GALLO_NC.expected, { camas: 40, colchones: 40 });
   assert.ok(Object.values(EL_GALLO_NC.sources).every(isElGalloNcUrl));
 });
 

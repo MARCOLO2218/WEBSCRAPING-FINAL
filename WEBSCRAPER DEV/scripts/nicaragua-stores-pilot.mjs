@@ -144,11 +144,23 @@ try {
           })).filter((item) => /brand|name|price|summary|product/i.test(String(item.className))).slice(0, 25),
         })),
       })) : undefined;
+      const pricedRows = rows.filter((row) => clean(row.regular_price) || clean(row.sale_price));
       report.stores[store] = {
         status: 'ok', count: rows.length,
-        priced: rows.filter((row) => clean(row.regular_price) || clean(row.sale_price)).length,
+        priced: pricedRows.length,
         seconds: Number(((Date.now() - started) / 1000).toFixed(2)),
         sample: rows.slice(0, 3).map((row) => ({ name: row.product_name, price: row.sale_price || row.regular_price, url: row.product_url })),
+        ...(store === 'walmart' ? {
+          byCategory: Object.fromEntries(rows.reduce((counts, row) => {
+            const category = clean(row.category) || 'Sin categoría';
+            counts.set(category, (counts.get(category) || 0) + 1);
+            return counts;
+          }, new Map())),
+          unpricedSamples: rows.filter((row) => !clean(row.regular_price) && !clean(row.sale_price))
+            .slice(0, 12).map((row) => ({
+              name: row.product_name, category: row.category, availability: row.availability, url: row.product_url,
+            })),
+        } : {}),
         ...(pageResults.length ? { pages: pageResults } : {}),
         ...(diagnostic ? { diagnostic } : {}),
       };
