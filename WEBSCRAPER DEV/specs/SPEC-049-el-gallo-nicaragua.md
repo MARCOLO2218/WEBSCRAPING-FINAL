@@ -1,6 +1,6 @@
 # SPEC-049 - El Gallo mas Gallo Nicaragua
 
-Estado: Piloto Ubuntu DEV repetido; el scraper extrae 40 productos, pero el conteo difiere de las fuentes y requiere conciliación antes de integrarlo.
+Estado: Piloto Ubuntu DEV repetido; el scraper extrae 40 tarjetas por búsqueda frente a 43 y 42 declaradas. Se agregó diagnóstico de conteos visibles para conciliarlo en la próxima prueba.
 
 ## Objetivo
 
@@ -22,7 +22,7 @@ Incorporar las camas y colchones de El Gallo mas Gallo Nicaragua al catálogo re
 - Piloto Ubuntu DEV del 2026-09-25: 40 productos únicos, todos con precio; ejecución de solo lectura (`databaseWrites: false`).
 - Desglose observado para cada búsqueda (`camas` y `colchones`): páginas 1–4 con 9 tarjetas y página 5 con 4 (40 tarjetas por búsqueda).
 - La URL previamente duplicada quedó normalizada correctamente.
-- Pendiente: los conteos de la fuente (43 camas y 42 colchones) no coinciden con las 40 tarjetas extraídas en cada búsqueda. Confirmar si las tarjetas faltantes son duplicados, resultados que no cargaron o productos fuera de alcance; no declarar cobertura completa aún.
+- Pendiente: los conteos de la fuente (43 camas y 42 colchones) no coinciden con las 40 tarjetas extraídas en cada búsqueda. El próximo piloto reportará el texto visible de conteo por página para determinar si el sitio cambia el total según consulta/página o si faltan tarjetas en la extracción.
 
 ## Criterios de aceptación
 

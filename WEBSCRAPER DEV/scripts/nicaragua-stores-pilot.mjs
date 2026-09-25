@@ -12,19 +12,21 @@ if (stores.some((store) => !allowed.has(store))) {
 }
 
 const clean = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
+const pageObservations = new Map();
 const navigate = async (page, url) => {
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 90_000 });
   await page.getByRole('button', { name: /^aceptar$/i }).click({ timeout: 3_000 }).catch(() => undefined);
   await page.waitForTimeout(1_500);
 };
 
-const extractCards = async (page, sourceUrl, config) => page.evaluate(({ sourceUrl, config }) => {
+const extractCards = async (page, sourceUrl, config) => {
+  const result = await page.evaluate(({ sourceUrl, config }) => {
   const cleanText = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
   const text = (card, selector) => cleanText(selector ? card.querySelector(selector)?.textContent : '');
   const absolute = (value) => {
     try { return new URL(value, location.href).toString(); } catch { return ''; }
   };
-  return [...document.querySelectorAll(config.cardSelector)].map((card) => {
+  const rows = [...document.querySelectorAll(config.cardSelector)].map((card) => {
     const anchor = card.querySelector(config.anchorSelector || 'a[href]');
     const image = card.querySelector(config.imageSelector || 'img');
     const title = text(card, config.titleSelector);
@@ -48,7 +50,15 @@ const extractCards = async (page, sourceUrl, config) => page.evaluate(({ sourceU
       scraped_at: '',
     };
   }).filter((row) => row.product_name && row.product_url);
-}, { sourceUrl, config });
+  const bodyText = String(document.body?.innerText || '').replace(/\s+/g, ' ').trim();
+  const visibleCountHints = [...new Set(
+    (bodyText.match(/.{0,35}\b\d+\s+(?:resultados?|productos?)\b.{0,35}/gi) || []).map((value) => value.trim()),
+  )].slice(0, 3);
+  return { rows, visibleCountHints };
+  }, { sourceUrl, config });
+  pageObservations.set(sourceUrl, result.visibleCountHints);
+  return result.rows;
+};
 
 const extractMaxipaliProduct = async (page, productUrl, scrapedAt) => page.evaluate(({ productUrl, scrapedAt }) => {
   const cleanText = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
@@ -79,7 +89,10 @@ try {
     const started = Date.now();
     const pageResults = [];
     runners['el-gallo'] = createElGalloNicaraguaScraper({ navigate, extractCards,
-      onPageResult: (source, pageNumber, count) => pageResults.push({ source, page: pageNumber, extracted: count }) });
+      onPageResult: (source, pageNumber, count, sourceUrl) => pageResults.push({
+        source, page: pageNumber, extracted: count,
+        visibleCountHints: pageObservations.get(sourceUrl) || [],
+      }) });
     runners.siman = createSimanNicaraguaScraper({ navigate, extractCards,
       onPageResult: (source, pageNumber, stats) => pageResults.push({ source, page: pageNumber, ...stats }) });
     try {

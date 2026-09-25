@@ -20,6 +20,7 @@ test('El Gallo NC conserva país, moneda y fuentes sin activar el worker', () =>
 
 test('extractor recorre cinco páginas por búsqueda y deduplica', async () => {
   const visited: string[] = [];
+  const diagnostics: Array<{ source: string; page: number; count: number; url: string }> = [];
   const product = 'https://www.elgallomasgallo.com.ni/cama-capri-exclusiva-mat';
   const scraper = createElGalloNicaraguaScraper({
     navigate: async (_page, url) => { visited.push(url); },
@@ -30,12 +31,16 @@ test('extractor recorre cinco páginas por búsqueda y deduplica', async () => {
       product_url: `${product}?from=listado`, source_url: sourceUrl, headline: '', description: '',
       warranty: '', benefits: '', image_url: '', image_alt: '', scraped_at: '',
     }],
+    onPageResult: (source, page, count, url) => diagnostics.push({ source, page, count, url }),
   });
   const rows = await scraper({} as any, '2026-09-25T00:00:00.000Z');
   assert.equal(visited.length, 10);
   assert.equal(rows.length, 1);
   assert.equal(rows[0].product_url, product);
   assert.equal(rows[0].source_site, EL_GALLO_NC.name);
+  assert.equal(diagnostics.length, 10);
+  assert.equal(diagnostics[0].url, visited[0]);
+  assert.deepEqual([diagnostics[0].source, diagnostics[0].page, diagnostics[0].count], ['camas', 1, 1]);
 });
 
 test('paginación conserva filtros y no acepta rangos arbitrarios', () => {

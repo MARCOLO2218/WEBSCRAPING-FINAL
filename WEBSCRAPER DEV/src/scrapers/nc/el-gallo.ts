@@ -73,7 +73,7 @@ export function dedupeElGalloNcProductUrls(values: readonly string[]): string[] 
 export type ElGalloNcScraperDependencies = {
   navigate: (page: Page, url: string) => Promise<void>;
   extractCards: (page: Page, sourceUrl: string, config: ProductSelectorConfig) => Promise<CsvProduct[]>;
-  onPageResult?: (source: ElGalloNcSource, page: number, count: number) => void;
+  onPageResult?: (source: ElGalloNcSource, page: number, count: number, sourceUrl: string) => void;
 };
 
 const selectors: ProductSelectorConfig = {
@@ -98,7 +98,7 @@ export function createElGalloNicaraguaScraper(dependencies: ElGalloNcScraperDepe
         const pageUrl = elGalloNcPageUrl(source, pageNumber);
         await dependencies.navigate(page, pageUrl);
         const extracted = await dependencies.extractCards(page, pageUrl, selectors);
-        dependencies.onPageResult?.(source, pageNumber, extracted.length);
+        dependencies.onPageResult?.(source, pageNumber, extracted.length, pageUrl);
         let accepted = 0;
         for (const row of extracted) {
           let productUrl: string;
