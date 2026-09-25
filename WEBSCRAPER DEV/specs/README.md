@@ -66,5 +66,6 @@ Este directorio conserva las especificaciones funcionales y tecnicas del product
 | `SPEC-043-backfill-controlado.md` | Completada | Backfill de 180382 productos aplicado en `webscraper_dev`; integridad, idempotencia y respaldo validados. |
 | `SPEC-044-politica-acceso-regional.md` | Completada | Política y dependencias FastAPI locales: 93 pruebas nuevas, 230 Python + 96 Node aprobadas. Sin login ni integración operativa. |
 | `SPEC-045-sesiones-y-login-api.md` | Completada (preparación aislada) | Servicio Argon2id, sesiones revocables y revisión 043 probados en SQLite; router sin montar ni migrar. |
-| `SPEC-046-limitador-login-compartido.md` | En progreso | Protección compartida contra repetición/password spraying, aislada de rutas operativas y sin migración real. |
+| `SPEC-046-limitador-login-compartido.md` | Completada | Concurrencia PostgreSQL validada: 8 permitidos, 24 bloqueados y limpieza final en cero. |
 | `SPEC-047-migracion-esquema-autenticacion-dev.md` | Completada | Esquema de autenticación aplicado y verificado vacío en `webscraper_dev`; revisión `044_login_throttle`. |
+| `SPEC-048-bootstrap-administrador-dev.md` | En progreso | Bootstrap controlado y reversible del primer administrador; implementación local sin usuario real. |

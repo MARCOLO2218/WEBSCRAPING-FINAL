@@ -1,6 +1,6 @@
 # SPEC-046 — límite compartido de intentos de login
 
-Estado: En progreso — diseño e implementación aislados en DEV
+Estado: Completada y validada en PostgreSQL DEV
 Fecha: 2026-09-24
 Depende de SPEC-045. No depende de aplicar la revisión 043 en la base existente.
 
@@ -95,5 +95,17 @@ en `backend/catalog_api/db/auth_throttle_probe.py`. Sólo acepta esa copia, el r
 `webscraper_user`, revisión 044, huella regional revisada y las cuatro tablas de
 autenticación vacías. Ejecuta 32 reservas simultáneas con identidad/IP sintéticas,
 espera 8 permitidas y 24 bloqueadas, comprueba ambos contadores en 9 y elimina
-exactamente sus dos hashes bajo una guarda advisory. SPEC-046 permanece en
+exactamente sus dos hashes bajo una guarda advisory. La SPEC se mantuvo en
 progreso hasta recibir el resultado PostgreSQL y confirmar el conteo final cero.
+
+## Resultado PostgreSQL DEV
+
+Ensayo ejecutado el 24 de septiembre de 2026 sobre `webscraper_dev`, revisión
+`044_login_throttle`, con 32 solicitudes concurrentes. Resultado: 8 permitidas,
+24 bloqueadas y dos contadores en 9, conforme al contrato. Las cuatro tablas de
+autenticación iniciaron vacías; los dos contadores sintéticos fueron eliminados
+y `login_intentos` terminó nuevamente con cero filas. Duración: 0.359 segundos;
+código de salida 0. No se crearon usuarios, asignaciones ni sesiones.
+
+La serialización PostgreSQL pendiente queda confirmada. La clave HMAC operativa,
+el mantenimiento programado y el montaje del router siguen fuera de esta SPEC.
