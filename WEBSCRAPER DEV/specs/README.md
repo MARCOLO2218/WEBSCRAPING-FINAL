@@ -70,6 +70,6 @@ Este directorio conserva las especificaciones funcionales y tecnicas del product
 | `SPEC-047-migracion-esquema-autenticacion-dev.md` | Completada | Esquema de autenticación aplicado y verificado vacío en `webscraper_dev`; revisión `044_login_throttle`. |
 | `SPEC-048-bootstrap-administrador-dev.md` | Completada | Primer administrador global creado y verificado en `webscraper_dev`; login aún sin montar. |
 | `SPEC-049-el-gallo-nicaragua.md` | Piloto DEV; conciliación pendiente | 40 únicos/preciados; cada búsqueda entrega 40 tarjetas frente a 43 y 42 declaradas. |
-| `SPEC-050-siman-nicaragua.md` | Piloto DEV; revisión pendiente | 38 únicos/preciados desde 126 tarjetas brutas; hace falta detallar filtros y duplicados. |
+| `SPEC-050-siman-nicaragua.md` | Piloto DEV; revisión pendiente | Último resultado: 37 únicos/preciados; 54 precios no interpretables y 9 duplicados entre 126 tarjetas. |
 | `SPEC-051-walmart-nicaragua.md` | Piloto DEV; revisión pendiente | 114 únicos, 102 con precio; revisar 12 sin precio y clasificación por categoría. |
 | `SPEC-052-maxipali-nicaragua.md` | Piloto DEV | Seis fichas útiles, cero precios publicados; confirmado nuevamente en modo de solo lectura. |

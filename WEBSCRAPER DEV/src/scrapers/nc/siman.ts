@@ -83,6 +83,7 @@ export type SimanNcPageStats = {
   irrelevant: number;
   invalidUrl: number;
   invalidPrice: number;
+  invalidPriceSamples: Array<{ name: string; regular: string; sale: string }>;
   duplicates: number;
   accepted: number;
 };
@@ -118,6 +119,7 @@ export function createSimanNicaraguaScraper(dependencies: SimanNcScraperDependen
           irrelevant: 0,
           invalidUrl: 0,
           invalidPrice: 0,
+          invalidPriceSamples: [],
           duplicates: 0,
           accepted: 0,
         };
@@ -136,6 +138,13 @@ export function createSimanNicaraguaScraper(dependencies: SimanNcScraperDependen
           const prices = [row.regular_price, row.sale_price].filter(Boolean);
           if (prices.some((price) => parseSimanNcPrice(price) === null)) {
             stats.invalidPrice += 1;
+            if (stats.invalidPriceSamples.length < 2) {
+              stats.invalidPriceSamples.push({
+                name: row.product_name.slice(0, 120),
+                regular: row.regular_price.slice(0, 100),
+                sale: row.sale_price.slice(0, 100),
+              });
+            }
             continue;
           }
           if (rows.has(productUrl)) stats.duplicates += 1;

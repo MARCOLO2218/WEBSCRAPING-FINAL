@@ -90,5 +90,9 @@ test('diagnostica exclusiones irrelevantes, URL no válida y precio ilegible', a
   const page = { mouse: { wheel: async () => undefined }, waitForTimeout: async () => undefined } as any;
   const rows = await createSimanNicaraguaScraper(dependencies)(page, '2026-09-25T12:00:00.000Z');
   assert.deepEqual(rows, []);
-  assert.deepEqual(stats[0], { extracted: 3, irrelevant: 1, invalidUrl: 1, invalidPrice: 1, duplicates: 0, accepted: 0 });
+  assert.deepEqual(stats[0], {
+    extracted: 3, irrelevant: 1, invalidUrl: 1, invalidPrice: 1,
+    invalidPriceSamples: [{ name: 'Colchón precio ilegible', regular: 'Consultar precio', sale: '' }],
+    duplicates: 0, accepted: 0,
+  });
 });
