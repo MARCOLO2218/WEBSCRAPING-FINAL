@@ -68,4 +68,8 @@ Este directorio conserva las especificaciones funcionales y tecnicas del product
 | `SPEC-045-sesiones-y-login-api.md` | Completada (preparación aislada) | Servicio Argon2id, sesiones revocables y revisión 043 probados en SQLite; router sin montar ni migrar. |
 | `SPEC-046-limitador-login-compartido.md` | Completada | Concurrencia PostgreSQL validada: 8 permitidos, 24 bloqueados y limpieza final en cero. |
 | `SPEC-047-migracion-esquema-autenticacion-dev.md` | Completada | Esquema de autenticación aplicado y verificado vacío en `webscraper_dev`; revisión `044_login_throttle`. |
-| `SPEC-048-bootstrap-administrador-dev.md` | En progreso | Bootstrap controlado y reversible del primer administrador; implementación local sin usuario real. |
+| `SPEC-048-bootstrap-administrador-dev.md` | Completada | Primer administrador global creado y verificado en `webscraper_dev`; login aún sin montar. |
+| `SPEC-049-el-gallo-nicaragua.md` | Implementación preparada | Extractor paginado de camas y colchones listo; piloto Ubuntu pendiente. |
+| `SPEC-050-siman-nicaragua.md` | Implementación preparada | Extractor visual con límites 5/2 y deduplicación listo; piloto Ubuntu pendiente. |
+| `SPEC-051-walmart-nicaragua.md` | Implementación preparada | Extractor VTEX API con filtros y moneda NIO listo; piloto Ubuntu pendiente. |
+| `SPEC-052-maxipali-nicaragua.md` | Implementación preparada | Seis fichas confirmadas, exclusiones y ausencia de precio controladas; piloto Ubuntu pendiente. |

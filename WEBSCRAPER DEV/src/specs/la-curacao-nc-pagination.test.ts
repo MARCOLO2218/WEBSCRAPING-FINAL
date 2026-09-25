@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { collectCuracaoNcPages } from '../scrapers/nc/pagination.js';
+import { collectCuracaoNcPages } from '../scrapers/nc/la-curacao.js';
 
 const first = 'https://www.lacuracaonline.com/nicaragua/c/muebles/camas-y-colchones/camas';
 
@@ -72,4 +72,52 @@ test('paginación NC no considera éxito una página vacía ni un fallo de lectu
   assert.equal(readError.reason, 'read_error');
   assert.equal(readError.failedUrl, failedUrl);
   assert.deepEqual(readError.items.map((item) => item.productId), ['sku-1']);
+});
+
+test('paginación NC exige total estable y cantidad de identidades igual al total anunciado', async () => {
+  const result = await collectCuracaoNcPages(first, async url => ({
+    items: [{ productId: url === first ? 'sku-1' : 'sku-2' }],
+    nextUrl: url === first ? `${first}?p=2` : null,
+    complete: true, declaredTotal: 2,
+  }), 3);
+  assert.equal(result.complete, true);
+
+  const repeated = await collectCuracaoNcPages(first, async url => ({
+    items: [{ productId: 'sku-1' }], nextUrl: url === first ? `${first}?p=2` : null,
+    complete: true, declaredTotal: 2,
+  }), 3);
+  assert.equal(repeated.complete, false);
+  assert.equal(repeated.reason, 'count_mismatch');
+
+  const changed = await collectCuracaoNcPages(first, async url => ({
+    items: [{ productId: url }], nextUrl: `${first}?p=2`,
+    complete: true, declaredTotal: url === first ? 2 : 3,
+  }), 3);
+  assert.equal(changed.reason, 'total_changed');
+  assert.equal(changed.complete, false);
+
+  const missing = await collectCuracaoNcPages(first, async url => ({
+    items: [{ productId: url }], nextUrl: url === first ? `${first}?p=2` : null,
+    complete: true, declaredTotal: url === first ? 2 : null,
+  }), 3);
+  assert.equal(missing.reason, 'count_mismatch');
+});
+
+test('Camas no declara cobertura completa cuando las capturas suman 53 de 54 SKU', async () => {
+  const counts = new Map([[first, 24], [`${first}?p=2`, 23], [`${first}?p=3`, 6]]);
+  const result = await collectCuracaoNcPages(first, async (url) => {
+    const pageNumber = Number(new URL(url).searchParams.get('p') ?? 1);
+    const count = counts.get(url) ?? 0;
+    return {
+      items: Array.from({ length: count }, (_, index) => ({ productId: `page-${pageNumber}-sku-${index}` })),
+      nextUrl: pageNumber < 3 ? `${first}?p=${pageNumber + 1}` : null,
+      complete: true,
+      declaredTotal: 54,
+    };
+  }, 3);
+
+  assert.equal(result.items.length, 53);
+  assert.equal(result.duplicateProducts, 0);
+  assert.equal(result.complete, false);
+  assert.equal(result.reason, 'count_mismatch');
 });

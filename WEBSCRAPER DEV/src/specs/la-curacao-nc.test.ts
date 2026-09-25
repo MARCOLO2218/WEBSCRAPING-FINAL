@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LA_CURACAO_NC, compareCuracaoNcCoverage, compareCuracaoNcCategory, isNicaraguaCuracaoUrl,
   parseCuracaoNcPrice, type SourceCoverage } from '../scrapers/nc/la-curacao.js';
-import { createCuracaoNcProduct } from '../scrapers/nc/product.js';
+import { createCuracaoNcProduct } from '../scrapers/nc/la-curacao.js';
 
 function coverage(): SourceCoverage[] {
   return [
@@ -99,6 +99,28 @@ test('cobertura deduplica productos presentes en varias categorías', () => {
     { productId: 'a', sources: ['principal', 'individuales'] },
     { productId: 'b', sources: ['principal', 'queen', 'king'] },
   ]);
+});
+
+test('cobertura enlaza SKU publicado y URL fallback por URL canónica compartida', () => {
+  const url = 'https://www.lacuracaonline.com/nicaragua/cama-prueba-123/p';
+  const rows: SourceCoverage[] = [
+    { source: 'principal', productIds: ['123'], products: [{ productId: '123', productUrl: url }], complete: true },
+    { source: 'individuales', productIds: [url], products: [{ productId: url, productUrl: url }], complete: true },
+    { source: 'queen', productIds: [], complete: true },
+    { source: 'king', productIds: [], complete: true },
+    { source: 'matrimoniales', productIds: [], complete: true },
+  ];
+  const result = compareCuracaoNcCoverage(rows);
+  assert.equal(result.equivalent, true);
+  assert.deepEqual(result.shared, [url]);
+  assert.equal(result.uniqueTotal, 1);
+  assert.equal(compareCuracaoNcCategory({
+    productIds: ['123'], products: [{ productId: '123', productUrl: url }], complete: true,
+  }, rows).equivalent, true);
+  assert.throws(() => compareCuracaoNcCoverage(rows.map((row, index) => index === 0
+    ? { ...row, products: [{ productId: 'wrong-sku', productUrl: url }] } : row)), /no coincide/);
+  assert.throws(() => compareCuracaoNcCoverage(rows.map((row, index) => index === 0
+    ? { ...row, products: [{ productId: '123', productUrl: 'https://example.com/item/p' }] } : row)), /ajena/);
 });
 
 test('cobertura reporta exclusivos de principal y tamaños', () => {

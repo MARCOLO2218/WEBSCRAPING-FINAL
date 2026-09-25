@@ -231,11 +231,14 @@ async function extractCardProducts(
     };
     const buildRow = (root: Element, title: string, anchor: HTMLAnchorElement | null, image: HTMLImageElement | null): CsvProduct => {
       const rootText = clean(root.textContent);
+      const currencyRegex = config.currencyCode === 'NIO'
+        ? /C\$\s*[\d,]+(?:\.\d+)?(?:\s*-\s*C\$?\s*[\d,]+(?:\.\d+)?)?/i
+        : /(?:Q|GTQ)\s*[\d,]+(?:\.\d+)?(?:\s*-\s*(?:Q|GTQ)?\s*[\d,]+(?:\.\d+)?)?/i;
       const category = productCategory(title, firstText(root, config.categorySelector));
       const regularPrice = firstText(root, config.regularPriceSelector);
       const salePrice = firstText(root, config.salePriceSelector)
         || firstText(root, config.priceSelector)
-        || clean(rootText.match(/(?:Q|GTQ)\s*[\d,]+(?:\.\d+)?(?:\s*-\s*(?:Q|GTQ)?\s*[\d,]+(?:\.\d+)?)?/i)?.[0]);
+        || clean(rootText.match(currencyRegex)?.[0]);
       const discount = firstText(root, config.discountSelector);
       const installment = firstText(root, config.installmentSelector);
       const line = firstText(root, config.lineSelector);

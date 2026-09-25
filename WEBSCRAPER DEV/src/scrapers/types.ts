@@ -22,4 +22,5 @@ export type ProductSelectorConfig = {
   priceSelector?: string;
   discountSelector?: string;
   installmentSelector?: string;
+  currencyCode?: 'GTQ' | 'NIO';
 };

@@ -8,7 +8,10 @@
     "catalog": "node node_modules/typescript/bin/tsc && node dist/catalog-server.js",
     "build": "tsc",
     "scrape": "npm run build && node dist/scrape-facenco-energy.js",
-    "test": "npm run build && node --test dist/specs/*.test.js"
+    "test": "npm run build && node --test dist/specs/*.test.js",
+    "test:curacao-dom": "npm run build && node --test dist/specs/browser/la-curacao-nc-*.test.js",
+    "pilot:curacao-nc": "npm run build && node scripts/curacao-nc-pilot-preview.mjs",
+    "pilot:nicaragua": "npm run build && node scripts/nicaragua-stores-pilot.mjs"
   },
   "dependencies": {
     "@types/pg": "^8.20.0",
