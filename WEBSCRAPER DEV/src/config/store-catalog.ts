@@ -9,7 +9,7 @@ export type StoreDefinition = {
 };
 
 // Fuente unica para las tiendas disponibles en la API y en el ejecutor.
-// Al regionalizar, se agregaran nuevos CountryCode y tiendas en este catalogo.
+// Las tiendas de países aún no operativos se registran deshabilitadas.
 export const STORE_CATALOG: readonly StoreDefinition[] = [
   { id: 'facenco', name: 'FACENCO', countryCode: 'GT', enabled: true },
   { id: 'camas-olympia-gt', name: 'Camas Olympia Online GT', countryCode: 'GT', enabled: true },
@@ -30,6 +30,11 @@ export const STORE_CATALOG: readonly StoreDefinition[] = [
   { id: 'dormilandia-gt', name: 'Dormilandia Guatemala', countryCode: 'GT', enabled: true },
   { id: 'dormisuenos-gt', name: 'Dormisuenos Guatemala', countryCode: 'GT', enabled: true },
   { id: 'bodegangas-gt', name: 'Bodegangas Guatemala', countryCode: 'GT', enabled: true },
+  { id: 'la-curacao-nc', name: 'La Curacao Nicaragua', countryCode: 'NC', enabled: false },
+  { id: 'el-gallo-nc', name: 'El Gallo mas Gallo Nicaragua', countryCode: 'NC', enabled: false },
+  { id: 'siman-nc', name: 'Siman Nicaragua', countryCode: 'NC', enabled: false },
+  { id: 'walmart-nc', name: 'Walmart Nicaragua', countryCode: 'NC', enabled: false },
+  { id: 'maxipali-nc', name: 'Maxi Pali Nicaragua', countryCode: 'NC', enabled: false },
 ] as const;
 
 export const ENABLED_STORE_NAMES = STORE_CATALOG

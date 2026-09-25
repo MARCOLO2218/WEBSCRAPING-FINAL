@@ -9,8 +9,9 @@ test('los cuatro países conservan su moneda y solo Guatemala está operativa', 
   assert.deepEqual(COUNTRY_CATALOG.filter(c => c.operational).map(c => c.code), ['GT']);
   assert.ok(Object.isFrozen(COUNTRY_CATALOG));
   assert.ok(COUNTRY_CATALOG.every(Object.isFrozen));
-  assert.equal(STORE_CATALOG.length, 19);
-  assert.ok(STORE_CATALOG.every(s => s.countryCode === 'GT' && getCountry(s.countryCode)?.operational));
+  assert.equal(STORE_CATALOG.filter(s => s.countryCode === 'GT' && s.enabled).length, 19);
+  assert.ok(STORE_CATALOG.filter(s => s.enabled).every(s => getCountry(s.countryCode)?.operational));
+  assert.ok(STORE_CATALOG.filter(s => s.countryCode === 'NC').every(s => !s.enabled && !getCountry(s.countryCode)?.operational));
 });
 
 test('valida todos los pares y rechaza cada combinación cruzada', () => {

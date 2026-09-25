@@ -1,6 +1,6 @@
 # SPEC-051 - Walmart Nicaragua
 
-Estado: Piloto Ubuntu DEV repetido; 114 productos únicos (19 camas/colchones y 95 accesorios), 102 con precio. Pendiente inspeccionar los datos de oferta de 12 productos.
+Estado: Piloto Ubuntu DEV y diagnóstico de ofertas validados; 114 productos únicos (19 camas/colchones y 95 accesorios), 102 con precio. Falta certificar cobertura total frente a las vistas de referencia.
 
 ## Objetivo
 
@@ -22,17 +22,16 @@ Incorporar camas, colchones y accesorios de descanso de Walmart Nicaragua al cat
 - Conservar disponibilidad, precio regular, precio de oferta, descuento, marca, imagen y URL fuente.
 - Mantener la tienda fuera del ejecutor principal hasta completar el piloto en Ubuntu DEV.
 
-## Evidencia pendiente
+## Evidencia y cobertura pendiente
 
 - Revisar el total único de 114 frente a las tres vistas observadas; el extractor excluye mascotas y categorías ajenas.
-- Revisar los 12 productos listados sin precio, que pueden estar agotados o sin oferta pública.
 - El piloto Ubuntu DEV del 2026-09-25 mantuvo 114 productos únicos y 102 con precio en modo de solo lectura (`databaseWrites: false`).
-- El diagnóstico de ese piloto clasificó 19 como camas/colchones y 95 como accesorios; los 12 sin precio aparecieron como “Listado en tienda online”, estado que no confirma disponibilidad.
-- El siguiente piloto incluirá valores de oferta/vendedor de la API para los productos sin precio, sin escribirlos ni inferir inventario.
+- El diagnóstico de ese piloto clasificó 19 como camas/colchones y 95 como accesorios. En los 12 sin precio, la API devolvió oferta del vendedor Walmart con `Price=0`, `ListPrice=0`, `AvailableQuantity=0` e `IsAvailable=false`.
+- Esos doce productos se conservan con precio vacío: no se inventa precio ni disponibilidad a partir de una ficha listada en búsqueda.
 
 ## Implementación
 
 - El extractor consulta la API pública por rangos cerrados de hasta 50 productos.
 - Descarta coincidencias ajenas a descanso, valida URLs `/p`, normaliza NIO y deduplica entre búsquedas.
 - No está registrado todavía en el ejecutor principal.
-- El piloto fue de solo lectura y devolvió 114 productos únicos, con 102 precios; la ejecución del 2026-09-25 confirmó el mismo conteo.
+- El piloto fue de solo lectura y devolvió 114 productos únicos, con 102 precios; la ejecución del 2026-09-25 confirmó el mismo conteo y diagnosticó los doce restantes como ofertas no disponibles. Esto valida extracción y precios disponibles, pero no certifica igualdad con todos los totales de referencia.
