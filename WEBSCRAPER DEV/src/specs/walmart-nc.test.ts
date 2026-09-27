@@ -8,6 +8,7 @@ import {
   isWalmartNcUrl,
   parseWalmartNcPrice,
   walmartNcApiUrl,
+  walmartNcFacetedApiUrl,
 } from '../scrapers/nc/walmart.js';
 
 test('Walmart NC conserva fuentes y conteos separados sin activar el worker', () => {
@@ -42,6 +43,16 @@ test('API Walmart NC pagina con rangos cerrados y acotados', () => {
   assert.throws(() => walmartNcApiUrl('', 0), /inválido/);
   assert.throws(() => walmartNcApiUrl('cama', -1), /inválido/);
   assert.throws(() => walmartNcApiUrl('cama', 0, 51), /inválido/);
+});
+
+test('API Walmart NC conserva filtros de categoría y marca al paginar', () => {
+  assert.equal(walmartNcFacetedApiUrl('14/115/563', 226, 0),
+    'https://www.walmart.com.ni/api/catalog_system/pub/products/search?_from=0&_to=49&fq=C%3A14%2F115%2F563&fq=B%3A226');
+  assert.equal(walmartNcFacetedApiUrl('14/115/566', 7602, 50, 21, 'cama'),
+    'https://www.walmart.com.ni/api/catalog_system/pub/products/search?_from=50&_to=70&fq=C%3A14%2F115%2F566&fq=B%3A7602&ft=cama');
+  assert.throws(() => walmartNcFacetedApiUrl('14/abc/563', 226, 0), /inválido/);
+  assert.throws(() => walmartNcFacetedApiUrl('14/115/563', 0, 0), /inválido/);
+  assert.throws(() => walmartNcFacetedApiUrl('14/115/563', 226, 0, 51), /inválido/);
 });
 
 test('extractor API filtra falsos positivos, pagina y deduplica', async () => {
@@ -98,4 +109,33 @@ test('diagnostica ofertas API ausentes de productos Walmart sin precio', async (
     offers: [{ seller: 'Walmart', price: 0, listPrice: 0, availableQuantity: 0,
       isAvailable: false, fields: ['Price', 'ListPrice', 'AvailableQuantity', 'IsAvailable', 'SellerStockKeepingUnitId'] }],
   }]);
+});
+
+test('excluye coincidencias accidentales por texto dentro de la categoría de colchones', async () => {
+  const payload = [{ productName: 'Set Olympia Easy Firm Imperial', brand: 'Olympia',
+    link: 'https://www.walmart.com.ni/set-olympia-easy-firm-imperial-8/p',
+    categories: ['/Artículos para el hogar/Colchones y Blancos/Colchones/'], items: [],
+  }];
+  const page = {
+    goto: async () => ({ ok: () => true }),
+    locator: () => ({ innerText: async () => JSON.stringify(payload) }),
+  } as any;
+  const rows = await createWalmartNicaraguaScraper({ pageSize: 1, maxProductsPerSearch: 1,
+    searchTerms: ['cama'] })(page, '2026-09-25T12:00:00.000Z');
+  assert.equal(rows.length, 0);
+});
+
+test('clasifica accesorios por su subcategoría seleccionada', async () => {
+  const payload = [{ productName: 'Juego de textiles Hotel Style', brand: 'Hotel Style',
+    link: 'https://www.walmart.com.ni/juego-textiles-hotel-style/p',
+    categories: ['/Artículos para el hogar/Colchones y Blancos/Protectores y Sábanas/'], items: [],
+  }];
+  const page = {
+    goto: async () => ({ ok: () => true }),
+    locator: () => ({ innerText: async () => JSON.stringify(payload) }),
+  } as any;
+  const rows = await createWalmartNicaraguaScraper({ pageSize: 1, maxProductsPerSearch: 1,
+    searchTerms: ['sabana'] })(page, '2026-09-25T12:00:00.000Z');
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].category, 'Accesorios de cama');
 });

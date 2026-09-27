@@ -15,6 +15,16 @@ export const WALMART_NC = {
     colchonesFiltrados: `https://${host}/camas?_q=camas&fuzzy=0&initialMap=accesscontrollist,ft&initialQuery=walmartniwm774/camas&map=category-1,category-2,category-3,brand,brand,brand,brand,brand,brand,brand,brand,brand,ft&operator=and&query=/articulos-para-el-hogar/colchones-y-blancos/colchones/american-dream/disney-minnie/hotel-style/king-koil/mainstays/mainstays-kids/masterbed/olympia/we-bare-bears/camas&searchState`,
     colchonesAmpliados: `https://${host}/camas?_q=camas&fuzzy=0&initialMap=accesscontrollist,ft&initialQuery=walmartniwm774/camas&map=category-1,category-3,brand,brand,brand,ft&operator=and&query=/articulos-para-el-hogar/colchones/king-koil/masterbed/olympia/camas&searchState`,
   },
+  apiSources: [
+    {
+      source: 'colchonesAmpliados', category: 'Camas y colchones', categoryPath: '14/115/566',
+      fullTexts: ['cama', 'colchon'], brandIds: [7602, 48425, 54327],
+    },
+    {
+      source: 'accesorios', category: 'Accesorios de cama', categoryPath: '14/115/563',
+      brandIds: [226, 48135, 54231, 3921, 51049, 54514],
+    },
+  ],
   controlProductUrl: `https://${host}/mb-cama-tamano-imperial-orthopremier-2p/p`,
 } as const;
 
@@ -62,6 +72,28 @@ export function walmartNcApiUrl(term: string, from: number, pageSize = 50): stri
     + `?_from=${from}&_to=${from + pageSize - 1}`;
 }
 
+export function walmartNcFacetedApiUrl(
+  categoryPath: string,
+  brandId: number,
+  from: number,
+  pageSize = 50,
+  fullText?: string,
+): string {
+  if (!/^\d+(?:\/\d+)*$/.test(categoryPath) || !Number.isSafeInteger(brandId) || brandId < 1
+    || !Number.isSafeInteger(from) || from < 0
+    || !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 50) {
+    throw new Error('Filtro de categoría/marca Walmart Nicaragua inválido.');
+  }
+  const query = new URLSearchParams({
+    _from: String(from),
+    _to: String(from + pageSize - 1),
+  });
+  query.append('fq', `C:${categoryPath}`);
+  query.append('fq', `B:${brandId}`);
+  if (fullText?.trim()) query.set('ft', fullText.trim());
+  return `https://${host}/api/catalog_system/pub/products/search?${query.toString()}`;
+}
+
 export type WalmartNcScraperOptions = {
   pageSize?: number;
   maxProductsPerSearch?: number;
@@ -101,6 +133,7 @@ function walmartNcCategory(name: string, categories: unknown): string | null {
     ? normalizeProductText(categories.map((value) => String(value)).join(' '))
     : '';
   if (categoryText && !/colchones y blancos|\/colchones\/|protectores y sabanas/.test(categoryText)) return null;
+  if (/\/protectores y sabanas\//.test(categoryText)) return 'Accesorios de cama';
   if (/sabana|funda|protector|cubrecama|almohada/.test(normalized)) return 'Accesorios de cama';
   if (/colchon|cama|box|base/.test(normalized)) return 'Camas y colchones';
   return null;
@@ -109,7 +142,7 @@ function walmartNcCategory(name: string, categories: unknown): string | null {
 export function createWalmartNicaraguaScraper(options: WalmartNcScraperOptions = {}) {
   const pageSize = options.pageSize ?? 50;
   const maxProductsPerSearch = options.maxProductsPerSearch ?? 300;
-  const searchTerms = options.searchTerms ?? ['cama', 'colchon', 'protector cama', 'sabana'];
+  const searchTerms = options.searchTerms;
   if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 50
     || !Number.isSafeInteger(maxProductsPerSearch) || maxProductsPerSearch < pageSize) {
     throw new Error('Límites de Walmart Nicaragua inválidos.');
@@ -118,9 +151,32 @@ export function createWalmartNicaraguaScraper(options: WalmartNcScraperOptions =
   return async function scrapeWalmartNc(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
     const rows = new Map<string, CsvProduct>();
     const offersByUrl = new Map<string, WalmartNcUnpricedDiagnostic['offers']>();
-    for (const term of searchTerms) {
+    const searches = searchTerms
+      ? searchTerms.map((term) => ({
+        term,
+        sourceUrl: WALMART_NC.sources.colchonesAmpliados,
+        category: null as string | null,
+        categoryPath: null as string | null,
+        brandIds: [] as readonly number[],
+        fullText: null as string | null,
+      }))
+      : WALMART_NC.apiSources.flatMap((source) => source.brandIds.flatMap((brandId) => (
+        ('fullTexts' in source ? source.fullTexts : [undefined]).map((fullText) => ({
+          term: source.category,
+          sourceUrl: WALMART_NC.sources[source.source],
+          category: source.category,
+          categoryPath: source.categoryPath,
+          brandIds: [brandId],
+          fullText: fullText || null,
+        }))
+      )));
+
+    for (const search of searches) {
       for (let from = 0; from < maxProductsPerSearch; from += pageSize) {
-        const response = await page.goto(walmartNcApiUrl(term, from, pageSize), {
+        const apiUrl = search.categoryPath
+          ? walmartNcFacetedApiUrl(search.categoryPath, search.brandIds[0], from, pageSize, search.fullText || undefined)
+          : walmartNcApiUrl(search.term, from, pageSize);
+        const response = await page.goto(apiUrl, {
           waitUntil: 'domcontentloaded', timeout: 45_000,
         }).catch(() => null);
         if (!response || !response.ok()) break;
@@ -141,7 +197,7 @@ export function createWalmartNicaraguaScraper(options: WalmartNcScraperOptions =
           const offer = seller?.commertialOffer || {};
           const name = cleanProductText(product.productName || product.productTitle || item?.nameComplete || item?.name);
           const category = walmartNcCategory(name, product.categories);
-          if (!name || !category) continue;
+          if (!name || !category || (search.category && category !== search.category)) continue;
           const candidateUrl = product.link
             || (product.linkText ? `https://${host}/${String(product.linkText).replace(/^\/+/, '')}/p` : '');
           let productUrl: string;
@@ -169,7 +225,7 @@ export function createWalmartNicaraguaScraper(options: WalmartNcScraperOptions =
           rows.set(productUrl, {
             source_site: WALMART_NC.name,
             brand: cleanProductText(product.brand || 'Walmart'),
-            line: term,
+            line: search.term,
             category,
             product_name: name,
             availability: Number(offer.AvailableQuantity || 0) > 0 ? 'Disponible' : 'Listado en tienda online',
@@ -178,7 +234,7 @@ export function createWalmartNicaraguaScraper(options: WalmartNcScraperOptions =
             discount: listPrice > price && price > 0 ? `${Math.round((1 - price / listPrice) * 100)}%` : '',
             installment: '',
             product_url: productUrl,
-            source_url: WALMART_NC.sources.colchonesAmpliados,
+            source_url: search.sourceUrl,
             headline: name,
             description: cleanProductText(product.description || product.metaTagDescription),
             warranty: '',

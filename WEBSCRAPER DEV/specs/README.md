@@ -33,7 +33,7 @@ Este directorio conserva las especificaciones funcionales y tecnicas del product
 | `SPEC-010-tiendas-visuales-paginadas-gt.md` | Completada | Dormisuenos y Bodegangas separados con paginacion. |
 | `SPEC-011-tiendas-api-guatemala.md` | Completada | Americana 2000 y Suena Center separados por API. |
 | `SPEC-012-max-guatemala.md` | Completada | Extractor especializado de MAX separado en modulo GT. |
-| `SPEC-013-walmart-guatemala.md` | Completada | Extractor especializado de Walmart separado en modulo GT. |
+| `SPEC-013-walmart-guatemala.md` | Completada | Extractor especializado de Walmart GT; captura segmentada Belezza confirmó 40 resultados en dos páginas. |
 | `SPEC-014-siman-guatemala.md` | Completada | Extractor paginado de Siman separado en modulo GT. |
 | `SPEC-015-tiendas-tarjetas-guatemala.md` | Completada | Sleep Gallery, Serta y Mattress separados por tarjetas. |
 | `SPEC-016-beds-dreams-guatemala.md` | Completada | Extractor Shopify de Beds & Dreams separado en modulo GT. |
@@ -71,6 +71,6 @@ Este directorio conserva las especificaciones funcionales y tecnicas del product
 | `SPEC-048-bootstrap-administrador-dev.md` | Completada | Primer administrador global creado y verificado en `webscraper_dev`; login aún sin montar. |
 | `SPEC-049-el-gallo-nicaragua.md` | Piloto DEV validado | 40 productos observados por consulta, 40 únicos y con precio; conteo coincide con páginas visibles. |
 | `SPEC-050-siman-nicaragua.md` | Piloto DEV validado | 77 productos únicos con precio; 23 repetidos entre búsquedas; sigue fuera del ejecutor principal. |
-| `SPEC-051-walmart-nicaragua.md` | Piloto y diagnóstico validados; cobertura por certificar | 114 únicos (19 camas/colchones, 95 accesorios), 102 con precio; 12 sin oferta activa (`Price=0`, `AvailableQuantity=0`, `IsAvailable=false`). |
+| `SPEC-051-walmart-nicaragua.md` | En progreso; validar versión actual en Ubuntu DEV | Windows DEV: coincidencia exacta de 153 URLs con las fuentes filtradas (19 camas/colchones, 134 accesorios), 141 con precio. Log Ubuntu anterior: 123 pruebas aprobadas, piloto 112/98 precios; Walmart sigue deshabilitado. |
 | `SPEC-052-maxipali-nicaragua.md` | Piloto DEV | Seis fichas útiles, cero precios publicados; confirmado nuevamente en modo de solo lectura. |
 | `SPEC-053-catalogo-tiendas-nicaragua.md` | Completada | Cinco tiendas NC registradas deshabilitadas; suite Ubuntu aprobada (123 pruebas), GT sin cambios. |
