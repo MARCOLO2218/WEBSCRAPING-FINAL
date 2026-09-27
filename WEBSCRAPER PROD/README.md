@@ -21,15 +21,17 @@ El archivo `.xlsx` ya trae la primera fila inmovilizada para que los encabezados
 
 ## Instalacion
 
+Requiere Node.js 22 LTS o superior y Corepack.
+
 ```bash
-npm install --no-audit
-npx playwright install chromium
+corepack pnpm install --frozen-lockfile
+corepack pnpm exec playwright install chromium
 ```
 
 ## Ejecucion
 
 ```bash
-npm start
+corepack pnpm start
 ```
 
 Para abrir el CSV en Excel:

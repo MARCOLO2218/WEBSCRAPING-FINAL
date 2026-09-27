@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@11.25.0",
   "scripts": {
     "start": "node node_modules/typescript/bin/tsc && node dist/scrape-facenco-energy.js",
     "catalog": "node node_modules/typescript/bin/tsc && node dist/catalog-server.js",
     "build": "tsc",
-    "scrape": "npm run build && node dist/scrape-facenco-energy.js"
+    "scrape": "node node_modules/typescript/bin/tsc && node dist/scrape-facenco-energy.js"
   },
   "dependencies": {
     "@types/pg": "^8.20.0",

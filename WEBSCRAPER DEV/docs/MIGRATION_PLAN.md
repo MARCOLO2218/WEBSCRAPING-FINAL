@@ -7,6 +7,14 @@ lockfile se generó desde `package-lock.json`; Windows y Ubuntu DEV usan
 `corepack pnpm install --frozen-lockfile`. La suite Node se ejecuta con
 `pnpm test`. PROD y sus instrucciones npm no forman parte de esta migración.
 
+Actualización SPEC-068: el usuario pidió trasladar pnpm a Guatemala PROD después
+de validar DEV en Ubuntu. La preparación local usará `WEBSCRAPER PROD` como
+fuente independiente y su lockfile propio; no reutiliza el lockfile DEV. Ubuntu
+DEV en `2e3ae00` instaló con Corepack/pnpm 11.25.0, pasó las 127 pruebas
+disponibles en ese commit y compiló. La revisión local Windows cuenta pruebas
+HN adicionales aún no publicadas. El reinicio PM2 quedó online; el despliegue
+de PROD sigue separado y a cargo del usuario.
+
 ## Actualización de continuidad — 2026-09-26
 
 El sprint `Demo DEV Nicaragua y acceso por país` quedó cerrado al 100% después

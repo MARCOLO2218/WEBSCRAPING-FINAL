@@ -201,7 +201,21 @@ DEV utiliza el puerto 3030 y su propia configuracion `.env`.
 
 ## Promocion a PROD
 
-Solo se realiza cuando el usuario lo solicita expresamente despues de validar DEV. Antes de copiar, identificar exactamente los archivos funcionales aprobados. Nunca copiar `.env`, datos locales, logs, `node_modules` ni archivos generados.
+El cambio de gestor SPEC-068 se prepara localmente sobre los archivos de
+`WEBSCRAPER PROD`, y su build no reinicia ni despliega el servicio. El usuario
+realiza la publicación a GitHub y el despliegue productivo sólo después de
+revisar el commit. Nunca copiar `.env`, datos locales, logs, `node_modules` ni
+archivos generados.
+
+En Ubuntu PROD, antes del `git pull`, preservar el cambio local de
+`WEBSCRAPER PROD/package-lock.json` que ya apareció en `git status`:
+
+```bash
+git stash push -m "guardar-lockfile-prod-local-antes-de-pnpm" -- "WEBSCRAPER PROD/package-lock.json"
+```
+
+El stash es sólo respaldo de ese lockfile npm obsoleto para conservar el cambio
+local; no aplicarlo encima de la revisión pnpm. No limpiar otros cambios locales.
 
 Despues de que el usuario suba los archivos aprobados a GitHub, actualizar Ubuntu PROD con:
 
@@ -210,13 +224,21 @@ cd "/home/administradorgt/WEBSCRAPING-FINAL"
 git pull
 
 cd "/home/administradorgt/WEBSCRAPING-FINAL/WEBSCRAPER PROD"
-npm install
-npm run build
+node --version
+corepack pnpm install --frozen-lockfile
+corepack pnpm run build
 pm2 restart webscraper-prod --update-env
 pm2 logs webscraper-prod --lines 80
 ```
 
 PROD utiliza el puerto 3031 y su propia configuracion `.env`.
+
+Si SPEC-068 falla en Ubuntu PROD antes o después del reinicio, no mezclar
+instalaciones npm y pnpm. Revertir el commit SPEC-068 en Windows/GitHub; después
+de que Ubuntu reciba esa reversión, el lockfile npm regresará y se puede
+restaurar el despliegue anterior con `npm ci`, `npm run build` y PM2 restart.
+No ejecutar `npm ci` mientras el commit de pnpm que quitó `package-lock.json`
+siga activo.
 
 ## Reglas que no deben romperse
 

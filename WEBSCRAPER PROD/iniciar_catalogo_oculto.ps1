@@ -55,12 +55,22 @@ try {
   Set-Location $projectDir
 
   if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
-    throw "Node.js no esta instalado. Instala Node.js LTS y vuelve a abrir el catalogo."
+    throw "Node.js no esta instalado. Instala Node.js 22 LTS o superior y vuelve a abrir el catalogo."
   }
 
-  if (-not (Test-Path "node_modules")) {
+  if (-not (Get-Command corepack -ErrorAction SilentlyContinue)) {
+    throw "Corepack no esta disponible. Instala una version de Node.js 22 LTS o superior que incluya Corepack y vuelve a abrir el catalogo."
+  }
+
+  $nodeVersionText = (& node --version).Trim().TrimStart("v")
+  $nodeVersion = [version]$nodeVersionText
+  if ($nodeVersion.Major -lt 22) {
+    throw "pnpm 11 requiere Node.js 22 o superior. Version actual: $nodeVersionText"
+  }
+
+  if (-not (Test-Path "node_modules\.pnpm")) {
     "Instalando dependencias..." | Out-File -FilePath $installLogFile -Encoding UTF8
-    Run-CmdStep "npm install"
+    Run-CmdStep "corepack pnpm install --frozen-lockfile"
   }
 
   "Compilando sistema..." | Out-File -FilePath $installLogFile -Append -Encoding UTF8

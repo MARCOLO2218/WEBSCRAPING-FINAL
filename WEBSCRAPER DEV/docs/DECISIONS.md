@@ -9,6 +9,16 @@
 - PROD no se migra en este cambio y conserva npm hasta una solicitud separada.
 - Los scripts de build/test/start/catalog conservan sus nombres y comandos.
 
+## ADR-018: pnpm fijado para Guatemala PROD con despliegue separado
+
+- Estado: preparación local SPEC-068, no desplegada.
+- PROD usa una resolución pnpm generada desde su propio lockfile npm; no se
+  copia la resolución de DEV.
+- La versión de pnpm es la misma (`11.25.0`) y el lanzador Windows instala con
+  lockfile congelado. PM2 puede seguir invocando `npm run catalog`.
+- El cambio local y su build no autorizan reiniciar PM2, migrar PostgreSQL o
+  tocar `.env`/datos del servidor. El usuario gestiona el despliegue.
+
 ## ADR-016: Límite compartido y fail-closed del login
 
 - Estado: preparación local SPEC-046; sin integración PostgreSQL operativa.

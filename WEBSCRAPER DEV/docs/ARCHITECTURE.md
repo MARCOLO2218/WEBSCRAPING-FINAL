@@ -18,8 +18,14 @@ Navegador -> catalog-server.ts -> PostgreSQL
 SPEC-067 fija pnpm `11.25.0` mediante el campo `packageManager` y
 `pnpm-lock.yaml`. Las instalaciones DEV reproducibles usan
 `corepack pnpm install --frozen-lockfile` en Windows y Ubuntu. Los scripts de
-aplicación conservan sus nombres; PROD permanece sin migrar y mantiene su flujo
-actual con npm hasta que se solicite esa transición por separado.
+aplicación conservan sus nombres. SPEC-067 mantuvo PROD fuera de alcance;
+SPEC-068 prepara su propia migración independiente.
+
+SPEC-068 prepara esa transición de Guatemala PROD de manera independiente:
+PROD mantiene su propio `package.json` y lockfile generado desde su resolución
+anterior, actualiza sus instrucciones y lanzador local y requiere revisión del
+usuario antes de publicar/reiniciar. No se traslada el lockfile de DEV ni se
+modifica la configuración, los datos o PM2 del servidor durante la preparación.
 
 ## Estructura de transicion
 
