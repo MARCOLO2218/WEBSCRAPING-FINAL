@@ -1,5 +1,14 @@
 # Registro de decisiones
 
+## ADR-017: pnpm fijado para DEV
+
+- Estado: aplicado localmente mediante SPEC-067.
+- Fijar pnpm `11.25.0` con `packageManager` en el `package.json` y conservar un
+  único lockfile `pnpm-lock.yaml`.
+- Windows y Ubuntu DEV instalan con `corepack pnpm install --frozen-lockfile`.
+- PROD no se migra en este cambio y conserva npm hasta una solicitud separada.
+- Los scripts de build/test/start/catalog conservan sus nombres y comandos.
+
 ## ADR-016: Límite compartido y fail-closed del login
 
 - Estado: preparación local SPEC-046; sin integración PostgreSQL operativa.
@@ -32,10 +41,11 @@
 
 ## ADR-014: Permisos regionales por petición antes del login operativo
 
-- Estado: implementación local preparatoria en SPEC-044.
+- Estado: política local SPEC-044; lector, ruta y dependencias inyectables en
+  SPEC-057/058/059. Ninguno está montado en `main.py` ni conectado a PostgreSQL.
 - Validar sesión/usuario vigentes, país explícito habilitado, asignación y acción.
-  Sin proveedor de identidad real, el adaptador FastAPI deniega; no hay usuario
-  de desarrollo ni país GT por defecto. Sin datos persistentes en esta entrega.
+  El adaptador FastAPI deniega si no recibe un proveedor; no hay usuario de
+  desarrollo ni país GT por defecto. No hay conexión de producción configurada.
 - Lector: consultar/exportar. Operador: además cargas y scrapers de su país.
   Administrador global gestiona acceso, sin bypass de asignaciones comerciales.
 - Contextos inmutables por petición; el proveedor debe releer permisos actuales,
@@ -47,6 +57,51 @@
   reales, lectores aislados, CSRF y cierre coordinado de accesos heredados.
 - Reutilizar catalogo.paises y los criterios 038/042/043. No crear countries ni
   volver a asignar globalmente GT como planteaba la versión inicial de SPEC-034.
+- SPEC-060 valida localmente la integración AuthRepository-ruta-lector en SQLite,
+  incluida la revocación de sesión y un país deshabilitado con grant. Esta
+  evidencia no habilita el montaje en la app ni sustituye la validación PostgreSQL.
+- SPEC-061 registra que los runners sólo escriben en la copia
+  `webscraper_dev`/`webscraper_user` y que la proyección regional 042 es una
+  fotografía. Mantener esos bloqueos y no exponer el lector hasta autorizar el
+  destino real, ensayar en scratch y resolver sincronización de publicaciones.
+- SPEC-062 establece que toda sincronización futura de proyección y snapshot
+  regional debe confirmar o revertir en la misma transacción Node, y seguir el
+  resultado real del bloqueo legacy. No mantener dos clasificadores distintos;
+  primero resolver identidad global de tienda, ledger incremental verificable y
+  tratamiento de FACENCO. Conservar la huella 042 como fotografía inicial.
+- Revisión 2026-09-26 de SPEC-062: preservar la clave visible `source_site` y
+  su normalización legacy durante la transición. Antes de asociarla a un país,
+  validar que no se use ya con otro país y rechazar la transacción si colisiona;
+  cualquier identidad compuesta requiere migración compatible de snapshots y
+  lectores. El verificador posterior debe auditar baseline 042/043 más deltas
+  append-only, sin reescribir `regional_lotes`.
+- Contrato FACENCO Excel en SPEC-062: complemento regional independiente, no
+  fuente PostgreSQL ni scrape; no crearle `run_id`/fecha de scrape ficticios.
+  Filtrar por país/moneda y usar código acotado por país como identidad cuando
+  exista. Queda pendiente la regla de negocio para `fecha_vigencia` ausente o
+  vencida; por ahora el Excel no reemplaza un snapshot persistido.
+- Implementación local de identidad de merge (2026-09-26): la fusión Node busca
+  primero país+código; la compatibilidad por nombre queda limitada a Guatemala.
+  Esto no agrega columnas a filas leídas ni cambia el contrato HTTP. Cualquier
+  habilitación regional aún necesita lector country-scoped y validación de
+  moneda; la corrección de merge sola no activa regiones.
+- Comparación local Node/Python: acotar referencia FACENCO por país, moneda y
+  nombre normalizado. Así los comparadores no usan un precio de otra jurisdicción.
+  Cubierto por pruebas con productos homónimos GT/NC; no habilita rutas regionales.
+- SPEC-065 (2026-09-27): tras cerrar el sprint de demo, registrar como
+  candidatas inactivas La Curacao/Walmart/Diunsa en HN y La Curacao/Siman/Walmart
+  en SV, con páginas oficiales citadas en la spec. Países siguen no operativos.
+  Las fábricas por país reciben extractores por inyección y filtran cada bandera;
+  no existen implementaciones de extracción/paginación ni import al ejecutor
+  principal. El piloto precede a cualquier habilitación.
+- Primer piloto modular HN (2026-09-27): Walmart tiene cliente VTEX paginado
+  separado y pruebas offline para host, rutas `/p`, moneda HNL, filtros y
+  deduplicación. Referencia API VTEX está documentada. La llamada en vivo al API
+  Walmart HN fue bloqueada en este entorno, por lo que no afirmar cobertura ni
+  integrar al ejecutor. Mantener su flag apagado hasta ejecutar piloto real.
+- SPEC-063/064 establece contrato TS/Python 038-v3. En particular, reconocer
+  `C$` como NIO precede la regla de `$` como USD. Mantener intacta evidencia
+  histórica v2 y regenerar cualquier plan de backfill con v3.
 
 ## ADR-013: Ampliación regional complementaria antes de activar lectores
 

@@ -3,16 +3,19 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@11.25.0",
   "scripts": {
     "start": "node node_modules/typescript/bin/tsc && node dist/scrape-facenco-energy.js",
     "catalog": "node node_modules/typescript/bin/tsc && node dist/catalog-server.js",
     "build": "tsc",
-    "scrape": "npm run build && node dist/scrape-facenco-energy.js",
-    "test": "npm run build && node --test dist/specs/*.test.js",
-    "test:curacao-dom": "npm run build && node --test dist/specs/browser/la-curacao-nc-*.test.js",
-    "pilot:curacao-nc": "npm run build && node scripts/curacao-nc-pilot-preview.mjs",
-    "pilot:nicaragua": "npm run build && node scripts/nicaragua-stores-pilot.mjs",
-    "audit:walmart-nc-filters": "node scripts/walmart-nc-filter-audit.mjs"
+    "scrape": "node node_modules/typescript/bin/tsc && node dist/scrape-facenco-energy.js",
+    "test": "node node_modules/typescript/bin/tsc && node --test dist/specs/*.test.js",
+    "test:curacao-dom": "node node_modules/typescript/bin/tsc && node --test dist/specs/browser/la-curacao-nc-*.test.js",
+    "pilot:curacao-nc": "node node_modules/typescript/bin/tsc && node scripts/curacao-nc-pilot-preview.mjs",
+    "pilot:nicaragua": "node node_modules/typescript/bin/tsc && node scripts/nicaragua-stores-pilot.mjs",
+    "audit:walmart-nc-filters": "node scripts/walmart-nc-filter-audit.mjs",
+    "pilot:walmart-hn": "node node_modules/typescript/bin/tsc && node scripts/walmart-hn-pilot.mjs",
+    "sprint:report": "node node_modules/typescript/bin/tsc && node scripts/sprint-status-report.mjs"
   },
   "dependencies": {
     "@types/pg": "^8.20.0",

@@ -15,6 +15,12 @@ Navegador -> catalog-server.ts -> PostgreSQL
 
 `public/` contiene el frontend estatico. `catalog-server.ts` compone dependencias y arranca el proceso; las rutas, utilidades HTTP, servicio de consulta PostgreSQL y cola local viven bajo `src/server/`. Los extractores de las 19 tiendas GT viven bajo `src/scrapers/gt/`; `scrape-facenco-energy.ts` los coordina y conserva temporalmente filtros y generacion de archivos.
 
+SPEC-067 fija pnpm `11.25.0` mediante el campo `packageManager` y
+`pnpm-lock.yaml`. Las instalaciones DEV reproducibles usan
+`corepack pnpm install --frozen-lockfile` en Windows y Ubuntu. Los scripts de
+aplicación conservan sus nombres; PROD permanece sin migrar y mantiene su flujo
+actual con npm hasta que se solicite esa transición por separado.
+
 ## Estructura de transicion
 
 ```text
@@ -22,7 +28,7 @@ src/
   config/       catalogos de tiendas y reglas de calidad/reintento
   domain/       tipos y normalizacion compartida de productos
   persistence/  configuracion, tablas y escritura PostgreSQL
-  scrapers/     tipos, registros por pais y motores compartidos
+  scrapers/     tipos, registros por país (gt/, hn/, sv/, nc/) y motores compartidos
   server/       utilidades, servicios, cola y rutas del servidor en transicion
   specs/        pruebas ejecutables de comportamiento
   catalog-server.ts
@@ -54,19 +60,106 @@ Guía y frontera de integración: `docs/ACCESO_REGIONAL_DEV.md`.
 
 SPEC-045 añade modelos preparados `catalogo.usuarios`, `usuario_paises` y
 `sesiones_app`, repositorio Argon2id y router HTTPS con cookies de sesión/CSRF.
-Se prueba en SQLite aislado y no se importa desde `main.py`. La revisión 043
-depende de 042, tiene guardas explícitas y no se ha ejecutado. No hay alta web
-ni bootstrap administrativo. Antes de exponer login hacen falta rate-limit
-compartido, HTTPS/orígenes del proxy, auditoría, lectores regionales y cierre de
-rutas heredadas. Guía: `docs/AUTENTICACION_REGIONAL_DEV.md`.
+Se prueba en SQLite aislado y no se importa desde `main.py`. Las revisiones
+043/044 y el bootstrap administrativo controlado están aplicados únicamente en
+`webscraper_dev`; existe un administrador global sin asignaciones ni sesiones.
+Antes de exponer login aún hacen falta montaje controlado, secreto HMAC,
+HTTPS/orígenes del proxy, auditoría, lectores regionales y cierre de rutas
+heredadas. Guía: `docs/AUTENTICACION_REGIONAL_DEV.md`.
 
 SPEC-046 prepara un limitador de login con contadores HMAC por identidad y
 dirección de conexión en una tabla compartida PostgreSQL; el diseño reserva
-cada intento bajo bloqueo antes de Argon2. La revisión aditiva 044 depende de
-043 y no se ha ejecutado. SQLite aislado no valida el bloqueo concurrente real.
-El router exige limitador; si falta o su storage falla, rechaza el login. Usa sólo la IP
-del socket, no confía en `X-Forwarded-For`; la resolución tras proxy y la limpieza
-periódica deben configurarse antes de exponerlo. Sin montaje operativo.
+cada intento bajo bloqueo antes de Argon2. La revisión 044 está aplicada sólo
+en la copia `webscraper_dev` y la concurrencia se validó allí con un probe
+acotado. El router exige limitador; si falta o su storage falla, rechaza el
+login. Usa sólo la IP del socket, no confía en `X-Forwarded-For`; la resolución
+tras proxy y la limpieza periódica deben configurarse antes de exponerlo. Sin
+montaje operativo.
+
+SPEC-057 prepara `RegionalCatalogRepository`, que SELECTea publicaciones
+asignadas por país/run/tienda sin sembrar snapshots. SPEC-058 define una fábrica
+de la ruta country-scoped, y SPEC-059 inyecta un `AuthRepository` y una sesión
+request-scoped a partir de una `sessionmaker` explícita. Ninguno de estos módulos
+se importa desde `main.py`; no crean engines ni cargan `.env`. La app actual
+sigue con su catálogo Node/GT y el login regional no está operativo.
+
+SPEC-060 valida en SQLite temporal la composición del repositorio de auth,
+autorización por país, sesión revocable y lector regional: GT asignado y activo
+lee su publicación; NC deshabilitado y una sesión revocada son rechazados.
+Sigue siendo una prueba aislada y no habilita rutas ni conexiones operativas.
+
+SPEC-061 documenta las compuertas pendientes para integrar la base DEV original.
+Los runners de escritura actuales aceptan sólo `webscraper_dev`/`webscraper_user`;
+no se deben relajar sin una SPEC y aprobación nuevas. La proyección 042 tampoco
+se sincroniza todavía con publicaciones posteriores, así que el lector no es un
+catálogo vigente hasta resolver esa frescura.
+
+SPEC-062 define el contrato de frescura: clasificar los nuevos productos en la
+misma transacción Node y mover la publicación regional sólo cuando avance el
+snapshot legacy por la regla de tres horas/mayor conteo. Todavía no se implementa:
+la clave global `store_key`, el ledger/verificador incremental y las filas
+FACENCO requieren decisiones; el clasificador TS/Python requiere integración y
+prueba PostgreSQL scratch.
+
+Revisión de SPEC-062 (2026-09-26): los registros actuales tienen nombres con
+sufijo de país en la mayoría de tiendas, pero GT conserva claves genéricas como
+`FACENCO` y `Beds & Dreams`; como `source_site` normalizado es la clave global
+del snapshot legacy, la escritura regional deberá rechazar cualquier clave que
+colisione entre países. No renombrar claves automáticamente. El verificador 043
+recalcula una fotografía completa inicial, por lo que la futura revisión debe
+preservar sus hashes y verificar las transacciones posteriores desde un ledger
+append-only por run/publicación. No hay dual-write aún.
+
+FACENCO Excel es complemento de lectura fuera de PostgreSQL: agrega o actualiza
+filas durante la consulta, no tiene run propio y la carga reemplaza el archivo
+completo con respaldo. Para lector regional se filtra explícitamente por país y
+moneda y se conserva como origen separado, sin inventar IDs ni fechas de scrape.
+Falta definir el tratamiento de `fecha_vigencia` ausente o vencida; hasta entonces
+el Excel no sustituye publicaciones ni snapshots regionales persistidos.
+La fusión local Node ahora prioriza país+código y mantiene el fallback por nombre
+únicamente para GT legacy; no expone un lector regional ni activa escrituras.
+Las comparaciones de precios Node/Python usan país, moneda y nombre normalizado,
+para impedir que la referencia FACENCO de una jurisdicción se aplique a otra.
+
+SPEC-065 registra La Curacao, Walmart y Diunsa como candidatas inactivas HN; y
+La Curacao, Siman y Walmart como candidatas inactivas SV. Cada país tiene un
+registro aislado con extractores inyectados y filtros independientes por país y
+tienda. Las páginas oficiales están documentadas en la spec; los extractores y
+la paginación de las demás tiendas siguen pendientes. Ambos países siguen no
+operativos y los registros no se importan desde el ejecutor principal.
+
+Primer extractor de la lista: `src/scrapers/hn/walmart.ts` implementa consulta
+VTEX paginada, precio HNL y normalización/deduplicación por URL. Sus pruebas usan
+fixtures offline. El usuario confirmó que el API responde en vivo. La primera
+consulta por texto mezcló categorías: 21 aceptados frente a 19 anunciados, con
+productos de mascotas y protectores. El extractor ahora consulta la ruta VTEX
+de categoría exacta y requiere esa categoría en cada ficha. El segundo piloto
+devolvió 19/19 productos únicos, 16 con precio y 3 sin precio. Se validó la
+cobertura de la categoría; falta caracterizar las tres ofertas sin precio. El
+módulo permanece fuera del ejecutor global y Walmart HN deshabilitado.
+
+`npm run pilot:walmart-hn` ejecuta ese extractor de forma manual, headless y
+acotada (20 por página; hasta 40 por término por defecto, máximo configurable
+200). Informa respuestas HTTP y cobertura de precios en JSON de consola; no
+escribe archivos ni base de datos y no forma parte de las pruebas ni del
+ejecutor normal.
+
+La Curacao Honduras tiene un contrato aislado en `src/scrapers/hn/la-curacao.ts`
+para URLs `/honduras/`, moneda HNL y precios opcionales. No reutiliza el motor
+visual de GT, que filtra por quetzales. El sitio devolvió 403 al inspeccionarlo
+desde este entorno; no se han definido lector DOM ni paginación y el módulo no
+está conectado al registro operativo.
+
+Diunsa HN tiene un contrato de procedencia en `src/scrapers/hn/diunsa.ts` para
+el dominio oficial, la categoría `/camas` y HNL. La página expone rango de
+precios en lempiras, pero la vista disponible no muestra fichas ni paginación;
+por eso no hay lector implementado y el contrato tampoco se importa en el
+registro HN.
+
+SPEC-063/064 agregaron un clasificador TypeScript puro con el mismo corpus JSON
+que Python y reglas 038-origin-v3. Corrigen la prioridad `C$` (NIO) antes de `$`
+(USD). El módulo sigue aislado del scraper; cualquier plan nuevo debe usar v3.
+Validación local: 156 Node y 293 Python aprobadas; no se conectó PostgreSQL.
 
 ```text
 Frontend -> FastAPI -> PostgreSQL

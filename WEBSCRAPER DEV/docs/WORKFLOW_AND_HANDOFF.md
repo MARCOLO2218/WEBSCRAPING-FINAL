@@ -1,12 +1,66 @@
 # Continuidad y flujo de trabajo
 
+Actualización 2026-09-26: el sprint de demo de Nicaragua y acceso por país se
+cerró al 100% por confirmación del usuario. SPEC-054 está validada en Ubuntu DEV
+(127/127 pruebas) y Nicaragua sigue apagada. SPEC-056 fue aprobada visualmente
+por el usuario. Los incrementos locales SPEC-057/058/059 preparan lector, ruta y
+dependencias regionales inyectables. Ninguno está montado ni conectado a
+PostgreSQL. No ejecutar migraciones ni modificar PROD.
+
+Actualización SPEC-060: dos pruebas de integración local conectan el
+`AuthRepository` real con la ruta y el lector regional usando SQLite temporal.
+La suite quedó en 292 pruebas Python aprobadas, una PostgreSQL optativa omitida
+y 134 pruebas Node aprobadas. No es validación Ubuntu/PostgreSQL ni activa
+rutas en `main.py`.
+
+SPEC-061 dejó documentado el plan para la base DEV original. Los runners de
+migración/bootstrap sólo permiten `webscraper_dev`/`webscraper_user`, y el
+backfill 042 no recibe nuevas publicaciones automáticamente. No intentar otra
+base ni montar el lector hasta tener autorización y resolver frescura regional.
+
+SPEC-062 trazó el escritor Node: run, productos y snapshot legacy se confirman
+juntos; la publicación sólo cambia tras vencer tres horas o superar el conteo.
+El diseño regional debe seguir ese resultado dentro de la transacción. No se
+implementó dual-write; falta resolver PK global `store_key`, ledger/verificador
+incremental y el contrato de filas del complemento FACENCO. SPEC-063/064 crean un clasificador TS/Python con
+corpus compartido y regla 038-origin-v3; `C$` se clasifica como NIO. No se conecta
+al escritor ni habilita Nicaragua. Suites completas: 156 Node aprobadas; 293
+Python aprobadas, una PostgreSQL opcional omitida y dos avisos de deprecación.
+
+Revisión estática de identidad regional (2026-09-26): la clave legacy es el
+nombre de `source_site`; varios nombres GT no incluyen país, aunque los NC sí.
+Mantener los nombres actuales y fallar cerrado ante una asociación de la misma
+clave con países distintos. `verify_projection()` de la revisión 043 describe
+el backfill inicial y no valida por sí solo escrituras futuras. SPEC-062 ahora
+requiere un ledger append-only que compruebe el baseline más cada run confirmado,
+sin cambiar la huella original. FACENCO Excel se definió como complemento
+independiente fuera de PostgreSQL, filtrado por país/moneda y sin runs simulados;
+queda decidir cómo ocultar/marcar precios con `fecha_vigencia` ausente o vencida.
+Implementación local acotada: Node fusiona Excel/PostgreSQL por país+código y
+permite fallback por nombre sólo para Guatemala; hay dos pruebas de homónimos y
+códigos repetidos entre países. Comparaciones Node/Python acotadas por país y
+moneda con pruebas de nombres homónimos GT/NC. API sigue GT-only. Validación:
+162 Node y 295 Python aprobadas, una PostgreSQL opcional omitida y dos avisos de
+deprecación; sin conexión a PostgreSQL.
+
+SPEC-065 registra seis tiendas candidatas HN/SV, todas deshabilitadas. Walmart
+HN tiene primer extractor VTEX paginado, validado offline con fixtures y
+aislamiento de host/HNL/deduplicación. La API real fue bloqueada por el navegador
+del entorno; piloto de cobertura pendiente. El extractor no se importa al
+ejecutor global. `npm test`: 167 aprobadas.
+
 Estado vigente: SPEC-042/043 completadas en copia PostgreSQL y revertidas a
 `037_countries`. Revisar `docs/SPEC-042-043_CIERRE_COPIA.md`.
 
-Flujo pendiente: revisión selectiva del diff, confirmación del usuario y luego
-publicación Windows→Git. No hay permiso de commit/push en esta fase ni de aplicar
-migraciones a la base DEV original o PROD. La próxima migración será una etapa
-separada con un plan y respaldo propios.
+Flujo confirmado: Windows→GitHub→Ubuntu DEV. El código SPEC-042/043 se publicó
+en `d89b97b`; la preparación NC de SPEC-039 en `ea417ed`. El usuario confirmó el
+pull Ubuntu a `ea417ed`, 86 pruebas Node y 137 Python aprobadas, con dos avisos de
+deprecación. No se aplicaron migraciones ni se solicitó reinicio PM2.
+
+Sigue pendiente autorizar una migración de la base DEV original, con plan y
+respaldo propios. La publicación del código no habilita NC ni introduce login
+o pantallas nuevas. El usuario conserva el flujo de comandos Git y Ubuntu;
+la autorización anterior de push no implica nuevos commits/push automáticos.
 
 Los handoffs y apartados de progreso que siguen en este documento describen
 estados anteriores; consultar el encabezado y `docs/MIGRATION_PLAN.md` para el
@@ -54,9 +108,20 @@ El trabajo de arquitectura se realiza exclusivamente en DEV. PROD se mantiene es
 
 ## Siguiente trabajo
 
-Revisar y publicar selectivamente el cambio cerrado de SPEC-042/043 después de la
-confirmación del usuario. Después, definir etapa y autorización para la migración
-de la base original. SPEC-034/Nuxt/login y el piloto NC quedan como etapas aparte.
+SPEC-039 está cerrada para el lote de capturas: Camas 53/54, categoría superior
+67/68 y cuatro rutas por tamaño confirmadas manualmente como terminadas. La
+omisión puntual autorizada no altera `count_mismatch`; no se conoce la identidad
+faltante ni si es el mismo producto en ambos conjuntos. NC sigue no operativo.
+Ver `docs/SPEC-039_EVIDENCIA_DOM.md`.
+
+Se continúa SPEC-034 mediante SPEC-044, completada localmente: política de
+autorización y contexto de país por petición, con adaptadores y datos de prueba
+en memoria. Pruebas: 96 Node y 230 Python aprobadas (93 nuevas de acceso); dos
+avisos previos de dependencias Python. No hay login ni
+rutas regionales activadas. Próximo incremento: autenticación y sesiones reales
+probadas de forma aislada; después lectores regionales y Nuxt. La migración
+original requiere autorización independiente. Guía: `docs/ACCESO_REGIONAL_DEV.md`.
+No hacer commit/push automático; el usuario mantiene Windows→GitHub→Ubuntu DEV.
 
 Los bloques de prioridad fechados debajo son notas históricas preservadas.
 
@@ -93,10 +158,11 @@ adaptación posterior al modo remoto con una dirección verificada.
 
 ```powershell
 cd "C:\Users\USER\source\repos\scraper 6\WEBSCRAPER DEV"
-npm install
-npm test
-npm run build
-npm run catalog
+node --version
+corepack pnpm install --frozen-lockfile
+pnpm test
+pnpm run build
+pnpm run catalog
 ```
 
 Antes de confirmar cambios:
@@ -123,9 +189,10 @@ cd "/home/administradorgt/WEBSCRAPING-FINAL"
 git pull
 
 cd "/home/administradorgt/WEBSCRAPING-FINAL/WEBSCRAPER DEV"
-npm install
-npm test
-npm run build
+node --version
+corepack pnpm install --frozen-lockfile
+pnpm test
+pnpm run build
 pm2 restart webscraper-dev --update-env
 pm2 logs webscraper-dev --lines 80
 ```

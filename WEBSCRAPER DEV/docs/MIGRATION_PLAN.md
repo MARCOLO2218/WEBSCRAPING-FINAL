@@ -1,5 +1,85 @@
 # Plan de ordenamiento y migracion
 
+## Actualización de gestor de paquetes — 2026-09-27
+
+SPEC-067 fija pnpm `11.25.0` para las instalaciones de WEBSCRAPER DEV. El
+lockfile se generó desde `package-lock.json`; Windows y Ubuntu DEV usan
+`corepack pnpm install --frozen-lockfile`. La suite Node se ejecuta con
+`pnpm test`. PROD y sus instrucciones npm no forman parte de esta migración.
+
+## Actualización de continuidad — 2026-09-26
+
+El sprint `Demo DEV Nicaragua y acceso por país` quedó cerrado al 100% después
+de la confirmación del usuario sobre el recorrido visual. El formulario sigue
+siendo demostrativo; no autentica ni autoriza usuarios. SPEC-054 se actualizó a
+4762a50 en Ubuntu DEV y la suite terminó con 127/127 pruebas; NC y las cinco
+tiendas siguen apagadas y fuera del ejecutor normal.
+
+SPEC-057 completó localmente un lector regional de solo lectura que exige el
+`CountryContext` de SPEC-044 y une la proyección regional por país, tienda y
+ejecución publicada. Suite: 290 Python aprobadas, una prueba PostgreSQL optativa
+omitida, y 134 Node aprobadas. No está montado en FastAPI ni consultó PostgreSQL.
+SPEC-058 completó localmente la fábrica de ruta `GET /api/countries/{country_code}/products`
+con permisos por petición y sesión inyectada; tampoco está montada en `main.py`.
+SPEC-059 ofrece la unión inyectable del `AuthRepository` y la sesión
+request-scoped desde una `sessionmaker` explícita, sin cargar `.env` ni construir
+engines. SPEC-060 comprueba localmente la integración con SQLite: GT asignado y
+activo permite leer, NC apagado y la sesión revocada se rechazan. No prueba
+PostgreSQL/Ubuntu ni monta las rutas operativas. El siguiente paso seguro es
+preparar y revisar el plan separado de integración a la base DEV original;
+después quedan configuración/auth operativa, HTTPS/proxy y cierre de rutas
+heredadas.
+
+Validación global al cierre de SPEC-060: 292 pruebas Python aprobadas, una
+prueba PostgreSQL optativa omitida y 134 pruebas Node aprobadas. No se usaron
+servicios ni datos fuera del entorno local.
+
+SPEC-061 revisó estáticamente la integración futura. Los scripts de escritura
+actuales bloquean cualquier destino que no sea `webscraper_dev`/`webscraper_user`;
+el objetivo operativo aún no se identificó aquí. Además, la proyección regional
+042 no se refresca con publicaciones posteriores. Por eso siguen pendientes un
+plan específico autorizado, un ensayo scratch desde backup fresco y el diseño
+de sincronización antes de montar el login o el lector.
+
+SPEC-062 ya define el contrato de sincronización, sin cambiar el escritor.
+SPEC-063/064 implementan y prueban el contrato común 038-v3; cualquier plan
+regional debe regenerarse porque `C$` queda correctamente como NIO. La revisión
+estática del 2026-09-26 definió mantener la clave visible `source_site`, rechazar
+colisiones de tienda entre países, y verificar el backfill 042 junto con los
+futuros deltas mediante un ledger append-only. No renombrar automáticamente
+claves globales. FACENCO Excel queda como fuente complementaria separada,
+filtrada por país/moneda e identificada por código con ámbito de país, sin
+inventarle runs PostgreSQL. Falta decisión de negocio para precios con vigencia
+ausente o vencida. Luego se puede implementar y probar dual-write transaccional en
+fixtures/PostgreSQL scratch;
+una migración/activación en la base DEV original seguirá requiriendo autorización
+separada.
+
+Incremento local SPEC-062 (2026-09-26): Node ya fusiona productos Excel y
+PostgreSQL por país+código, con fallback por nombre sólo para el catálogo
+Guatemala. Dos pruebas nuevas cubren códigos iguales entre países y homónimos.
+La operación sigue limitada al catálogo Node actual; no implica lector regional.
+Validación: `npm test`, 158/158.
+
+Incremento siguiente: comparación de precios Node/Python acotada por país y
+moneda. Validación actual: `npm test`, 159/159; pytest de catálogo/Excel, 8/8.
+
+Después del cierre del sprint de demo, SPEC-065 registra seis tiendas candidatas
+HN/SV, todas apagadas, con directorios y registros aislados. Walmart HN tiene un
+primer cliente paginado VTEX, validado con fixtures para límites, moneda, host,
+categoría y deduplicación. El piloto manual mostró que búsquedas por texto
+mezclaban categorías: 21 URLs aceptadas e incluían mascotas y protectores frente
+a 19 productos anunciados. El extractor ahora consulta la ruta de categoría VTEX
+documentada y valida la ruta exacta por producto. El segundo piloto confirmó
+19/19 productos únicos y 16/19 con precio; tres fichas no publicaron precio en
+la respuesta. La cobertura objetivo queda validada, pero no integrar al ejecutor
+hasta definir cómo se reportan esas ofertas sin precio. La Curacao HN tiene un
+contrato HN/HNL aislado, pero sin lector DOM porque la categoría devuelve 403
+desde este entorno. Suite local: 173/173.
+
+Validación Windows al cierre de SPEC-064: `npm test` 156/156 y Pytest 293
+aprobadas, una integración PostgreSQL optativa omitida y dos avisos preexistentes.
+
 ## Estado vigente — código publicado y avances locales
 
 SPEC-042 y SPEC-043 están completadas para la copia PostgreSQL `webscraper_dev`.
@@ -35,13 +115,13 @@ SPEC-045 completada localmente para autenticación aislada. SPEC-046 implementa
 límite por usuario/IP HMAC, reserva atómica propuesta y fail-closed; agrega
 revisión 044 protegida y limpieza acotada. Verificación: 96 Node y 259 Python
 (1 prueba PostgreSQL omitida, 2 avisos de deprecación conocidos). Sigue en progreso: SQLite no valida
-La prueba PostgreSQL concurrente quedó preparada y exige `SPEC046_POSTGRES_TEST_URL`
-a una base vacía `spec046_scratch_*`; no se ejecutó porque no hay motor local
-activo. Router sin montar; 043/044 no ejecutadas, sin
-usuarios ni bootstrap. Antes de exponer: ensayo PostgreSQL aislado, bootstrap
-auditado, secreto HMAC estable, IP confiable tras proxy, limpieza periódica,
-lectores regionales y cierre de rutas heredadas. No cambia interfaz ni conecta
-rutas heredadas. Guía: `docs/AUTENTICACION_REGIONAL_DEV.md`.
+La concurrencia PostgreSQL se validó en `webscraper_dev` mediante un probe
+acotado que eliminó sus filas temporales. Las revisiones 043/044 están aplicadas
+y SPEC-048 creó un administrador global sin asignaciones ni sesiones. El router
+sigue sin montar. Antes de exponer: secreto HMAC estable, IP confiable tras
+proxy, limpieza periódica, lectores regionales y cierre de rutas heredadas. No
+cambia interfaz ni conecta rutas heredadas. Guía:
+`docs/AUTENTICACION_REGIONAL_DEV.md`.
 
 Publicar código requiere revisar sólo los archivos del incremento; conservar
 fuera los cambios ajenos existentes. No ejecutar migración original ni reinicios.

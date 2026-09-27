@@ -22,8 +22,9 @@
 
 ## Validacion
 
-- Ejecutar `npm test` antes de entregar cambios.
-- Mantener compatibles `npm run build`, `npm test`, `npm start` y `npm run catalog` durante la migracion.
+- Ejecutar `pnpm test` antes de entregar cambios.
+- Usar `pnpm` como gestor fijado por `packageManager` y `pnpm-lock.yaml`.
+- Mantener disponibles los scripts `build`, `test`, `start` y `catalog`; npm puede seguir invocandolos durante la transición.
 - FastAPI se introducira gradualmente; los scrapers TypeScript/Playwright se conservaran inicialmente como workers.
 
 ## Git y despliegues
