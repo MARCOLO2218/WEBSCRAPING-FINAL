@@ -9,7 +9,8 @@ test('demo regional presenta el flujo de ingreso simulado y selección de país 
   assert.match(demoHtml, /PROTOTIPO DE PRESENTACIÓN · NO AUTENTICA USUARIOS NI EJECUTA SCRAPERS/);
   assert.match(demoHtml, /<h2 id="loginTitle">Iniciar sesión<\/h2>/);
   assert.match(demoHtml, /<h1 id="countryTitle">Elige un país<\/h1>/);
-  assert.match(demoHtml, /data-country="GT"/);
+  assert.match(demoHtml, /<a class="country-button" data-country="GT" href="\/">Abrir catálogo operativo de Guatemala<\/a>/);
+  assert.doesNotMatch(demoHtml, /id="catalogStage"|id="demoRun"/);
 });
 
 test('formulario y botones de demo no transmiten credenciales ni ejecutan servicios', () => {

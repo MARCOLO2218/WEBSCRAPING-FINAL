@@ -85,7 +85,7 @@
     .country-card h2 { margin: 17px 0 6px; font-size: 20px; }
     .country-card p { margin-bottom: 18px; color: var(--muted); font-size: 13px; line-height: 1.5; }
     .country-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: auto; }
-    .country-button { min-height: 40px; color: #fff; background: var(--primary); }
+    .country-button { display: inline-flex; align-items: center; min-height: 40px; color: #fff; background: var(--primary); text-decoration: none; }
     .country-button:disabled { cursor: not-allowed; color: #788690; background: #e6ecee; }
     .text-button { padding: 0 8px; border: 0; color: var(--primary); background: transparent; font-weight: 750; }
     .demo-state { margin: 20px 0; padding: 13px 15px; border: 1px solid #ead49c; border-radius: 12px; color: #77500d; background: var(--amber-pale); font-size: 13px; line-height: 1.5; }
@@ -184,7 +184,7 @@
             <div class="country-top"><span class="country-symbol">GT</span><span class="prototype-tag">Operativo actual</span></div>
             <h2>Guatemala</h2>
             <p>Moneda GTQ · 19 tiendas habilitadas en el catálogo operativo.</p>
-            <div class="country-actions"><button class="country-button" data-country="GT" type="button">Entrar a Guatemala</button></div>
+            <div class="country-actions"><a class="country-button" data-country="GT" href="/">Abrir catálogo operativo de Guatemala</a></div>
           </article>
           <article class="country-card disabled">
             <div class="country-top"><span class="country-symbol">NC</span><span class="read-only">Piloto validado</span></div>
@@ -206,23 +206,6 @@
           </article>
         </div>
         <div class="demo-state">Nicaragua y Honduras permanecen deshabilitadas para operación. Sus vistas muestran evidencia de piloto, no catálogos conectados.</div>
-      </section>
-
-      <section id="catalogStage" class="stage" aria-labelledby="catalogTitle">
-        <div class="stage-heading">
-          <div>
-            <p class="eyebrow" style="color:var(--primary)">País seleccionado · GT / GTQ</p>
-            <h1 id="catalogTitle">Catálogo de Guatemala</h1>
-            <p>En la aplicación integrada, las consultas usarán sólo el país elegido y autorizado.</p>
-          </div>
-          <button class="secondary" data-back="countryStage" type="button">Cambiar país</button>
-        </div>
-        <div class="report-card">
-          <div class="report-header"><div><h2>Espacio de trabajo regional</h2><p>Vista de demostración, sin acceso a datos del catálogo.</p></div><span class="read-only">Sin ejecución</span></div>
-          <div class="demo-state">País activo en esta vista: Guatemala. No se consultó PostgreSQL y no se inició ningún scraper.</div>
-          <button id="demoRun" class="primary" type="button">Mostrar acción de scraper</button>
-          <p id="demoRunMessage" class="footnote" role="status" hidden></p>
-        </div>
       </section>
 
       <section id="ncReportStage" class="stage" aria-labelledby="ncReportTitle">
@@ -297,14 +280,8 @@
     document.querySelectorAll('[data-back]').forEach((button) => {
       button.addEventListener('click', () => showStage(button.dataset.back));
     });
-    document.querySelector('[data-country="GT"]').addEventListener('click', () => showStage('catalogStage'));
     document.querySelector('#openNcReport').addEventListener('click', () => showStage('ncReportStage'));
     document.querySelector('#openHnPreview').addEventListener('click', () => showStage('hnPreviewStage'));
-    document.querySelector('#demoRun').addEventListener('click', () => {
-      const message = document.querySelector('#demoRunMessage');
-      message.hidden = false;
-      message.textContent = 'Acción ilustrativa: en la integración real, el servidor validará tu sesión, país y permisos antes de iniciar un trabajo.';
-    });
   </script>
 </body>
 </html>
