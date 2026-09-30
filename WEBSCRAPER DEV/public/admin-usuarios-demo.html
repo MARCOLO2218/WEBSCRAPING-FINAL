@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Usuarios y permisos | Vista previa</title>
+  <style>
+    :root { color-scheme:light; --navy:#062f5f; --blue:#0b5794; --cyan:#5ec7ed; --ink:#17324d; --muted:#64788d; --line:#d9e4ee; --paper:#f3f8fc; --green:#18734c; --amber:#80530d; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:15px/1.45 "Segoe UI",Arial,sans-serif; }
+    header { background:linear-gradient(115deg,var(--navy),#0a5489); color:white; padding:27px max(22px,calc((100vw - 1160px)/2)); }
+    header a { color:#bdeafa; text-decoration:none; font-size:13px; }
+    h1 { margin:12px 0 4px; font-size:29px; }
+    header p { margin:0; color:#d8eafb; }
+    main { width:min(1160px,calc(100% - 32px)); margin:22px auto 50px; }
+    .preview { display:flex; gap:12px; align-items:flex-start; border:1px solid #e8c66f; border-radius:10px; background:#fff6da; color:#65470a; padding:13px 16px; margin-bottom:18px; }
+    .preview strong { display:block; margin-bottom:2px; }
+    .panel { background:white; border:1px solid var(--line); border-radius:12px; box-shadow:0 5px 20px #14385a0a; overflow:hidden; }
+    .panel-head { padding:20px 22px; display:flex; justify-content:space-between; gap:16px; align-items:center; }
+    h2 { font-size:19px; margin:0 0 3px; }
+    .panel-head p { color:var(--muted); margin:0; font-size:13px; }
+    button { border:0; border-radius:7px; padding:10px 13px; background:var(--blue); color:white; font-weight:650; cursor:pointer; }
+    button:hover { filter:brightness(.94); }
+    button.secondary { background:white; color:var(--blue); border:1px solid #b9cee0; }
+    .actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; min-width:760px; }
+    th,td { padding:13px 16px; text-align:left; border-top:1px solid #e9eff4; vertical-align:middle; }
+    th { color:#536b82; background:#f8fbfd; font-size:12px; font-weight:700; }
+    .username { font-weight:700; }
+    .meta { display:block; color:var(--muted); font-size:12px; margin-top:2px; }
+    .pill { display:inline-flex; margin:2px 4px 2px 0; border-radius:99px; padding:4px 9px; color:#14517c; background:#e6f4fc; font-size:12px; white-space:nowrap; }
+    .pill.admin { background:#e9eafe; color:#46428c; }
+    .pill.off { background:#fff1d6; color:var(--amber); }
+    .actions-cell { min-width:235px; }
+    .actions-cell button { padding:7px 9px; margin:2px; font-size:12px; }
+    .subhead { padding:20px 22px 12px; }
+    .subhead h2 { font-size:17px; }
+    .subhead p { margin:3px 0 0; color:var(--muted); font-size:13px; }
+    #notice { min-height:24px; color:var(--green); padding:12px 22px; font-size:13px; }
+    dialog { width:min(570px,calc(100vw - 26px)); border:0; border-radius:14px; padding:0; box-shadow:0 22px 80px #102b4770; color:var(--ink); }
+    dialog::backdrop { background:#08223db0; }
+    .dialog-head,.dialog-body,.dialog-foot { padding:17px 21px; }
+    .dialog-head { border-bottom:1px solid var(--line); }
+    .dialog-head h2 { margin:0; }
+    .dialog-head p { margin:3px 0 0; color:var(--muted); font-size:13px; }
+    .dialog-body { max-height:55vh; overflow:auto; }
+    .country { display:grid; grid-template-columns:24px 1fr 145px; gap:10px; align-items:center; padding:12px 0; border-bottom:1px solid #edf1f5; }
+    .country input { width:17px; height:17px; accent-color:var(--blue); }
+    .country-name { display:block; font-weight:650; }
+    .country-detail { color:var(--muted); font-size:12px; }
+    select,input[type=text] { width:100%; border:1px solid #bdccda; border-radius:7px; padding:9px; background:white; color:var(--ink); }
+    select:disabled { opacity:.55; background:#f2f5f7; }
+    .dialog-foot { display:flex; justify-content:flex-end; gap:9px; border-top:1px solid var(--line); }
+    .audit td { font-size:13px; }
+    @media(max-width:680px) { header { padding:22px 18px; } h1 { font-size:24px; } .panel-head { align-items:flex-start; flex-direction:column; } main { width:calc(100% - 20px); } .country { grid-template-columns:24px 1fr 125px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="/">← Volver al catálogo</a>
+    <h1>Usuarios y permisos</h1>
+    <p>Administración de niveles globales y acceso por país</p>
+  </header>
+  <main>
+    <aside class="preview" role="note">
+      <span aria-hidden="true">ⓘ</span>
+      <div><strong>Vista previa de diseño · no es el módulo operativo</strong>Los nombres y eventos son de ejemplo. Los cambios que pruebes sólo viven en esta página y desaparecen al recargar. No se envía información ni se modifica ninguna cuenta.</div>
+    </aside>
+    <section class="panel" aria-labelledby="users-title">
+      <div class="panel-head">
+        <div><h2 id="users-title">Cuentas de ejemplo</h2><p>Admin y superadmin operan en países habilitados; usuario necesita permisos asignados.</p></div>
+        <div class="actions"><button id="create" type="button">Crear cuenta de ejemplo</button><button id="reset-demo" class="secondary" type="button">Restablecer demostración</button></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Usuario</th><th>Nivel global</th><th>Países asignados</th><th>Acciones de ejemplo</th></tr></thead>
+        <tbody id="users"></tbody>
+      </table></div>
+      <div id="notice" role="status" aria-live="polite">Interacciones locales de demostración activas.</div>
+    </section>
+    <section class="panel" style="margin-top:18px" aria-labelledby="audit-title">
+      <div class="subhead"><h2 id="audit-title">Actividad administrativa</h2><p>Ejemplos de eventos que registrará la bitácora.</p></div>
+      <div class="table-wrap"><table class="audit">
+        <thead><tr><th>Fecha</th><th>Acción</th><th>Actor</th><th>Cuenta</th><th>Resultado</th></tr></thead>
+        <tbody><tr><td>Ejemplo</td><td>Permisos cambiados</td><td>superadmin.demo</td><td>usuario.demo</td><td>Registrado en bitácora</td></tr>
+          <tr><td>Ejemplo</td><td>Cuenta bloqueada</td><td>superadmin.demo</td><td>usuario.demo</td><td>Sesiones revocadas</td></tr></tbody>
+      </table></div>
+    </section>
+  </main>
+  <dialog id="permissions" aria-labelledby="permissions-title">
+    <form id="permissions-form">
+      <div class="dialog-head"><h2 id="permissions-title">Permisos por país</h2><p id="selected-user"></p></div>
+      <div id="countries" class="dialog-body"></div>
+      <div class="dialog-foot"><button id="cancel-permissions" class="secondary" type="button">Cancelar</button><button type="submit">Guardar ejemplo</button></div>
+    </form>
+  </dialog>
+  <dialog id="create-dialog" aria-labelledby="create-title">
+    <form id="create-form">
+      <div class="dialog-head"><h2 id="create-title">Crear cuenta de ejemplo</h2><p>No se crea una cuenta real.</p></div>
+      <div class="dialog-body">
+        <p><label>Nombre de ejemplo<br><input name="username" type="text" required maxlength="40" placeholder="usuario.demo"></label></p>
+        <p><label>Nivel global<br><select name="level"><option value="usuario">Usuario</option><option value="admin">Administrador</option></select></label></p>
+      </div>
+      <div class="dialog-foot"><button id="cancel-create" class="secondary" type="button">Cancelar</button><button type="submit">Agregar a esta vista</button></div>
+    </form>
+  </dialog>
+  <script>
+    (() => {
+      const initialUsers = [
+        {id:'demo-super',username:'superadmin.demo',level:'superadmin',enabled:true,permissions:[]},
+        {id:'demo-admin',username:'admin.demo',level:'admin',enabled:true,permissions:[]},
+        {id:'demo-user',username:'usuario.demo',level:'usuario',enabled:true,permissions:[{code:'GT',role:'operador'}]},
+      ];
+      const countries = [
+        {code:'GT',name:'Guatemala',currency:'GTQ',enabled:true},
+        {code:'HN',name:'Honduras',currency:'HNL',enabled:false},
+        {code:'SV',name:'El Salvador',currency:'USD',enabled:false},
+        {code:'NC',name:'Nicaragua',currency:'NIO',enabled:false},
+      ];
+      let users = structuredClone(initialUsers);
+      let selectedId = null;
+      const table = document.querySelector('#users');
+      const notice = document.querySelector('#notice');
+      const permissionsDialog = document.querySelector('#permissions');
+      const createDialog = document.querySelector('#create-dialog');
+      const labels = {superadmin:'Superadmin',admin:'Administrador',usuario:'Usuario'};
+      const node = (tag,text,className) => { const item=document.createElement(tag); if(text!==undefined)item.textContent=text; if(className)item.className=className; return item; };
+      function show(text) { notice.textContent=`Demostración: ${text} (sin guardar en el servidor).`; }
+      function render() {
+        table.replaceChildren();
+        for (const user of users) {
+          const row=node('tr');
+          const name=node('td'); name.append(node('span',user.username,'username'),node('span','Cuenta ficticia','meta'));
+          const level=node('td'); level.append(node('span',labels[user.level],user.level==='usuario'?'pill':'pill admin'));
+          if(!user.enabled) level.append(node('span','Bloqueada','pill off'));
+          const grants=node('td');
+          if(user.level!=='usuario') grants.append(node('span','Todos los países habilitados','meta'));
+          else if(user.permissions.length) for(const permission of user.permissions) {
+            const country=countries.find(item=>item.code===permission.code);
+            grants.append(node('span',`${permission.code} · ${permission.role}${country&&!country.enabled?' · país apagado':''}`,country&&country.enabled?'pill':'pill off'));
+          } else grants.append(node('span','Sin países asignados','meta'));
+          const actions=node('td',undefined,'actions-cell');
+          if(user.level==='usuario') { const edit=node('button','Editar países'); edit.type='button'; edit.className='secondary'; edit.addEventListener('click',()=>openPermissions(user)); actions.append(edit); }
+          if(user.level!=='superadmin') {
+            const reset=node('button','Restablecer clave'); reset.type='button'; reset.className='secondary'; reset.addEventListener('click',()=>show(`el restablecimiento de ${user.username} se simularía`));
+            const block=node('button',user.enabled?'Bloquear':'Desbloquear'); block.type='button'; block.className='secondary'; block.addEventListener('click',()=>{user.enabled=!user.enabled;render();show(`${user.username} ${user.enabled?'se desbloquearía':'se bloquearía'}`);});
+            actions.append(reset,block);
+          }
+          row.append(name,level,grants,actions); table.append(row);
+        }
+      }
+      function openPermissions(user) {
+        selectedId=user.id;
+        document.querySelector('#selected-user').textContent=`Cuenta de ejemplo: ${user.username}`;
+        const container=document.querySelector('#countries'); container.replaceChildren();
+        const current=new Map(user.permissions.map(item=>[item.code,item.role]));
+        for(const country of countries) {
+          const label=node('label',undefined,'country'); const checkbox=document.createElement('input');
+          checkbox.type='checkbox'; checkbox.value=country.code; checkbox.checked=current.has(country.code);
+          const title=node('span'); title.append(node('span',`${country.name} · ${country.code}`,'country-name'),node('span',`${country.currency}${country.enabled?'':' · deshabilitado'}`,'country-detail'));
+          const role=document.createElement('select'); role.setAttribute('aria-label',`Nivel para ${country.name}`);
+          for(const [value,text] of [['lector','Lector'],['operador','Operador']]) {const option=node('option',text);option.value=value;role.append(option);}
+          role.value=current.get(country.code)||'lector'; role.disabled=!checkbox.checked;
+          checkbox.addEventListener('change',()=>{role.disabled=!checkbox.checked;}); label.append(checkbox,title,role); container.append(label);
+        }
+        permissionsDialog.showModal();
+      }
+      document.querySelector('#permissions-form').addEventListener('submit',event=>{
+        event.preventDefault(); const user=users.find(item=>item.id===selectedId); if(!user)return;
+        user.permissions=[...document.querySelectorAll('#countries input:checked')].map(input=>({code:input.value,role:input.parentElement.querySelector('select').value}));
+        render(); permissionsDialog.close(); show(`permisos de ${user.username} actualizados sólo en pantalla`);
+      });
+      document.querySelector('#cancel-permissions').addEventListener('click',()=>permissionsDialog.close());
+      document.querySelector('#create').addEventListener('click',()=>createDialog.showModal());
+      document.querySelector('#cancel-create').addEventListener('click',()=>createDialog.close());
+      document.querySelector('#create-form').addEventListener('submit',event=>{
+        event.preventDefault(); const data=new FormData(event.currentTarget); const username=String(data.get('username')).trim();
+        if(!username)return;
+        users.push({id:`demo-${Date.now()}`,username,level:String(data.get('level')),enabled:true,permissions:[]});
+        event.currentTarget.reset(); createDialog.close(); render(); show(`se agregó ${username} sólo a la vista`);
+      });
+      document.querySelector('#reset-demo').addEventListener('click',()=>{users=structuredClone(initialUsers);render();show('se restablecieron los datos de ejemplo');});
+      render();
+    })();
+  </script>
+</body>
+</html>
