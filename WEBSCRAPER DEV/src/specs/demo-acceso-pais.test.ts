@@ -4,18 +4,18 @@ import { readFile } from 'node:fs/promises';
 
 const demoHtml = await readFile(new URL('../../public/demo-acceso-pais.html', import.meta.url), 'utf8');
 
-test('demo regional presenta el flujo de ingreso simulado y selección de país en español', () => {
+test('demo de países es una vista de pilotos separada del acceso principal', () => {
   assert.match(demoHtml, /<html lang="es">/);
   assert.match(demoHtml, /PROTOTIPO DE PRESENTACIÓN · NO AUTENTICA USUARIOS NI EJECUTA SCRAPERS/);
-  assert.match(demoHtml, /<h2 id="loginTitle">Iniciar sesión<\/h2>/);
-  assert.match(demoHtml, /<h1 id="countryTitle">Elige un país<\/h1>/);
-  assert.match(demoHtml, /<a class="country-button" data-country="GT" href="\/">Abrir catálogo operativo de Guatemala<\/a>/);
-  assert.doesNotMatch(demoHtml, /id="catalogStage"|id="demoRun"/);
+  assert.match(demoHtml, /<section id="countryStage" class="stage active"/);
+  assert.match(demoHtml, /href="\/"[^>]*>Volver al acceso central<\/a>/);
+  assert.match(demoHtml, /data-country="GT" href="\/catalogo-guatemala\.html"/);
+  assert.doesNotMatch(demoHtml, /loginStage|demoLogin|<input autocomplete=/);
 });
 
-test('formulario y botones de demo no transmiten credenciales ni ejecutan servicios', () => {
-  assert.match(demoHtml, /id="demoLogin"/);
-  assert.match(demoHtml, /event\.preventDefault\(\);\s*showStage\('countryStage'\)/);
+test('las vistas piloto se pueden abrir directamente desde el portal y no ejecutan servicios', () => {
+  assert.match(demoHtml, /const requestedStage = window\.location\.hash\.slice\(1\)/);
+  assert.match(demoHtml, /showStage\(requestedStage\)/);
   assert.doesNotMatch(demoHtml, /\bfetch\s*\(|XMLHttpRequest|navigator\.sendBeacon|localStorage|sessionStorage/i);
 });
 

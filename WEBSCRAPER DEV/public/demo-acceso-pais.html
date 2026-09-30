@@ -142,49 +142,21 @@
     </header>
 
     <main>
-      <section id="loginStage" class="stage active" aria-labelledby="loginTitle">
-        <div class="login-layout">
-          <section class="welcome-panel">
-            <div>
-              <p class="eyebrow">Un catálogo, acceso por país</p>
-              <h1>Precios claros para cada mercado.</h1>
-              <p class="welcome-copy">Inicia sesión y luego elige un país autorizado. El catálogo y las operaciones siguen el país que seleccionaste.</p>
-            </div>
-            <div class="flow-note"><span class="flow-icon">1→2</span><span>Ingreso seguro <strong>→</strong> selección de país <strong>→</strong> catálogo regional</span></div>
-          </section>
-          <section class="login-card">
-            <form id="demoLogin" class="form">
-              <p class="eyebrow" style="color:var(--primary)">Bienvenido</p>
-              <h2 id="loginTitle">Iniciar sesión</h2>
-              <p class="form-intro">Usa tu cuenta de trabajo para acceder a los países que te asignaron.</p>
-              <label class="field">Correo o usuario
-                <input autocomplete="username" type="text" placeholder="nombre@empresa.com" required>
-              </label>
-              <label class="field">Contraseña
-                <input autocomplete="current-password" type="password" placeholder="Ingresa tu contraseña" required>
-              </label>
-              <button class="primary full" type="submit">Continuar</button>
-              <p class="mock-caption">Vista de demostración: el formulario no envía ni guarda los datos ingresados.</p>
-            </form>
-          </section>
-        </div>
-      </section>
-
-      <section id="countryStage" class="stage" aria-labelledby="countryTitle">
+      <section id="countryStage" class="stage active" aria-labelledby="countryTitle">
         <div class="stage-heading">
           <div>
             <p class="eyebrow" style="color:var(--primary)">Paso 2 · cuenta demo</p>
             <h1 id="countryTitle">Elige un país</h1>
             <p>En la versión final sólo aparecerán países asignados a tu usuario.</p>
           </div>
-          <button class="secondary" data-back="loginStage" type="button">Cerrar sesión demo</button>
+          <a class="secondary" href="/" style="display:inline-flex;align-items:center;text-decoration:none">Volver al acceso central</a>
         </div>
         <div class="country-grid">
           <article class="country-card">
             <div class="country-top"><span class="country-symbol">GT</span><span class="prototype-tag">Operativo actual</span></div>
             <h2>Guatemala</h2>
             <p>Moneda GTQ · 19 tiendas habilitadas en el catálogo operativo.</p>
-            <div class="country-actions"><a class="country-button" data-country="GT" href="/">Abrir catálogo operativo de Guatemala</a></div>
+            <div class="country-actions"><a class="country-button" data-country="GT" href="/catalogo-guatemala.html">Abrir catálogo operativo de Guatemala</a></div>
           </article>
           <article class="country-card disabled">
             <div class="country-top"><span class="country-symbol">NC</span><span class="read-only">Piloto validado</span></div>
@@ -273,15 +245,13 @@
       stages.forEach((stage) => stage.classList.toggle('active', stage.id === id));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    document.querySelector('#demoLogin').addEventListener('submit', (event) => {
-      event.preventDefault();
-      showStage('countryStage');
-    });
     document.querySelectorAll('[data-back]').forEach((button) => {
       button.addEventListener('click', () => showStage(button.dataset.back));
     });
     document.querySelector('#openNcReport').addEventListener('click', () => showStage('ncReportStage'));
     document.querySelector('#openHnPreview').addEventListener('click', () => showStage('hnPreviewStage'));
+    const requestedStage = window.location.hash.slice(1);
+    if (stages.some((stage) => stage.id === requestedStage)) showStage(requestedStage);
   </script>
 </body>
 </html>
