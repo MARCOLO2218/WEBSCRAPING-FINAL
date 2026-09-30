@@ -781,6 +781,30 @@ tbody tr:hover {
 
 #priceUploadStatus:empty { display: none; }
 
+.preview-nav {
+  margin: 14px 0 18px;
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--facenco-blue-soft);
+  border: 1px solid rgba(94, 199, 237, 0.55);
+  border-radius: 10px;
+}
+
+.preview-nav-copy { display: grid; gap: 3px; }
+.preview-nav-copy strong { color: var(--facenco-navy); }
+.preview-nav-copy span { color: var(--muted); font-size: 12px; }
+.preview-nav-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.preview-nav-links .button { text-decoration: none; }
+
+@media (max-width: 600px) {
+  .preview-nav-links { width: 100%; }
+  .preview-nav-links .button { flex: 1 1 100%; text-align: center; }
+}
+
 @media (max-width: 600px) {
   .price-upload-body { padding: 16px; }
   .price-upload-actions .button { width: 100%; }
