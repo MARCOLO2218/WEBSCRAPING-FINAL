@@ -3,9 +3,9 @@
 ## Estado
 
 - País: Guatemala (GT), 19 tiendas del registro.
-- Ciclo: en progreso; Furniture City sigue sin resolución. La última auditoría
-  Ubuntu encontró 58 candidatos y sólo 7 precios; hay un nuevo ajuste local para
-  limitar la consulta a la categoría oficial.
+- Ciclo: en progreso; Furniture City sigue sin resolución. La auditoría más
+  reciente obtuvo 56 candidatos y 6 precios; hay un nuevo ajuste local para
+  desactivar su fallback genérico de enlaces.
 - SPEC: [SPEC-070](../specs/SPEC-070-auditoria-mantenimiento-tiendas-guatemala.md).
 - Informe detallado: [auditoría de las 19 tiendas](GT_STORE_AUDIT_2026-09-28.md).
 - Base local observada: `72a80e0` más cambios locales; hay cambios ajenos staged y
@@ -29,7 +29,7 @@
 | Americana 2000 Guatemala | 40 útiles de 44 recibidos | Ninguno identificado en esta captura. |
 | Mattress Guatemala | Error remoto de conexión a la base del comercio | Esperar que el comercio restaure el sitio y repetir comprobación. |
 | Beds & Dreams | 39 con precio; no se reprodujeron los 3 reportados | Revisar conteos en el host donde se presente el síntoma. |
-| Furniture City Guatemala | Última auditoría Ubuntu: 58 candidatos, 58 con nombre/URL, 7 con precio; código local ahora consulta sólo Descanso | Publicar el último ajuste y repetir auditoría/paginación en DEV. |
+| Furniture City Guatemala | Última auditoría Ubuntu: 56 candidatos, 56 con nombre/URL, 6 con precio; código local desactiva fallback de enlaces | Publicar el último ajuste y repetir auditoría/paginación en DEV. |
 | La Curacao Guatemala | 35, con precio | Ninguno identificado en esta captura. |
 | MAX Guatemala | 581 | Ninguno identificado en esta captura. |
 | Elektra Guatemala | 12; títulos limpios tras corrección | Ninguno identificado en esta captura. |
@@ -47,9 +47,10 @@ La ruta anterior [`/mattress-colchones/`](https://www.furniturecity.com.gt/mattr
 presenta contenido de marca. La [categoría Descanso](https://www.furniturecity.com.gt/product-category/Descanso/)
 publica cinco colchones con precio. El primer ajuste cambió la fuente y quitó
 placeholders, pero la auditoría Ubuntu aún recorrió categorías relacionadas y
-devolvió 58 candidatos, sólo 7 con precio. El código local ahora consulta una
-sola categoría. Esta segunda corrección aún requiere publicarse y verificarse en
-Ubuntu; el problema no está resuelto todavía.
+devolvió primero 58 candidatos y luego 56, con sólo 6 precios, incluso al
+consultar una sola categoría. El código local ahora desactiva para esta tienda
+el fallback genérico que recorre todos los enlaces. Esta tercera corrección aún
+requiere validarse y publicarse en Ubuntu; el problema no está resuelto todavía.
 
 ## Continuidad
 

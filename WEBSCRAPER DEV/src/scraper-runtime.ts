@@ -85,7 +85,7 @@ export async function extractCardProducts(
         return buildRow(card, title, card.querySelector<HTMLAnchorElement>(config.anchorSelector ?? 'a[href]'), card.querySelector<HTMLImageElement>(config.imageSelector ?? 'img'));
       })
       .filter((row) => row.product_name && row.product_url);
-    const linkRows = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href]'))
+    const linkRows = config.includeLinkFallback === false ? [] : Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href]'))
       .map((anchor) => {
         const container = anchor.closest('article, li, [class*="product"], [class*="Product"], [data-testid*="product"], [data-testid*="Product"], div') ?? anchor;
         const image = container.querySelector<HTMLImageElement>('img') ?? anchor.querySelector<HTMLImageElement>('img');

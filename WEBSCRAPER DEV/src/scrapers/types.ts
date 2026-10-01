@@ -22,5 +22,7 @@ export type ProductSelectorConfig = {
   priceSelector?: string;
   discountSelector?: string;
   installmentSelector?: string;
+  /** Skip the broad all-anchor fallback when the official card selector is authoritative. */
+  includeLinkFallback?: boolean;
   currencyCode?: 'GTQ' | 'NIO';
 };

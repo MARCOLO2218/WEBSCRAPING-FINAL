@@ -27,6 +27,7 @@ async function scrapeFurnitureCity(page: Page, scrapedAt: string): Promise<CsvPr
     salePriceSelector: 'ins .woocommerce-Price-amount, ins',
     priceSelector: '.price',
     discountSelector: '.onsale',
+    includeLinkFallback: false,
   });
 
   return rows.map((row) => ({ ...row, scraped_at: scrapedAt }));

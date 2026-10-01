@@ -102,3 +102,14 @@ conteo, precios y paginación.
 
 El ajuste compiló localmente y la suite Node pasó 210/210. No se ha ejecutado
 todavía la auditoría con la extracción acotada.
+
+## Segundo resultado de auditoría puntual Ubuntu — 2026-10-01
+
+Después de limitar la navegación a Descanso, Ubuntu obtuvo 56 candidatos, 56
+con nombre/URL y 6 con precio. La única página ya era correcta, pero el motor
+compartido también recorría todos los enlaces de la página y agregaba ruido.
+Se agregó una opción por tienda para desactivar ese fallback genérico; sólo
+Furniture City la usa, mientras el resto conserva su extracción actual. La
+prueba verifica que Furniture City solicite el modo de tarjetas solamente.
+TypeScript compiló y la suite local pasó 210/210 pruebas después de este ajuste.
+Todavía no se debe considerar resuelta hasta repetir `audit:gt` en Ubuntu.

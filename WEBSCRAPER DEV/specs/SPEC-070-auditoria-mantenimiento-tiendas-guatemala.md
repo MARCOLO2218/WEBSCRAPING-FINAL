@@ -25,8 +25,9 @@ cambios estructurales, ausencia de productos y pérdida de campos relevantes.
   paginación sigue activa. Un resultado bajo 20 provoca reintento y advertencia
   de calidad en el scraper normal.
 - Furniture City consulta sólo la categoría oficial vigente de Descanso; no
-  recorre categorías relacionadas encontradas en el menú. Los enlaces de fichas
-  no generan filas vacías ni amplían el conjunto de resultados.
+  recorre categorías relacionadas encontradas en el menú. Desactiva para esta
+  tienda el fallback genérico que recoge todos los enlaces de la página; las
+  tarjetas oficiales siguen identificando URL y producto.
 - Beds & Dreams informa los conteos de sus tres colecciones comerciales y las
   nueve colecciones de confort, además del total único que el extractor forma.
 - El motor visual respeta el orden de prioridad de selectores para nombres y

@@ -9,11 +9,13 @@ import {
 
 const mainSource = readFileSync('src/scrape-facenco-energy.ts', 'utf8');
 const furnitureSource = readFileSync('src/scrapers/gt/furniture-city.ts', 'utf8');
+const runtimeSource = readFileSync('src/scraper-runtime.ts', 'utf8');
 
 test('Furniture City consulta sólo la categoría oficial y conserva los precios del listado', async () => {
   const productUrl = 'https://www.furniturecity.com.gt/producto/cama-prueba/';
   const navigated: string[] = [];
   const extracted: string[] = [];
+  const linkFallbackOptions: boolean[] = [];
   const extractedRow = {
     source_site: 'Furniture City Guatemala',
     brand: 'Furniture City',
@@ -40,6 +42,7 @@ test('Furniture City consulta sólo la categoría oficial y conserva los precios
     navigate: async (_page, url) => { navigated.push(url); },
     extractCards: async (_page, url, config) => {
       extracted.push(`${url}|${config.cardSelector}|${config.titleSelector}`);
+      linkFallbackOptions.push(config.includeLinkFallback ?? true);
       return [extractedRow];
     },
   });
@@ -47,6 +50,7 @@ test('Furniture City consulta sólo la categoría oficial y conserva los precios
   const rows = await scraper(page, '2026-09-03T12:00:00.000Z');
   assert.deepEqual(navigated, [FURNITURE_CITY_SOURCE_URL]);
   assert.equal(extracted.length, 1);
+  assert.deepEqual(linkFallbackOptions, [false]);
   assert.ok(extracted.every((value) => value.includes('li.product')));
   assert.equal(rows[0]?.product_url, productUrl);
   assert.equal(rows[0]?.source_site, 'Furniture City Guatemala');
@@ -62,5 +66,6 @@ test('Furniture City vive fuera del ejecutor principal', () => {
   assert.doesNotMatch(mainSource, /async function scrapeFurnitureCity\b/);
   assert.doesNotMatch(furnitureSource, /extractFurnitureCityCatalogUrls/);
   assert.match(furnitureSource, /async function scrapeFurnitureCity\b/);
+  assert.match(runtimeSource, /config\.includeLinkFallback === false \? \[\]/);
   assert.match(mainSource, /createFurnitureCityGuatemalaScraper/);
 });
