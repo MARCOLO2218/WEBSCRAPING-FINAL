@@ -24,9 +24,9 @@ cambios estructurales, ausencia de productos y pérdida de campos relevantes.
   tarjetas WooCommerce/WoodMart actuales y eTheme anterior se reconocen, y la
   paginación sigue activa. Un resultado bajo 20 provoca reintento y advertencia
   de calidad en el scraper normal.
-- Furniture City usa la categoría vigente de Descanso. Sólo procesa URLs de
-  categorías como listados; enlaces de fichas no generan filas vacías que
-  reemplacen productos extraídos con precio.
+- Furniture City consulta sólo la categoría oficial vigente de Descanso; no
+  recorre categorías relacionadas encontradas en el menú. Los enlaces de fichas
+  no generan filas vacías ni amplían el conjunto de resultados.
 - Beds & Dreams informa los conteos de sus tres colecciones comerciales y las
   nueve colecciones de confort, además del total único que el extractor forma.
 - El motor visual respeta el orden de prioridad de selectores para nombres y

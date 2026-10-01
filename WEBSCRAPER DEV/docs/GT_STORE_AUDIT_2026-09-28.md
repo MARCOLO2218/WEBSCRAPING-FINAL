@@ -87,3 +87,18 @@ Validación local de este incremento: TypeScript compiló y Node aprobó 210/210
 pruebas. `corepack pnpm test` no pudo iniciar porque Windows negó crear la
 carpeta temporal de Corepack; se usaron los binarios de `node_modules` sin
 cambiar esa configuración.
+
+## Resultado de auditoría puntual Ubuntu — 2026-10-01
+
+Con `9e7af1d` y luego el ajuste de compilación `72a80e0`, `audit:gt` llegó a
+ejecutar sólo Furniture City sin errores de navegación: 58 candidatos, 58 con
+nombre, 58 con URL y 7 con precio. La extracción aún no está resuelta. El
+auditor recorría todas las URLs de categorías enlazadas cuyo path contenía
+`colchones` o `descanso`; se acotó localmente a la categoría oficial
+`/product-category/Descanso/`, que la página pública anuncia con cinco
+resultados. Una nueva prueba verifica que no se navegue a categorías enlazadas.
+Falta publicar este último ajuste y repetir la auditoría puntual antes de valorar
+conteo, precios y paginación.
+
+El ajuste compiló localmente y la suite Node pasó 210/210. No se ha ejecutado
+todavía la auditoría con la extracción acotada.
