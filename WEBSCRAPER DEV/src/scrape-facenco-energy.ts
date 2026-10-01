@@ -1,9 +1,10 @@
-﻿import { chromium, type Page } from 'playwright';
+import { chromium, type Page } from 'playwright';
 import ExcelJS from 'exceljs';
 import { config as loadEnv } from 'dotenv';
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { getStoreRegistrationDifferences } from './config/store-catalog.js';
 import { buildStoreQualityWarning, getStoreRetryMinimum } from './config/store-rules.js';
 import {
@@ -27,11 +28,7 @@ import { createFacencoGuatemalaScraper } from './scrapers/gt/facenco.js';
 import { createGuatemalaVisualStores } from './scrapers/gt/visual-stores.js';
 import { createVisualScraperEngine } from './scrapers/shared/visual-engine.js';
 import type { ProductSelectorConfig, StoreScraper } from './scrapers/types.js';
-
-const envFile = existsSync('.env') ? '.env' : undefined;
-if (envFile) {
-  loadEnv({ path: envFile });
-}
+import { extractCardProducts, goto } from './scraper-runtime.js';
 
 // URLs de origen.
 // Si solo cambia la URL de una tienda ya existente, modifica estas constantes.
@@ -175,131 +172,6 @@ async function writeExcel(rows: CsvProduct[], outputFile: string): Promise<void>
   worksheet.getColumn('scraped_at').width = 26;
 
   await workbook.xlsx.writeFile(outputFile);
-}
-
-async function goto(page: Page, url: string): Promise<void> {
-  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60_000 });
-  await page.waitForLoadState('networkidle', { timeout: 30_000 }).catch(() => undefined);
-}
-
-async function extractCardProducts(
-  page: Page,
-  sourceUrl: string,
-  config: ProductSelectorConfig,
-): Promise<CsvProduct[]> {
-  return page.evaluate(({ sourceUrl, config }) => {
-    const clean = (value: string | null | undefined) => (value ?? '').replace(/\s+/g, ' ').trim();
-    const absolute = (url: string) => {
-      try {
-        return new URL(url, sourceUrl).toString();
-      } catch {
-        return url;
-      }
-    };
-    const firstText = (root: Element, selector?: string) => {
-      if (!selector) {
-        return '';
-      }
-      return clean(root.querySelector(selector)?.textContent);
-    };
-    const productCategory = (name: string, fallback: string) => {
-      if (fallback) {
-        return fallback;
-      }
-      if (/colch[oÃ³]n|colchon|mattress/i.test(name)) {
-        return 'Colchones';
-      }
-      if (/cama|base|box spring/i.test(name)) {
-        return 'Camas';
-      }
-      if (/almohada|pillow/i.test(name)) {
-        return 'Almohadas';
-      }
-      if (/protector|funda|s[aÃ¡]bana|frazada|edred[oÃ³]n|comforter/i.test(name)) {
-        return 'Ropa de cama';
-      }
-      return '';
-    };
-    const imageUrl = (image: HTMLImageElement | null) => {
-      if (!image) {
-        return '';
-      }
-      const srcset = image.getAttribute('data-srcset') || image.getAttribute('srcset') || '';
-      const srcsetFirst = srcset.split(',').map((item) => item.trim().split(/\s+/)[0]).find(Boolean) ?? '';
-      const src = image.currentSrc || image.src || image.getAttribute('data-src') || image.getAttribute('src') || srcsetFirst;
-      return src && !src.startsWith('data:') ? absolute(src) : '';
-    };
-    const buildRow = (root: Element, title: string, anchor: HTMLAnchorElement | null, image: HTMLImageElement | null): CsvProduct => {
-      const rootText = clean(root.textContent);
-      const currencyRegex = config.currencyCode === 'NIO'
-        ? /C\$\s*[\d,]+(?:\.\d+)?(?:\s*-\s*C\$?\s*[\d,]+(?:\.\d+)?)?/i
-        : /(?:Q|GTQ)\s*[\d,]+(?:\.\d+)?(?:\s*-\s*(?:Q|GTQ)?\s*[\d,]+(?:\.\d+)?)?/i;
-      const category = productCategory(title, firstText(root, config.categorySelector));
-      const regularPrice = firstText(root, config.regularPriceSelector);
-      const salePrice = firstText(root, config.salePriceSelector)
-        || firstText(root, config.priceSelector)
-        || clean(rootText.match(currencyRegex)?.[0]);
-      const discount = firstText(root, config.discountSelector);
-      const installment = firstText(root, config.installmentSelector);
-      const line = firstText(root, config.lineSelector);
-
-      return {
-        source_site: config.sourceSite,
-        brand: config.brand,
-        line,
-        category,
-        product_name: title,
-        availability: 'Listado en tienda online',
-        regular_price: regularPrice,
-        sale_price: salePrice,
-        discount,
-        installment,
-        product_url: anchor?.href ? absolute(anchor.href) : '',
-        source_url: sourceUrl,
-        headline: '',
-        description: '',
-        warranty: '',
-        benefits: '',
-        image_url: imageUrl(image),
-        image_alt: clean(image?.getAttribute('alt')),
-        scraped_at: '',
-      };
-    };
-
-    const cardRows = Array.from(document.querySelectorAll<HTMLElement>(config.cardSelector))
-      .map((card) => {
-        const title = firstText(card, config.titleSelector)
-          || clean(card.getAttribute('aria-label'))
-          || clean(card.querySelector<HTMLAnchorElement>('a[title]')?.getAttribute('title'))
-          || clean(card.querySelector<HTMLImageElement>('img[alt]')?.getAttribute('alt'));
-        const anchor = card.querySelector<HTMLAnchorElement>(config.anchorSelector ?? 'a[href]');
-        const image = card.querySelector<HTMLImageElement>(config.imageSelector ?? 'img');
-        return buildRow(card, title, anchor, image);
-      })
-      .filter((product) => product.product_name && product.product_url);
-
-    const linkRows = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href]'))
-      .map((anchor) => {
-        const container = anchor.closest('article, li, [class*="product"], [class*="Product"], [data-testid*="product"], [data-testid*="Product"], div') ?? anchor;
-        const image = container.querySelector<HTMLImageElement>('img') ?? anchor.querySelector<HTMLImageElement>('img');
-        const title = clean(anchor.getAttribute('title'))
-          || clean(anchor.textContent)
-          || clean(image?.getAttribute('alt'))
-          || clean(container.querySelector('h1,h2,h3,h4,[class*="name"],[class*="Name"],[class*="title"],[class*="Title"]')?.textContent);
-        return buildRow(container, title, anchor, image);
-      })
-      .filter((product) => product.product_name && product.product_url);
-
-    const unique = new Map<string, CsvProduct>();
-    for (const row of [...cardRows, ...linkRows]) {
-      const key = row.product_url || `${row.source_site}|${row.product_name}`;
-      if (!unique.has(key)) {
-        unique.set(key, row);
-      }
-    }
-
-    return Array.from(unique.values());
-  }, { sourceUrl, config });
 }
 
 // Filtro comercial FACENCO.
@@ -508,7 +380,7 @@ function hasQuetzalPrice(row: CsvProduct): boolean {
 
 
 
-function filterGuatemalaQuetzalRows(rows: CsvProduct[], sourceSite = 'Tienda'): CsvProduct[] {
+export function filterGuatemalaQuetzalRows(rows: CsvProduct[], sourceSite = 'Tienda'): CsvProduct[] {
   const withQuetzal = rows.filter((row) => hasQuetzalPrice(row));
   const withBedProduct = rows.filter((row) => hasRelevantBedProduct(row));
   const kept = rows.filter((row) => hasQuetzalPrice(row) && hasRelevantBedProduct(row));
@@ -749,6 +621,11 @@ function makeFinalDedupKey(row: CsvProduct): string {
 }
 // FIN FIX FILTRO FINAL POR TIENDA
 async function main(): Promise<void> {
+  const envFile = existsSync('.env') ? '.env' : undefined;
+  if (envFile) {
+    loadEnv({ path: envFile });
+  }
+
   const browser = await chromium.launch({ headless: true });
   const storeTimeoutMs = Math.max(
     30_000,
@@ -929,10 +806,12 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}
 
 
 
