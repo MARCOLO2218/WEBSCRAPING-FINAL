@@ -1,8 +1,8 @@
 import type { Page } from 'playwright';
-import { cleanProductText as cleanText, type CsvProduct } from '../../domain/product.js';
+import type { CsvProduct } from '../../domain/product.js';
 import type { ProductSelectorConfig } from '../types.js';
 
-export const FURNITURE_CITY_SOURCE_URL = 'https://www.furniturecity.com.gt/mattress-colchones/';
+export const FURNITURE_CITY_SOURCE_URL = 'https://www.furniturecity.com.gt/product-category/Descanso/';
 
 export type FurnitureCityDependencies = {
   navigate: (page: Page, url: string) => Promise<void>;
@@ -29,7 +29,7 @@ async function extractFurnitureCityCatalogUrls(page: Page): Promise<string[]> {
 
     return Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href]'))
       .map((anchor) => absolute(anchor.getAttribute('href') ?? ''))
-      .filter((url) => /\/product-category\/.*colchones/i.test(url) || /\/producto\//i.test(url));
+      .filter((url) => /\/product-category\/.*(?:colchones|descanso)/i.test(url));
   }, FURNITURE_CITY_SOURCE_URL);
 }
 
@@ -42,31 +42,6 @@ async function scrapeFurnitureCity(page: Page, scrapedAt: string): Promise<CsvPr
   const rowsByUrl = new Map<string, CsvProduct>();
 
   for (const catalogUrl of catalogUrls) {
-    if (/\/producto\//i.test(catalogUrl)) {
-      rowsByUrl.set(catalogUrl, {
-        source_site: 'Furniture City Guatemala',
-        brand: 'Furniture City',
-        line: '',
-        category: 'Colchones',
-        product_name: cleanText(catalogUrl.split('/').filter(Boolean).pop()?.replace(/-/g, ' ')),
-        availability: 'Listado en tienda online',
-        regular_price: '',
-        sale_price: '',
-        discount: '',
-        installment: '',
-        product_url: catalogUrl,
-        source_url: FURNITURE_CITY_SOURCE_URL,
-        headline: '',
-        description: '',
-        warranty: '',
-        benefits: '',
-        image_url: '',
-        image_alt: '',
-        scraped_at: scrapedAt,
-      });
-      continue;
-    }
-
     await goto(page, catalogUrl);
     const rows = await extractCardProducts(page, catalogUrl, {
       sourceSite: 'Furniture City Guatemala',

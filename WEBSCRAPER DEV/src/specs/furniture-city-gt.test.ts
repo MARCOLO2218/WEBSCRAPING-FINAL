@@ -15,14 +15,35 @@ test('Furniture City conserva descubrimiento de categorias y productos', async (
   const productUrl = 'https://www.furniturecity.com.gt/producto/cama-prueba/';
   const navigated: string[] = [];
   const extracted: string[] = [];
+  const extractedRow = {
+    source_site: 'Furniture City Guatemala',
+    brand: 'Furniture City',
+    line: '',
+    category: 'Colchones',
+    product_name: 'Colchón de prueba',
+    availability: 'Disponible',
+    regular_price: 'Q1,200.00',
+    sale_price: 'Q999.00',
+    discount: '',
+    installment: '',
+    product_url: productUrl,
+    source_url: categoryUrl,
+    headline: '',
+    description: '',
+    warranty: '',
+    benefits: '',
+    image_url: '',
+    image_alt: '',
+    scraped_at: '',
+  };
   const page = {
-    evaluate: async () => [categoryUrl, productUrl],
+    evaluate: async () => [categoryUrl],
   } as unknown as Page;
   const scraper = createFurnitureCityGuatemalaScraper({
     navigate: async (_page, url) => { navigated.push(url); },
     extractCards: async (_page, url, config) => {
       extracted.push(`${url}|${config.cardSelector}|${config.titleSelector}`);
-      return [];
+      return [extractedRow];
     },
   });
 
@@ -32,6 +53,12 @@ test('Furniture City conserva descubrimiento de categorias y productos', async (
   assert.ok(extracted.every((value) => value.includes('li.product')));
   assert.equal(rows[0]?.product_url, productUrl);
   assert.equal(rows[0]?.source_site, 'Furniture City Guatemala');
+  assert.equal(rows[0]?.regular_price, 'Q1,200.00');
+  assert.equal(rows[0]?.sale_price, 'Q999.00');
+});
+
+test('Furniture City usa su categoría actual de Descanso', () => {
+  assert.equal(FURNITURE_CITY_SOURCE_URL, 'https://www.furniturecity.com.gt/product-category/Descanso/');
 });
 
 test('Furniture City vive fuera del ejecutor principal', () => {
