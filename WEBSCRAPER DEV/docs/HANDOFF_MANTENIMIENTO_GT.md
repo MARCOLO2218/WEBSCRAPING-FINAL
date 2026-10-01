@@ -3,19 +3,22 @@
 ## Estado
 
 - País: Guatemala (GT), 19 tiendas del registro.
-- Ciclo: en progreso; Furniture City sigue sin resolución. La auditoría más
-  reciente obtuvo 56 candidatos y 6 precios; hay un nuevo ajuste local para
-  desactivar su fallback genérico de enlaces.
+- Ciclo: en progreso; Furniture City ya devuelve cinco candidatos, todos con
+  precio y URL en la auditoría Ubuntu de `73273e2`. Queda validar en Ubuntu la
+  normalización local de una leyenda de rango duplicada en un precio variable.
 - SPEC: [SPEC-070](../specs/SPEC-070-auditoria-mantenimiento-tiendas-guatemala.md).
 - Informe detallado: [auditoría de las 19 tiendas](GT_STORE_AUDIT_2026-09-28.md).
-- Base local observada: `72a80e0` más cambios locales; hay cambios ajenos staged y
-  unstaged en el repositorio. No limpiar, revertir ni publicar en bloque.
-- La suite Node local pasó 210/210 y TypeScript compiló después del ajuste de
-  Furniture City. `corepack pnpm test` no pudo crear su carpeta temporal por
+- Base local observada: `87dab77` más cambios locales; Ubuntu confirmó después
+  el pull a `73273e2`. Hay cambios ajenos staged y unstaged en el repositorio.
+  No limpiar, revertir ni publicar en bloque.
+- Ubuntu pasó `pnpm test` 138/138 y `pnpm run build` con `73273e2`; la auditoría
+  puntual devolvió 5 productos, 5 nombres, 5 URLs y 5 precios. La suite Node local
+  pasó 211/211 y TypeScript compiló tras limpiar el texto del precio. `corepack pnpm test` no pudo crear su carpeta temporal por
   permisos de Windows; se usaron los binarios ya instalados en `node_modules`.
 - Ubuntu DEV ejecutó `audit:gt` para una sola tienda; no se escribió en la base ni
   se exportó catálogo.
-- El último ajuste de Furniture City aún no se ha publicado ni validado en DEV.
+- La limpieza del texto del precio variable es el siguiente cambio local por
+  publicar; aún falta confirmar la auditoría actualizada en Ubuntu.
 
 ## Seguimiento por tienda
 
@@ -29,7 +32,7 @@
 | Americana 2000 Guatemala | 40 útiles de 44 recibidos | Ninguno identificado en esta captura. |
 | Mattress Guatemala | Error remoto de conexión a la base del comercio | Esperar que el comercio restaure el sitio y repetir comprobación. |
 | Beds & Dreams | 39 con precio; no se reprodujeron los 3 reportados | Revisar conteos en el host donde se presente el síntoma. |
-| Furniture City Guatemala | Última auditoría Ubuntu: 56 candidatos, 56 con nombre/URL, 6 con precio; código local desactiva fallback de enlaces | Publicar el último ajuste y repetir auditoría/paginación en DEV. |
+| Furniture City Guatemala | Ubuntu `73273e2`: 5 candidatos, todos con nombre/URL/precio; normalización del texto de un rango ya está local | Publicar normalización y repetir auditoría puntual. |
 | La Curacao Guatemala | 35, con precio | Ninguno identificado en esta captura. |
 | MAX Guatemala | 581 | Ninguno identificado en esta captura. |
 | Elektra Guatemala | 12; títulos limpios tras corrección | Ninguno identificado en esta captura. |
@@ -46,11 +49,12 @@
 La ruta anterior [`/mattress-colchones/`](https://www.furniturecity.com.gt/mattress-colchones/)
 presenta contenido de marca. La [categoría Descanso](https://www.furniturecity.com.gt/product-category/Descanso/)
 publica cinco colchones con precio. El primer ajuste cambió la fuente y quitó
-placeholders, pero la auditoría Ubuntu aún recorrió categorías relacionadas y
-devolvió primero 58 candidatos y luego 56, con sólo 6 precios, incluso al
-consultar una sola categoría. El código local ahora desactiva para esta tienda
-el fallback genérico que recorre todos los enlaces. Esta tercera corrección aún
-requiere validarse y publicarse en Ubuntu; el problema no está resuelto todavía.
+placeholders. Las auditorías Ubuntu encontraron primero 58 y luego 56 candidatos
+por categorías relacionadas y enlaces generales. La revisión publicada en
+`73273e2` limitó la extracción a las tarjetas de la categoría oficial y produjo
+5 de 5 productos con precio y URL. Una muestra de precio variable aún incluye
+una leyenda duplicada; el extractor local normaliza ese texto a los importes
+únicos del rango. Falta publicar y verificar esta limpieza final.
 
 ## Continuidad
 

@@ -113,3 +113,15 @@ Furniture City la usa, mientras el resto conserva su extracción actual. La
 prueba verifica que Furniture City solicite el modo de tarjetas solamente.
 TypeScript compiló y la suite local pasó 210/210 pruebas después de este ajuste.
 Todavía no se debe considerar resuelta hasta repetir `audit:gt` en Ubuntu.
+
+## Tercer resultado de auditoría puntual Ubuntu — 2026-10-01
+
+Después de publicar `73273e2`, Ubuntu ejecutó las 138 pruebas y el build sin
+errores. La auditoría puntual de Furniture City devolvió 5 candidatos, todos con
+nombre, URL y precio. La muestra de un colchón variable llegó como
+`Q4,829.00 - Q6,379.00Rango de precios: desde Q4,829.00 hasta Q6,379.00`.
+Esto confirmó que el exceso de productos quedó corregido, pero el texto del
+precio todavía necesitaba limpieza. El extractor local ahora conserva los dos
+importes GTQ únicos y descarta la leyenda duplicada; TypeScript compiló y la
+suite local pasó 211/211. Falta publicar esta última normalización y repetir la
+auditoría puntual en Ubuntu.

@@ -5,6 +5,7 @@ import type { Page } from 'playwright';
 import {
   FURNITURE_CITY_SOURCE_URL,
   createFurnitureCityGuatemalaScraper,
+  normalizeFurnitureCityPrice,
 } from '../scrapers/gt/furniture-city.js';
 
 const mainSource = readFileSync('src/scrape-facenco-energy.ts', 'utf8');
@@ -24,7 +25,7 @@ test('Furniture City consulta sólo la categoría oficial y conserva los precios
     product_name: 'Colchón de prueba',
     availability: 'Disponible',
     regular_price: 'Q1,200.00',
-    sale_price: 'Q999.00',
+    sale_price: 'Q4,829.00 - Q6,379.00Rango de precios: desde Q4,829.00 hasta Q6,379.00',
     discount: '',
     installment: '',
     product_url: productUrl,
@@ -55,7 +56,16 @@ test('Furniture City consulta sólo la categoría oficial y conserva los precios
   assert.equal(rows[0]?.product_url, productUrl);
   assert.equal(rows[0]?.source_site, 'Furniture City Guatemala');
   assert.equal(rows[0]?.regular_price, 'Q1,200.00');
-  assert.equal(rows[0]?.sale_price, 'Q999.00');
+  assert.equal(rows[0]?.sale_price, 'Q4,829.00 - Q6,379.00');
+});
+
+test('Furniture City elimina texto auxiliar y montos duplicados en precios variables', () => {
+  assert.equal(
+    normalizeFurnitureCityPrice('Q4,829.00 - Q6,379.00Rango de precios: desde Q4,829.00 hasta Q6,379.00'),
+    'Q4,829.00 - Q6,379.00',
+  );
+  assert.equal(normalizeFurnitureCityPrice('Q1,999.00'), 'Q1,999.00');
+  assert.equal(normalizeFurnitureCityPrice('Rango de precios no disponible'), '');
 });
 
 test('Furniture City usa su categoría actual de Descanso', () => {

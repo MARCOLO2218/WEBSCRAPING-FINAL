@@ -27,7 +27,8 @@ cambios estructurales, ausencia de productos y pérdida de campos relevantes.
 - Furniture City consulta sólo la categoría oficial vigente de Descanso; no
   recorre categorías relacionadas encontradas en el menú. Desactiva para esta
   tienda el fallback genérico que recoge todos los enlaces de la página; las
-  tarjetas oficiales siguen identificando URL y producto.
+  tarjetas oficiales siguen identificando URL y producto. Normaliza los precios
+  como importes GTQ únicos o rangos sin repetir descripciones accesibles del sitio.
 - Beds & Dreams informa los conteos de sus tres colecciones comerciales y las
   nueve colecciones de confort, además del total único que el extractor forma.
 - El motor visual respeta el orden de prioridad de selectores para nombres y
@@ -48,6 +49,8 @@ cambios estructurales, ausencia de productos y pérdida de campos relevantes.
   productos útiles.
 - Beds & Dreams conserva filtros/datos y expone un diagnóstico de los conteos
   de todas las colecciones consultadas.
+- Furniture City conserva los extremos únicos de un rango GTQ y elimina
+  descripciones accesibles duplicadas del texto de precio.
 - La auditoría visita las 19 tiendas mediante el registro compartido y ningún
   camino del comando llama a persistencia o exportación.
 - `pnpm test` y `pnpm run build` terminan correctamente.

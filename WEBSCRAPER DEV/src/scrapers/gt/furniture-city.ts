@@ -4,6 +4,13 @@ import type { ProductSelectorConfig } from '../types.js';
 
 export const FURNITURE_CITY_SOURCE_URL = 'https://www.furniturecity.com.gt/product-category/Descanso/';
 
+export function normalizeFurnitureCityPrice(value: string): string {
+  const amounts = [...value.matchAll(/(?:GTQ|Q)\s*[\d,]+(?:\.\d{1,2})?/gi)]
+    .map(([amount]) => amount.replace(/\s+/g, '').toUpperCase());
+  const uniqueAmounts = [...new Set(amounts)].slice(0, 2);
+  return uniqueAmounts.join(' - ');
+}
+
 export type FurnitureCityDependencies = {
   navigate: (page: Page, url: string) => Promise<void>;
   extractCards: (page: Page, sourceUrl: string, config: ProductSelectorConfig) => Promise<CsvProduct[]>;
@@ -30,7 +37,12 @@ async function scrapeFurnitureCity(page: Page, scrapedAt: string): Promise<CsvPr
     includeLinkFallback: false,
   });
 
-  return rows.map((row) => ({ ...row, scraped_at: scrapedAt }));
+  return rows.map((row) => ({
+    ...row,
+    regular_price: normalizeFurnitureCityPrice(row.regular_price),
+    sale_price: normalizeFurnitureCityPrice(row.sale_price),
+    scraped_at: scrapedAt,
+  }));
 }
 
   return scrapeFurnitureCity;
