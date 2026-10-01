@@ -26,8 +26,7 @@ const visualStores = createGuatemalaVisualStores(engine);
 const pagedVisualStores = createGuatemalaPagedVisualStores(engine);
 const max = createMaxGuatemalaScraper({ navigate: goto, filterGuatemalaRows: filterGuatemalaQuetzalRows });
 const walmart = createWalmartGuatemalaScraper({ filterGuatemalaRows: filterGuatemalaQuetzalRows });
-const simanPageLimit = Number(process.argv.find((argument) => argument.startsWith('--max-pages='))?.split('=')[1] ?? 8);
-const siman = createSimanGuatemalaScraper(engine, { maxPages: simanPageLimit });
+const siman = createSimanGuatemalaScraper(engine);
 const cardStores = createGuatemalaCardStores({
   navigate: goto,
   extractCards: extractCardProducts,
@@ -79,9 +78,6 @@ const failures: string[] = [];
 
 try {
   console.log(`Auditoria GT solo lectura: ${timestamp} (${stores.length}/${allStores.length} tiendas)`);
-  if (stores.some((store) => store.name === 'Siman Guatemala') && simanPageLimit < 8) {
-    console.log(`Siman: muestra limitada a ${Math.max(1, Math.trunc(simanPageLimit))} páginas para revisar marcado (no mide cobertura total).`);
-  }
   console.log('Persistencia PostgreSQL y exportación de catálogo no forman parte de este comando.');
 
   for (const store of stores) {
