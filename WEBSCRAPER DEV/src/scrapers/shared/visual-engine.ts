@@ -1,6 +1,7 @@
 import type { Page } from 'playwright';
 import type { CsvProduct } from '../../domain/product.js';
 import type { ProductSelectorConfig } from '../types.js';
+import { scrapeCemacoCatalog } from '../gt/cemaco.js';
 
 export type VisualScraperEngineDependencies = {
   navigate: (page: Page, url: string) => Promise<void>;
@@ -28,6 +29,11 @@ async function scrapeGenericGuatemalaStore(
   sourceSite: string,
   brand: string,
 ): Promise<CsvProduct[]> {
+  if (sourceSite === 'Cemaco Guatemala') {
+    return filterGuatemalaQuetzalRows(await scrapeCemacoCatalog(page, sourceUrl, scrapedAt, {
+      navigate: goto, prepare: autoScrollCatalogPage,
+    }), sourceSite);
+  }
   await goto(page, sourceUrl);
   await autoScrollCatalogPage(page);
   const rows = await extractCardProducts(page, sourceUrl, {

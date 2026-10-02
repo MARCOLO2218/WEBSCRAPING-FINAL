@@ -125,3 +125,43 @@ precio todavía necesitaba limpieza. El extractor local ahora conserva los dos
 importes GTQ únicos y descarta la leyenda duplicada; TypeScript compiló y la
 suite local pasó 211/211. Falta publicar esta última normalización y repetir la
 auditoría puntual en Ubuntu.
+
+## Validación Furniture City en Ubuntu — 2026-10-01
+
+Tras publicar `0adf12c`, el usuario confirmó que Ubuntu estaba actualizado:
+139/139 pruebas aprobadas y build TypeScript correcto. La auditoría puntual
+reportó cinco candidatos, todos con nombre, precio y URL, cero fallos y cinco
+segundos de ejecución. El precio variable ya llega limpio:
+`Q4,829.00 - Q6,379.00`. Furniture City queda validada para la categoría Descanso
+observada. La ejecución fue de solo lectura y no actualizó catálogo ni exportó
+archivos. El siguiente pendiente GT es comprobar el formato de precios de Cemaco.
+
+## Corrección Cemaco — 2026-10-02
+
+La auditoría Ubuntu devolvió 24 candidatos con títulos «Ver más» y «Ver
+restricciones» y Q250. La inspección DOM confirmó tarjetas Algolia en enlaces
+`a[data-product]` y precios con centavos en un span separado. El extractor
+específico ahora lee nombre, marca, URL /p y precios de la misma tarjeta; excluye
+el fallback de enlaces generales. La auditoría local de solo lectura obtuvo
+20 productos, todos con nombre/precio/URL, cero fallos, y muestras Q5,388.50,
+Q6,864.00 y Q3,699.00. Build correcto y 212/212 pruebas Node aprobadas con los
+binarios instalados; Corepack falló por EPERM al crear su carpeta temporal.
+Cambio local sin publicar: falta validación Ubuntu y revisar cobertura de
+paginación; no se certifica todo el catálogo del comercio ni se escribió en DB.
+
+## Cobertura paginada Cemaco — 2026-10-02
+
+La validación final recorrió las 16 páginas anunciadas por el paginador Algolia:
+15 páginas de 20 fichas y una última de 15. Total: 315 fichas únicas con precio;
+el filtro GT existente aceptó 311 productos de descanso y descartó cuatro
+no relacionados. Los 311 aceptados tienen nombre, precio y URL; cero fallos,
+215 segundos. Muestras: Colchón Beautyrest Firme Q5,388.50, Set Colchón + Base
+Beautyrest Firme Q6,864.00 y Set de Cama Dinasty Plus Q3,699.00.
+
+El paginador abrevia intervalos con puntos suspensivos. El extractor incluye
+las páginas intermedias hasta el máximo descubierto, conserva búsqueda e índice,
+deduplica por URL y falla explícitamente ante una página sin tarjetas o más de
+20 páginas. TypeScript compiló y 216/216 pruebas locales pasaron. Validación de
+solo lectura: sin PostgreSQL, exportaciones ni despliegue. Queda publicar y
+confirmar esta misma auditoría en Ubuntu; el conteo refleja la búsqueda actual
+`camas`, no todo el catálogo comercial ni todas sus variantes.

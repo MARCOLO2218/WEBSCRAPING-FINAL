@@ -31,6 +31,14 @@ cambios estructurales, ausencia de productos y pérdida de campos relevantes.
   como importes GTQ únicos o rangos sin repetir descripciones accesibles del sitio.
 - Beds & Dreams informa los conteos de sus tres colecciones comerciales y las
   nueve colecciones de confort, además del total único que el extractor forma.
+- Cemaco usa exclusivamente las tarjetas Algolia `a[data-product]` con URL
+  de ficha `/p`, nombre propio y precios de la misma tarjeta. Reconstruye los
+  centavos del span separado; no recoge enlaces promocionales ni Q250 ajenos.
+  Recorre los enlaces del paginador Algolia que mantienen origen, ruta, término
+  e índice originales; deduplica fichas por URL. El recorrido se limita a 20
+  páginas, incluyendo los intervalos ocultos por puntos suspensivos del paginador.
+  Falla explícitamente si encuentra una página vacía o un enlace de
+  la misma búsqueda que excede ese límite, sin declarar cobertura completa.
 - El motor visual respeta el orden de prioridad de selectores para nombres y
   precios; Elektra y Siman toman el nombre del producto en vez de la marca o
   acción del card, y Siman excluye el porcentaje del texto del precio.
@@ -51,6 +59,9 @@ cambios estructurales, ausencia de productos y pérdida de campos relevantes.
   de todas las colecciones consultadas.
 - Furniture City conserva los extremos únicos de un rango GTQ y elimina
   descripciones accesibles duplicadas del texto de precio.
+- Cemaco reconstruye Q5,388 + span 50 como Q5,388.50, conserva precio regular
+  y oferta, rechaza URLs ajenas y enlaces promocionales, descubre páginas
+  sucesivas, deduplica URLs y detecta cobertura vacía o sobre el límite.
 - La auditoría visita las 19 tiendas mediante el registro compartido y ningún
   camino del comando llama a persistencia o exportación.
 - `pnpm test` y `pnpm run build` terminan correctamente.
@@ -65,10 +76,12 @@ cambios estructurales, ausencia de productos y pérdida de campos relevantes.
 - `src/scrapers/gt/siman.ts`
 - `src/scrapers/gt/card-stores.ts`
 - `src/scrapers/gt/furniture-city.ts`
+- `src/scrapers/gt/cemaco.ts`
 - `src/scrapers/gt/olympia-la-colchoneria.ts`
 - `src/scrapers/shared/visual-engine.ts`
 - `docs/GT_STORE_AUDIT_2026-09-28.md`
 - `src/specs/gt-paged-visual-stores.test.ts`
 - `src/specs/furniture-city-gt.test.ts`
+- `src/specs/cemaco-gt.test.ts`
 - `src/specs/beds-dreams-gt.test.ts`
 - `package.json`

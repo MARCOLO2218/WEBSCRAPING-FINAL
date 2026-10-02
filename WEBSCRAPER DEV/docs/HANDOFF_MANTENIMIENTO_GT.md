@@ -4,21 +4,19 @@
 
 - País: Guatemala (GT), 19 tiendas del registro.
 - Ciclo: en progreso; Furniture City ya devuelve cinco candidatos, todos con
-  precio y URL en la auditoría Ubuntu de `73273e2`. Queda validar en Ubuntu la
-  normalización local de una leyenda de rango duplicada en un precio variable.
+  precio y URL y rango limpio en la auditoría Ubuntu posterior a `0adf12c`.
 - SPEC: [SPEC-070](../specs/SPEC-070-auditoria-mantenimiento-tiendas-guatemala.md).
 - Informe detallado: [auditoría de las 19 tiendas](GT_STORE_AUDIT_2026-09-28.md).
-- Base local observada: `87dab77` más cambios locales; Ubuntu confirmó después
-  el pull a `73273e2`. Hay cambios ajenos staged y unstaged en el repositorio.
+- Base local observada: `0adf12c`; Ubuntu confirmó que estaba actualizado. Hay cambios ajenos staged y unstaged en el repositorio.
   No limpiar, revertir ni publicar en bloque.
-- Ubuntu pasó `pnpm test` 138/138 y `pnpm run build` con `73273e2`; la auditoría
+- Ubuntu pasó `pnpm test` 139/139 y `pnpm run build` tras publicar `0adf12c`; la auditoría
   puntual devolvió 5 productos, 5 nombres, 5 URLs y 5 precios. La suite Node local
   pasó 211/211 y TypeScript compiló tras limpiar el texto del precio. `corepack pnpm test` no pudo crear su carpeta temporal por
   permisos de Windows; se usaron los binarios ya instalados en `node_modules`.
 - Ubuntu DEV ejecutó `audit:gt` para una sola tienda; no se escribió en la base ni
   se exportó catálogo.
-- La limpieza del texto del precio variable es el siguiente cambio local por
-  publicar; aún falta confirmar la auditoría actualizada en Ubuntu.
+- Furniture City validada el 2026-10-01: rango `Q4,829.00 - Q6,379.00`,
+  cinco candidatos y cero fallos. Siguiente pendiente: publicar y validar Cemaco en Ubuntu.
 
 ## Seguimiento por tienda
 
@@ -32,12 +30,12 @@
 | Americana 2000 Guatemala | 40 útiles de 44 recibidos | Ninguno identificado en esta captura. |
 | Mattress Guatemala | Error remoto de conexión a la base del comercio | Esperar que el comercio restaure el sitio y repetir comprobación. |
 | Beds & Dreams | 39 con precio; no se reprodujeron los 3 reportados | Revisar conteos en el host donde se presente el síntoma. |
-| Furniture City Guatemala | Ubuntu `73273e2`: 5 candidatos, todos con nombre/URL/precio; normalización del texto de un rango ya está local | Publicar normalización y repetir auditoría puntual. |
+| Furniture City Guatemala | Ubuntu tras `0adf12c`: 5 candidatos con nombre/URL/precio y rango limpio | Resuelta para la categoría Descanso observada; revisar en el próximo ciclo. |
 | La Curacao Guatemala | 35, con precio | Ninguno identificado en esta captura. |
 | MAX Guatemala | 581 | Ninguno identificado en esta captura. |
 | Elektra Guatemala | 12; títulos limpios tras corrección | Ninguno identificado en esta captura. |
 | Walmart Guatemala | 562, con precio normalizado | Ninguno identificado en esta captura. |
-| Cemaco Guatemala | 20, con precio; observación anterior de formato por revisar | Confirmar formato con extracción directa/fixture; los ejemplos públicos consultados usan `Q` con miles y centavos. |
+| Cemaco Guatemala | Validación local: 16 páginas, 315 fichas únicas, 311 aceptadas con nombre/precio/URL; 216 pruebas aprobadas | Publicar y repetir auditoría puntual en Ubuntu. |
 | Siman Guatemala | 142 candidatos en ocho páginas; página 1 verificada tras corrección | Ninguno identificado en esta captura. |
 | Suena Center Guatemala | 18 | Ninguno identificado en esta captura. |
 | Dormilandia Guatemala | 70 | Ninguno identificado en esta captura. |
@@ -52,23 +50,51 @@ publica cinco colchones con precio. El primer ajuste cambió la fuente y quitó
 placeholders. Las auditorías Ubuntu encontraron primero 58 y luego 56 candidatos
 por categorías relacionadas y enlaces generales. La revisión publicada en
 `73273e2` limitó la extracción a las tarjetas de la categoría oficial y produjo
-5 de 5 productos con precio y URL. Una muestra de precio variable aún incluye
-una leyenda duplicada; el extractor local normaliza ese texto a los importes
-únicos del rango. Falta publicar y verificar esta limpieza final.
+5 de 5 productos con precio y URL. El commit `0adf12c` limpió la leyenda
+duplicada del precio variable. Ubuntu confirmó 139/139 pruebas, build correcto
+y cinco productos con rango limpio el 2026-10-01. Esta validación corresponde
+a la categoría Descanso; la auditoría no actualizó el catálogo operativo.
 
 ## Continuidad
 
-1. Cuando el usuario publique el último ajuste en DEV, repetir la auditoría de
-   Furniture City y actualizar fecha, commit, conteo, precios y paginación.
-2. Confirmar la extracción de precio de Cemaco con un fixture o salida directa;
-   no modificar el parser sin reproducir un valor incorrecto.
-3. Repetir los síntomas de Beds & Dreams en el host donde aparecían si se desea
+1. Publicar y validar la corrección paginada de Cemaco en Ubuntu (referencia local: 311 aceptados en 16 páginas).
+2. Repetir los síntomas de Beds & Dreams en el host donde aparecían si se desea
    cerrar ese caso.
-4. Mantener Mattress y Bodegangas como bloqueos externos hasta que exista una
+3. Mantener Mattress y Bodegangas como bloqueos externos hasta que exista una
    comprobación que permita validar el extractor.
-5. Cuando termine o cambie el estado, actualizar este handoff y
+4. Cuando termine o cambie el estado, actualizar este handoff y
    `docs/MANTENIMIENTO_POR_PAIS.md`.
 
 No ejecutar escrituras PostgreSQL/Excel, auditoría general, PROD, proxy o
 firewall desde este handoff. Conservar los cambios locales y dejar Git y el
 despliegue al usuario.
+
+## Corrección Cemaco — 2026-10-02
+
+La auditoría Ubuntu devolvió 24 candidatos con títulos «Ver más» y «Ver
+restricciones» y Q250. La inspección DOM confirmó tarjetas Algolia en enlaces
+`a[data-product]` y precios con centavos en un span separado. El extractor
+específico ahora lee nombre, marca, URL /p y precios de la misma tarjeta; excluye
+el fallback de enlaces generales. La auditoría local de solo lectura obtuvo
+20 productos, todos con nombre/precio/URL, cero fallos, y muestras Q5,388.50,
+Q6,864.00 y Q3,699.00. Build correcto y 212/212 pruebas Node aprobadas con los
+binarios instalados; Corepack falló por EPERM al crear su carpeta temporal.
+Cambio local sin publicar: falta validación Ubuntu y revisar cobertura de
+paginación; no se certifica todo el catálogo del comercio ni se escribió en DB.
+
+## Cobertura paginada Cemaco — 2026-10-02
+
+La validación final recorrió las 16 páginas anunciadas por el paginador Algolia:
+15 páginas de 20 fichas y una última de 15. Total: 315 fichas únicas con precio;
+el filtro GT existente aceptó 311 productos de descanso y descartó cuatro
+no relacionados. Los 311 aceptados tienen nombre, precio y URL; cero fallos,
+215 segundos. Muestras: Colchón Beautyrest Firme Q5,388.50, Set Colchón + Base
+Beautyrest Firme Q6,864.00 y Set de Cama Dinasty Plus Q3,699.00.
+
+El paginador abrevia intervalos con puntos suspensivos. El extractor incluye
+las páginas intermedias hasta el máximo descubierto, conserva búsqueda e índice,
+deduplica por URL y falla explícitamente ante una página sin tarjetas o más de
+20 páginas. TypeScript compiló y 216/216 pruebas locales pasaron. Validación de
+solo lectura: sin PostgreSQL, exportaciones ni despliegue. Queda publicar y
+confirmar esta misma auditoría en Ubuntu; el conteo refleja la búsqueda actual
+`camas`, no todo el catálogo comercial ni todas sus variantes.
