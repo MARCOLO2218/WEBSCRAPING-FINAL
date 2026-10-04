@@ -10,3 +10,11 @@ backups/
 /public/nicaragua-catalogo.json
 /public/nicaragua-catalogo.json.*.tmp
 /public/nicaragua-catalogo.json.lock
+
+# Archivos de trabajo locales y proyectos ajenos al scraper.
+/repos/
+/work/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
