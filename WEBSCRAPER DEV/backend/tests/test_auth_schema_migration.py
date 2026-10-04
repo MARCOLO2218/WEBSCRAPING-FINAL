@@ -1,16 +1,36 @@
-"""Flujo controlado 042 -> 043 -> 044 en una base efímera."""
+"""Flujo controlado 042 -> 046 en una base efímera."""
 
 import hashlib
+from pathlib import Path
 
 from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy import create_engine, event, inspect, text
+from sqlalchemy.exc import IntegrityError
 
 from catalog_api.db import auth_schema_migration as migration
 from catalog_api.db.country_models import country_metadata
 
 REGIONAL_HASH = "7" * 64
+
+
+def test_diagnostic_does_not_expose_exception_or_credentials():
+    class DatabaseError(Exception):
+        sqlstate = "28P01"
+    error = DatabaseError("password=super-secreto DSN=privado")
+    diagnostic = migration.safe_diagnostic(error)
+    assert diagnostic == {"categoria": "credenciales_rechazadas", "sqlstate": "28P01"}
+    assert "super-secreto" not in str(diagnostic)
+    assert migration.safe_diagnostic(RuntimeError("secreto"))["categoria"] == "error_de_preflight"
+
+
+def test_connection_diagnostic_handles_libpq_without_sqlstate():
+    from sqlalchemy.exc import OperationalError
+    error = OperationalError("SQL privado", {}, Exception("password authentication failed for user privado"))
+    assert migration.safe_diagnostic(error) == {"categoria": "credenciales_rechazadas", "sqlstate": None}
+    error = OperationalError("SQL privado", {}, Exception("no pg_hba.conf entry for host privado"))
+    assert migration.safe_diagnostic(error)["categoria"] == "conexion_rechazada_por_politica_postgresql"
 
 
 @pytest.fixture
@@ -53,6 +73,7 @@ def test_apply_verify_idempotence_and_empty_rollback(db):
         assert applied["revision_despues"] == migration.HEAD
         assert set(applied["tablas"]) == {
             "usuarios", "usuario_paises", "sesiones_app", "login_intentos",
+            "admin_eventos",
         }
         assert set(applied["filas"].values()) == {0}
 
@@ -77,6 +98,63 @@ def test_rollback_rejects_existing_auth_data(db):
         ))
     with pytest.raises(migration.Rejected, match="existen datos"), db.begin() as connection:
         migration.execute(connection, "rollback")
+
+
+def test_existing_044_schema_is_inspectable_and_upgrades_to_046(db):
+    with db.begin() as connection:
+        migration.migrate(connection, migration.THROTTLE)
+        connection.execute(text(
+            "INSERT INTO catalogo.usuarios "
+            "(id,username,password_hash,enabled,global_admin,created_at) "
+            "VALUES ('legacy-admin','admin','synthetic-hash',1,1,'2026-09-27 12:00:00')"
+        ))
+    with db.begin() as connection:
+        preflight = migration.execute(connection, "plan")
+        assert preflight["revision_antes"] == migration.THROTTLE
+        assert "admin_eventos" not in preflight["tablas"]
+    with db.begin() as connection:
+        applied = migration.execute(connection, "apply")
+        assert applied["revision_antes"] == migration.THROTTLE
+        assert applied["revision_despues"] == migration.HEAD
+        assert "account_level" in {
+            column["name"] for column in inspect(connection).get_columns(
+                "usuarios", schema="catalogo"
+            )
+        }
+        assert "admin_eventos" in applied["tablas"]
+        level = connection.execute(text(
+            "SELECT account_level FROM catalogo.usuarios WHERE id = 'legacy-admin'"
+        )).scalar_one()
+        assert level == "superadmin"
+
+
+def test_admin_audit_events_reject_update_and_delete(db):
+    with db.begin() as connection:
+        migration.execute(connection, "apply")
+        connection.execute(text(
+            "INSERT INTO catalogo.admin_eventos "
+            "(id,actor_user_id,target_user_id,event_type,details,created_at) "
+            "VALUES ('event-1','actor-1','target-1','usuario_creado','{}',"
+            "'2026-09-28 12:00:00')"
+        ))
+    for statement in (
+        "UPDATE catalogo.admin_eventos SET event_type='cuenta_bloqueada' WHERE id='event-1'",
+        "DELETE FROM catalogo.admin_eventos WHERE id='event-1'",
+    ):
+        with pytest.raises(IntegrityError), db.begin() as connection:
+            connection.execute(text(statement))
+    with db.connect() as connection:
+        assert connection.execute(text(
+            "SELECT count(*) FROM catalogo.admin_eventos WHERE id='event-1'"
+        )).scalar_one() == 1
+
+
+def test_postgresql_audit_migration_rejects_truncate():
+    migration_source = (
+        Path(__file__).parents[1] / "migrations" / "versions" / "046_admin_audit.py"
+    ).read_text(encoding="utf-8")
+    assert "BEFORE TRUNCATE ON catalogo.admin_eventos" in migration_source
+    assert "trg_admin_eventos_no_truncate" in migration_source
 
 
 def test_postgresql_rejects_any_other_database_or_role():

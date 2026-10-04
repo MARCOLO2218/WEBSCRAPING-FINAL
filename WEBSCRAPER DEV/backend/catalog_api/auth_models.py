@@ -1,7 +1,7 @@
 """Tablas preparatorias de identidad; Alembic las crea sólo con autorización."""
 
 from sqlalchemy import (
-    Boolean, CheckConstraint, Column, DateTime, ForeignKey, Index, MetaData,
+    Boolean, CheckConstraint, Column, DateTime, ForeignKey, Index, JSON, MetaData,
     String, Table, Text, UniqueConstraint,
 )
 
@@ -18,6 +18,9 @@ users = Table(
     Column("password_hash", Text, nullable=False),
     Column("enabled", Boolean, nullable=False, default=True),
     Column("global_admin", Boolean, nullable=False, default=False),
+    Column("account_level", String(16), nullable=False, default="usuario", server_default="usuario"),
+    CheckConstraint("account_level IN ('superadmin','admin','usuario')",
+                    name="ck_usuarios_account_level"),
     Column("created_at", DateTime(timezone=True), nullable=False),
     UniqueConstraint("username", name="uq_usuarios_username"),
 )
@@ -45,6 +48,24 @@ sessions = Table(
     UniqueConstraint("token_hash", name="uq_sesiones_app_token_hash"),
 )
 Index("ix_sesiones_app_user_expiry", sessions.c.user_id, sessions.c.expires_at)
+
+admin_audit_events = Table(
+    "admin_eventos", auth_metadata,
+    Column("id", String(36), primary_key=True),
+    Column("actor_user_id", String(36), nullable=False),
+    Column("target_user_id", String(36), nullable=False),
+    Column("event_type", String(40), nullable=False),
+    Column("details", JSON, nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False),
+    CheckConstraint(
+        "event_type IN ('usuario_creado','permisos_cambiados',"
+        "'contrasena_restablecida','cuenta_bloqueada','cuenta_desbloqueada','nivel_cambiado')",
+        name="ck_admin_eventos_event_type",
+    ),
+)
+# Los escritores de aplicación sólo insertan; no se exponen operaciones de
+# edición/eliminación de estos eventos desde repositorios o rutas HTTP.
+Index("ix_admin_eventos_created", admin_audit_events.c.created_at, admin_audit_events.c.id)
 
 
 def tables() -> tuple[Table, Table, Table]:

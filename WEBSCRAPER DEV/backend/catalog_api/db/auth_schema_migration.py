@@ -9,16 +9,21 @@ import re
 
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import create_engine, inspect, select, text
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import URL
 
-from ..auth_models import tables as identity_tables
+from ..auth_models import admin_audit_events
+from ..auth_schema_043 import tables_043
 from ..auth_throttle_models import login_attempts
 
 
 BASE = "042_regional"
 MID = "043_auth"
-HEAD = "044_login_throttle"
+THROTTLE = "044_login_throttle"
+LEVELS = "045_account_levels"
+AUDIT = "046_admin_audit"
+LEVEL_EVENT = "047_admin_level_event"
+HEAD = LEVEL_EVENT
 BACKEND = Path(__file__).resolve().parents[2]
 
 
@@ -27,7 +32,23 @@ class Rejected(ValueError):
 
 
 def auth_tables():
-    return (*identity_tables(), login_attempts)
+    return (*tables_043, login_attempts)
+
+
+def tables_for_revision(current):
+    table_map = {table.name: table for table in tables_043}
+    if current == BASE:
+        return {}
+    if current == MID:
+        return table_map
+    table_map[login_attempts.name] = login_attempts
+    if current == THROTTLE:
+        return table_map
+    if current in {LEVELS, AUDIT, LEVEL_EVENT}:
+        table_map["usuarios"] = None
+    if current in {AUDIT, LEVEL_EVENT}:
+        table_map[admin_audit_events.name] = admin_audit_events
+    return table_map
 
 
 def require_copy_target(connection):
@@ -42,18 +63,25 @@ def revision(connection):
     values = list(connection.execute(text(
         "SELECT version_num FROM catalogo.alembic_version"
     )).scalars())
-    if len(values) != 1 or values[0] not in {BASE, MID, HEAD}:
+    if len(values) != 1 or values[0] not in {BASE, MID, THROTTLE, LEVELS, AUDIT, LEVEL_EVENT}:
         raise Rejected("Revisión Alembic incompatible con la migración de autenticación")
     return values[0]
 
 
-def existing_auth_tables(connection):
-    names = {table.name for table in auth_tables()}
+def existing_auth_tables(connection, current=None):
+    names = ({table.name for table in tables_043} |
+             {login_attempts.name, admin_audit_events.name})
     return set(inspect(connection).get_table_names(schema="catalogo")) & names
 
 
-def table_state(connection, existing=None):
-    expected = {table.name: set(table.c.keys()) for table in auth_tables()}
+def table_state(connection, existing=None, current=None):
+    current = current or revision(connection)
+    expected = {
+        name: (set(table.c.keys()) if table is not None else
+               {"id", "username", "password_hash", "enabled", "global_admin",
+                "account_level", "created_at"})
+        for name, table in tables_for_revision(current).items()
+    }
     inspector = inspect(connection)
     existing = existing_auth_tables(connection) if existing is None else existing
     for name in existing:
@@ -63,18 +91,21 @@ def table_state(connection, existing=None):
         if actual_columns != expected[name]:
             raise Rejected("Esquema de autenticación divergente: " + name)
     counts = {
-        table.name: connection.execute(select(text("count(*)")).select_from(table)).scalar_one()
-        for table in auth_tables() if table.name in existing
+        name: connection.execute(text(f"SELECT count(*) FROM catalogo.{name}")).scalar_one()
+        for name in sorted(existing)
     }
     return existing, counts
 
 
 def require_consistent_state(current, existing):
-    identity = {table.name for table in identity_tables()}
+    identity = {table.name for table in tables_043}
     expected = {
         BASE: set(),
         MID: identity,
-        HEAD: identity | {login_attempts.name},
+        THROTTLE: identity | {login_attempts.name},
+        LEVELS: identity | {login_attempts.name},
+        AUDIT: identity | {login_attempts.name, admin_audit_events.name},
+        LEVEL_EVENT: identity | {login_attempts.name, admin_audit_events.name},
     }[current]
     if existing != expected:
         raise Rejected("Estado parcial entre Alembic y tablas de autenticación")
@@ -90,6 +121,10 @@ def migrate(connection, target, rollback=False):
         auth_throttle_schema_migration=not rollback,
         auth_schema_rollback=rollback,
         auth_throttle_schema_rollback=rollback,
+        account_levels_schema_migration=not rollback,
+        account_levels_schema_rollback=rollback,
+        admin_audit_schema_migration=not rollback,
+        admin_audit_schema_rollback=rollback,
     )
     if rollback:
         command.downgrade(config, target)
@@ -126,9 +161,9 @@ def execute(connection, mode="plan", allow_data_loss=False, expected_regional_ha
 
     before = revision(connection)
     lot = regional_lot(connection, expected_regional_hash)
-    existing = existing_auth_tables(connection)
+    existing = existing_auth_tables(connection, before)
     require_consistent_state(before, existing)
-    existing, counts = table_state(connection, existing)
+    existing, counts = table_state(connection, existing, before)
 
     if mode == "verify" and before != HEAD:
         raise Rejected("Las revisiones de autenticación aún no están aplicadas")
@@ -142,11 +177,11 @@ def execute(connection, mode="plan", allow_data_loss=False, expected_regional_ha
         migrate(connection, HEAD)
 
     after = revision(connection)
-    final_tables = existing_auth_tables(connection)
+    final_tables = existing_auth_tables(connection, after)
     require_consistent_state(after, final_tables)
-    final_tables, final_counts = table_state(connection, final_tables)
+    final_tables, final_counts = table_state(connection, final_tables, after)
     if mode == "apply" and after != HEAD:
-        raise Rejected("La migración de autenticación no alcanzó 044")
+        raise Rejected("La migración de autenticación no alcanzó 047")
     if mode == "rollback" and after != BASE:
         raise Rejected("El rollback de autenticación no regresó a 042")
 
@@ -183,6 +218,43 @@ def validate_backup(path, expected_sha256):
     if actual != expected_sha256:
         raise Rejected("La huella del respaldo cambió; detener migración")
     return actual
+
+
+def safe_diagnostic(error):
+    """Clasificar sin serializar excepción, SQL, parámetros ni DSN."""
+    original = getattr(error, "orig", error)
+    state = getattr(original, "sqlstate", None)
+    categories = {
+        "28P01": "credenciales_rechazadas", "28000": "autorizacion_rechazada",
+        "3D000": "base_no_existe", "42501": "permisos_insuficientes",
+        "42P01": "tabla_requerida_no_existe", "42703": "columna_requerida_no_existe",
+        "3F000": "esquema_no_existe", "53300": "limite_conexiones",
+        "57014": "consulta_cancelada_o_timeout",
+    }
+    if state in categories:
+        return {"categoria": categories[state], "sqlstate": state}
+    if isinstance(state, str) and re.fullmatch(r"[A-Z0-9]{5}", state):
+        return {"categoria": "error_postgresql", "sqlstate": state}
+    if type(error).__name__ == "OperationalError":
+        # libpq puede no entregar SQLSTATE durante el establecimiento inicial.
+        # Usar el texto sólo para clasificar; nunca devolverlo al operador.
+        detail = str(original).lower()
+        signatures = [
+            ("password authentication failed", "credenciales_rechazadas"),
+            ("no password supplied", "contrasena_no_proporcionada"),
+            ("no pg_hba.conf entry", "conexion_rechazada_por_politica_postgresql"),
+            ("ssl connection is required", "tls_requerido"),
+            ("ssl is required", "tls_requerido"),
+            ("certificate verify failed", "certificado_tls_no_verificado"),
+            ("does not exist", "base_o_rol_no_existe"),
+            ("connection refused", "conexion_rechazada"),
+            ("timeout expired", "timeout_conexion"),
+            ("connection timed out", "timeout_conexion"),
+            ("server closed the connection", "servidor_cerro_conexion"),
+        ]
+        category = next((category for signature, category in signatures if signature in detail), "conexion_no_establecida")
+        return {"categoria": category, "sqlstate": None}
+    return {"categoria": "error_de_preflight", "sqlstate": None}
 
 
 def main(argv=None):
@@ -251,7 +323,10 @@ def main(argv=None):
         message = str(error) if isinstance(error, Rejected) else (
             "Operación no confirmada; revisar conexión y estado PostgreSQL."
         )
-        print(json.dumps({"status": "error", "message": message}, ensure_ascii=False))
+        report = {"status": "error", "message": message}
+        if not isinstance(error, Rejected):
+            report["diagnostico"] = safe_diagnostic(error)
+        print(json.dumps(report, ensure_ascii=False))
         return 2
     finally:
         if engine is not None:
