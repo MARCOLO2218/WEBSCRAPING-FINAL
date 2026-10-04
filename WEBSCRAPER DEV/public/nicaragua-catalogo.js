@@ -59,6 +59,7 @@ get('export').addEventListener('click', () => {
   const link = document.createElement('a'); link.href = url; link.download = 'catalogo-nicaragua.csv'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 get('refresh').addEventListener('click', load);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !activeJob) load(); });
 const storeNames = { 'la-curacao': 'La Curacao', 'el-gallo': 'El Gallo más Gallo', siman: 'Siman', walmart: 'Walmart', maxipali: 'Maxi Pali' };
 for (const [id, name] of Object.entries(storeNames)) {
   const label = element('label', name); const input = document.createElement('input'); input.type = 'checkbox'; input.value = id; input.checked = true; label.prepend(input); get('run-stores').append(label);

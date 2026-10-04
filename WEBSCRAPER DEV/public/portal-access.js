@@ -27,6 +27,7 @@ function showCountries(context) {
   }
   get('profile-summary').textContent = `Cuenta: ${context.user_id} · ${context.account_level === 'superadmin' ? 'Superadministrador' : context.account_level === 'admin' ? 'Administrador' : 'Usuario'}`;
   get('manage-users').hidden = context.account_level === 'usuario';
+  document.dispatchEvent(new CustomEvent('catalog-session', { detail: context }));
   get('login').hidden = true; get('countries').hidden = false;
   form.reset();
 }
@@ -45,6 +46,7 @@ get('logout').addEventListener('click', async () => {
   try {
     await request('/auth/logout', { method: 'POST', headers: { 'X-CSRF-Token': csrf || csrfCookie() } });
     csrf = ''; get('countries').hidden = true; get('login').hidden = false;
+    document.dispatchEvent(new CustomEvent('catalog-session', { detail: null }));
     notice.textContent = 'Sesión cerrada.';
   } catch (error) { get('profile-summary').textContent = error.message; }
   finally { button.disabled = false; }
