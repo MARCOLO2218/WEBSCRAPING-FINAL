@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { config as loadEnv } from 'dotenv';
 import { createCatalogRequestHandler } from './server/routes.js';
 import { createScraperJobQueue } from './server/scraper-job-queue.js';
+import { createNcJobs } from './server/nc-jobs.js';
 
 const envFile = existsSync('.env') ? '.env' : undefined;
 if (envFile) {
@@ -19,6 +20,7 @@ const requestHandler = createCatalogRequestHandler({
   publicDir: PUBLIC_DIR,
   outputCsv: OUTPUT_CSV,
   scraperJobQueue,
+  ncJobs: createNcJobs(),
 });
 const server = createServer(requestHandler);
 

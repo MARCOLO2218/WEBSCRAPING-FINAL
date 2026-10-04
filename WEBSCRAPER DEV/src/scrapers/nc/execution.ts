@@ -54,12 +54,14 @@ export type NcStoreOutput = {
 export async function executeNcReadOnly(
   requested: readonly string[],
   runners: Record<NcStoreKey, () => Promise<NcStoreOutput>>,
+  onProgress?: (event: { store: string; status: string; count?: number }) => void,
 ) {
   const stores = requested.length ? [...new Set(requested)] : Object.keys(NC_EXECUTION_STORES);
   for (const store of stores) if (!(Object.hasOwn(NC_EXECUTION_STORES, store))) throw new Error(`Tienda NC desconocida: ${store}`);
   const results = [];
   for (const store of stores as NcStoreKey[]) {
     const started = Date.now();
+    onProgress?.({ store, status: 'running' });
     try {
       const output = await runners[store]();
       const products = normalizeNcProducts(store, output.rows);
@@ -70,6 +72,8 @@ export async function executeNcReadOnly(
       results.push({ store, status: 'error', seconds: (Date.now() - started) / 1000,
         error: error instanceof Error ? error.message : String(error), products: [] });
     }
+    const result = results.at(-1)!;
+    onProgress?.({ store, status: result.status, count: result.products.length });
   }
   return { mode: 'read_only', country: 'NC', currency: 'NIO', databaseWrites: false,
     status: results.every(result => result.status === 'ok') ? 'ok' : 'partial', stores: results };

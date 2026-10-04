@@ -9,3 +9,4 @@ backups/
 
 /public/nicaragua-catalogo.json
 /public/nicaragua-catalogo.json.*.tmp
+/public/nicaragua-catalogo.json.lock

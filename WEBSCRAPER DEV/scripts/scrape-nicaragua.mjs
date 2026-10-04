@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url';
 
 const summaryOnly = process.argv.includes('--summary');
 const publishPreview = process.argv.includes('--publish-preview');
-const args = process.argv.slice(2).filter(arg => !['--', '--summary', '--publish-preview'].includes(arg));
+const webJob = process.argv.includes('--web-job');
+const args = process.argv.slice(2).filter(arg => !['--', '--summary', '--publish-preview', '--web-job'].includes(arg));
 if (args.some(arg => !arg.startsWith('--stores='))) throw new Error('Use --stores=la-curacao,el-gallo,siman,walmart,maxipali');
 if (args.length > 1) throw new Error('No repita --stores');
 const requested = args.length ? args[0].slice('--stores='.length).split(',').map(value => value.trim()).filter(Boolean) : [];
@@ -47,7 +48,7 @@ try {
       })) };
     } finally { await page.close(); }
   }]));
-  const report = await executeNcReadOnly(requested, runners);
+  const report = await executeNcReadOnly(requested, runners, webJob ? event => console.log(`NC_PROGRESS ${JSON.stringify(event)}`) : undefined);
   if (publishPreview) {
     const target = await publishNcPreviewSnapshot(report, scrapedAt, fileURLToPath(new URL('../public/', import.meta.url)));
     console.log(`Vista NC actualizada: ${target}`);

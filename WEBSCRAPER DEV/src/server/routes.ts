@@ -10,6 +10,7 @@ export type CatalogRouteDependencies = {
   publicDir: string;
   outputCsv: string;
   scraperJobQueue: ReturnType<typeof createScraperJobQueue>;
+  ncJobs?: (req: IncomingMessage, res: ServerResponse, url: URL) => Promise<void>;
 };
 
 export function createCatalogRequestHandler(dependencies: CatalogRouteDependencies) {
@@ -18,6 +19,10 @@ export function createCatalogRequestHandler(dependencies: CatalogRouteDependenci
   return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     try {
       const url = new URL(req.url || '/', `http://${req.headers.host}`);
+      if (url.pathname.startsWith('/api/nc/') && dependencies.ncJobs) {
+        await dependencies.ncJobs(req, res, url);
+        return;
+      }
 
       if (url.pathname === '/api/facenco-prices') {
         await handlePriceUpload(req, res, url.searchParams.get('confirm') === 'true');
