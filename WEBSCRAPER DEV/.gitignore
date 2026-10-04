@@ -6,3 +6,6 @@
 *.backup
 backups/
 .regional-validation/
+
+/public/nicaragua-catalogo.json
+/public/nicaragua-catalogo.json.*.tmp

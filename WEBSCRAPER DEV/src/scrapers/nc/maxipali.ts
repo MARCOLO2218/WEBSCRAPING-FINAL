@@ -94,6 +94,7 @@ export function createMaxipaliNicaraguaScraper(dependencies: MaxipaliNcScraperDe
       rows.set(maxipaliNcProductId(canonical), {
         ...row,
         source_site: MAXIPALI_NC.name,
+        image_url: /(?:\/icon_sf\.png|\/logo[^/]*\.(?:png|svg|jpg))(?:\?|$)/i.test(row.image_url) ? '' : row.image_url,
         product_url: canonical,
         source_url: productUrl,
         scraped_at: scrapedAt,

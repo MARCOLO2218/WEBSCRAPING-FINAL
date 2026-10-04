@@ -2,9 +2,12 @@ import { chromium } from 'playwright';
 import { executeNcReadOnly, NC_EXECUTION_STORES } from '../dist/scrapers/nc/execution.js';
 import { LA_CURACAO_NC, collectCuracaoNcPages, readCuracaoNcDom } from '../dist/scrapers/nc/la-curacao.js';
 import { runNicaraguaPilots } from './nicaragua-stores-pilot.mjs';
+import { publishNcPreviewSnapshot } from './nc-preview-snapshot.mjs';
+import { fileURLToPath } from 'node:url';
 
 const summaryOnly = process.argv.includes('--summary');
-const args = process.argv.slice(2).filter(arg => arg !== '--' && arg !== '--summary');
+const publishPreview = process.argv.includes('--publish-preview');
+const args = process.argv.slice(2).filter(arg => !['--', '--summary', '--publish-preview'].includes(arg));
 if (args.some(arg => !arg.startsWith('--stores='))) throw new Error('Use --stores=la-curacao,el-gallo,siman,walmart,maxipali');
 if (args.length > 1) throw new Error('No repita --stores');
 const requested = args.length ? args[0].slice('--stores='.length).split(',').map(value => value.trim()).filter(Boolean) : [];
@@ -45,6 +48,10 @@ try {
     } finally { await page.close(); }
   }]));
   const report = await executeNcReadOnly(requested, runners);
+  if (publishPreview) {
+    const target = await publishNcPreviewSnapshot(report, scrapedAt, fileURLToPath(new URL('../public/', import.meta.url)));
+    console.log(`Vista NC actualizada: ${target}`);
+  }
   const visibleReport = summaryOnly ? { ...report, stores: report.stores.map(({ products, diagnostics, ...store }) => ({
     ...store, sample: products.slice(0, 3),
   })) } : report;

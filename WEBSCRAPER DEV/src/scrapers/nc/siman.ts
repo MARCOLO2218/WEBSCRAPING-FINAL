@@ -22,6 +22,10 @@ export const SIMAN_NC = {
 
 export type SimanNcSource = keyof typeof SIMAN_NC.sources;
 
+export function cleanSimanNcDiscount(text: string): string {
+  return text.match(/(?:^|[^\d.,])(\d{1,3}(?:\.\d+)?\s*%)\s*$/)?.[1]?.replace(/\s/g, '') ?? '';
+}
+
 export function isSimanNcUrl(value: string): boolean {
   try {
     const url = new URL(value);
@@ -161,6 +165,7 @@ export function createSimanNicaraguaScraper(dependencies: SimanNcScraperDependen
             source_site: SIMAN_NC.name,
             regular_price: regularPrice ?? '',
             sale_price: salePrice ?? '',
+            discount: cleanSimanNcDiscount(row.discount),
             product_url: productUrl,
             source_url: pageUrl,
             scraped_at: scrapedAt,

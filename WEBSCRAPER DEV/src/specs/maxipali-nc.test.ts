@@ -28,7 +28,7 @@ test('extractor visita las seis fichas confirmadas y conserva productos sin prec
         productUrl.includes('colchon') ? 'COLCHON QUEEN OZARK TRAIL' : 'CAMA SUPER DESCANSO',
       availability: '', regular_price: '', sale_price: '', discount: '', installment: '',
       product_url: productUrl, source_url: productUrl, headline: '', description: '', warranty: '',
-      benefits: '', image_url: '', image_alt: '', scraped_at: '',
+      benefits: '', image_url: 'https://wmcamcdn.com/biformato/icon_sf.png', image_alt: '', scraped_at: '',
     }),
   });
   const rows = await scraper({} as any, '2026-09-25T00:00:00.000Z');
@@ -36,6 +36,7 @@ test('extractor visita las seis fichas confirmadas y conserva productos sin prec
   assert.equal(rows.length, 6);
   assert.ok(rows.every((row) => row.source_site === MAXIPALI_NC.name));
   assert.ok(rows.every((row) => row.regular_price === '' && row.sale_price === ''));
+  assert.ok(rows.every(row => row.image_url === ''));
 });
 
 test('clasificación excluye cámara y limpia colchón', () => {

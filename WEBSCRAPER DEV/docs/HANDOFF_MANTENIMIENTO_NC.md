@@ -89,3 +89,34 @@ e importación sin ejecución verificadas. Falta publicación y ejecución conju
 en Ubuntu. Salida completa sólo en consola; no activa NC ni persiste datos.
 Después de validar este ejecutor: preparar vista NC y revisar las compuertas
 pendientes para persistencia/exportación regional; no modificar PostgreSQL.
+
+## Ejecución conjunta Ubuntu — 2026-10-04 — 68d83aa
+
+Usuario confirmó pull, 149/149 pruebas aprobadas (incluyen compilación), y
+`scrape:nc -- --summary` con status ok, NC/NIO y databaseWrites false.
+Resultados: La Curacao 65/65 con precio; El Gallo 35/35; Siman 77/77;
+Walmart 154/143; Maxi Palí 6/0. Total 337 productos, 320 con precio y 17 sin
+precio. Las cinco tiendas respondieron; tiempo por tienda 7.938, 60.017,
+70.297, 8.750 y 30.712 segundos respectivamente.
+La Curacao certifica su categoría; las otras cuatro conservan cobertura acotada.
+El ejecutor independiente está validado en DEV, no es catálogo operativo.
+
+Antes de la vista NC, corregir campos auxiliares observados: Maxi Palí usa
+`https://wmcamcdn.com/biformato/icon_sf.png` como imagen (icono, no producto),
+y Siman trae texto de precio junto al porcentaje en discount. No inventar una
+foto ni un descuento. Siguiente bloque: vista NC alimentada con resultados
+reales del ejecutor y flujo por tienda; persistencia/exportación regional sigue
+pendiente de integración sin modificar PostgreSQL en este ciclo.
+
+## Vista NC DEV — SPEC-083 — 2026-10-04
+
+Preparada localmente `/catalogo-nicaragua.html`, enlazada desde el portal. Lee
+un snapshot real generado explícitamente con
+`corepack pnpm run scrape:nc -- --publish-preview --summary`. Sólo publica tras
+éxito de las cinco tiendas; falla sin reemplazar la versión previa en caso
+parcial. No agrega datos ficticios ni modifica PostgreSQL. El JSON local queda
+fuera de Git. Muestra fecha, filtros, fotos y precios NIO; error si no existe
+snapshot. Siman limpia discount; Maxi Palí descarta icon_sf.png como foto.
+Build y 224/224 pruebas locales aprobadas. Falta publicación, generación en
+Ubuntu y revisión visual. Después: acciones operativas y exportación/persistencia
+regional con sus compuertas; el botón de actualización actual sólo relee datos.

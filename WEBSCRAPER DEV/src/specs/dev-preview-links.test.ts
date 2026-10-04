@@ -23,7 +23,7 @@ test('la portada es un acceso regional independiente y muestra países después 
 test('el selector abre cada país directamente y Guatemala ya no es la portada', () => {
   assert.match(portal, /href="\/catalogo-guatemala\.html">Ingresar a Guatemala/);
   assert.match(portal, /href="\/demo-acceso-pais\.html#hnPreviewStage">Ver piloto de Honduras/);
-  assert.match(portal, /href="\/demo-acceso-pais\.html#ncReportStage">Ver piloto de Nicaragua/);
+  assert.match(portal, /href="\/catalogo-nicaragua\.html">Ver catálogo DEV de Nicaragua/);
   assert.match(portal, /El Salvador/);
   assert.match(guatemalaCatalog, /id="runScraperButton"/);
   assert.match(guatemalaCatalog, /id="statusBar"/);
