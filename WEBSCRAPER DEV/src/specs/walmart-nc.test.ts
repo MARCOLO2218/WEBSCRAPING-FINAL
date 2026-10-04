@@ -103,6 +103,7 @@ test('diagnostica ofertas API ausentes de productos Walmart sin precio', async (
   const rows = await scraper(page, '2026-09-25T12:00:00.000Z');
   assert.equal(rows.length, 1);
   assert.equal(rows[0].regular_price, '');
+  assert.equal(rows[0].availability, 'No disponible');
   assert.deepEqual(diagnostic, [{
     productName: 'Cama King Koil matrimonial', category: 'Camas y colchones',
     productUrl: 'https://www.walmart.com.ni/cama-king-koil/p',

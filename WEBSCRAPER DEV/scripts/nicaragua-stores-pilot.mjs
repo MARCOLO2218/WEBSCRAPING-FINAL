@@ -1,15 +1,12 @@
 import { chromium } from 'playwright';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createElGalloNicaraguaScraper } from '../dist/scrapers/nc/el-gallo.js';
 import { createSimanNicaraguaScraper } from '../dist/scrapers/nc/siman.js';
 import { createWalmartNicaraguaScraper } from '../dist/scrapers/nc/walmart.js';
 import { createMaxipaliNicaraguaScraper } from '../dist/scrapers/nc/maxipali.js';
 
 const allowed = new Set(['el-gallo', 'siman', 'walmart', 'maxipali']);
-const requested = process.argv.slice(2).filter((value) => !value.startsWith('-'));
-const stores = requested.length ? requested : [...allowed];
-if (stores.some((store) => !allowed.has(store))) {
-  throw new Error(`Tienda inválida. Use: ${[...allowed].join(', ')}`);
-}
 
 const clean = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
 const pageObservations = new Map();
@@ -73,9 +70,13 @@ const extractMaxipaliProduct = async (page, productUrl, scrapedAt) => page.evalu
   } : null;
 }, { productUrl, scrapedAt });
 
-const browser = await chromium.launch({ headless: true });
+export async function runNicaraguaPilots(stores = [...allowed], options = {}) {
+if (stores.some((store) => !allowed.has(store))) {
+  throw new Error(`Tienda inválida. Use: ${[...allowed].join(', ')}`);
+}
+const browser = options.browser ?? await chromium.launch({ headless: true });
 const page = await browser.newPage({ locale: 'es-NI' });
-const scrapedAt = new Date().toISOString();
+const scrapedAt = options.scrapedAt ?? new Date().toISOString();
 const walmartUnpricedDiagnostics = [];
 const runners = {
   'el-gallo': createElGalloNicaraguaScraper({ navigate, extractCards }),
@@ -100,6 +101,7 @@ try {
       onPageResult: (source, pageNumber, stats) => pageResults.push({ source, page: pageNumber, ...stats }) });
     try {
       const rows = await runners[store](page, scrapedAt);
+      options.onRows?.(store, rows);
       const diagnostic = rows.length === 0 ? await page.evaluate(() => ({
         url: location.href,
         title: document.title,
@@ -173,8 +175,15 @@ try {
     }
   }
 } finally {
-  await browser.close();
+  await page.close();
+  if (!options.browser) await browser.close();
+}
+return report;
 }
 
-console.log(JSON.stringify(report, null, 2));
-if (Object.values(report.stores).some((entry) => entry.status !== 'ok')) process.exitCode = 1;
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const requested = process.argv.slice(2).filter(value => !value.startsWith('-'));
+  const report = await runNicaraguaPilots(requested.length ? requested : [...allowed]);
+  console.log(JSON.stringify(report, null, 2));
+  if (Object.values(report.stores).some(entry => entry.status !== 'ok')) process.exitCode = 1;
+}

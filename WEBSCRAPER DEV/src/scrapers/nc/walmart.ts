@@ -228,7 +228,9 @@ export function createWalmartNicaraguaScraper(options: WalmartNcScraperOptions =
             line: search.term,
             category,
             product_name: name,
-            availability: Number(offer.AvailableQuantity || 0) > 0 ? 'Disponible' : 'Listado en tienda online',
+            availability: offer.IsAvailable === false || offer.AvailableQuantity === 0
+              ? 'No disponible'
+              : Number(offer.AvailableQuantity) > 0 ? 'Disponible' : 'Disponibilidad no confirmada',
             regular_price: regularPrice,
             sale_price: salePrice,
             discount: listPrice > price && price > 0 ? `${Math.round((1 - price / listPrice) * 100)}%` : '',

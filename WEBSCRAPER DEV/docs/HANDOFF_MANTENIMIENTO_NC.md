@@ -60,3 +60,32 @@ precios C$ y enlace siguiente `?p=2`. SPEC-081 agrega el runner
 Build y 217/217 pruebas Node locales aprobadas con binarios instalados. Falta
 publicar el runner y ejecutarlo en Ubuntu; la muestra de página 1 no certifica
 los 65 productos ni la equivalencia con fuentes de tamaños.
+
+## La Curacao validada en Ubuntu — 2026-10-04
+
+El usuario publicó `51de964` y confirmó su pull en Ubuntu. El piloto en vivo
+compiló y terminó con status ok, complete true, reason finished: 65 productos
+únicos en tres páginas (24+24+17), total anunciado estable 65, cero duplicados,
+problemas o advertencias. Precios NIO habitual/oferta y stock JSON-LD reconocidos;
+los ejemplos incluyen C$19,000.00 habitual y C$10,399.00 oferta. Sin escrituras.
+La validación cubre la categoría superior Camas y Colchones actual, no certifica
+la equivalencia con las fuentes de tamaños ni todos los atributos de ficha.
+
+Las cinco tiendas confirmadas ya responden mediante sus pilotos. Siguiente
+trabajo: ejecutor NC independiente con salida regional homogénea (país/moneda,
+identidad, campos opcionales y cobertura), incluyendo corrección de disponibilidad
+Walmart. Después validar el conjunto en Ubuntu y preparar la vista NC en DEV;
+no escribir en PostgreSQL ni activar el ejecutor GT/PROD durante esta preparación.
+## Ejecutor unificado NC — SPEC-082 — 2026-10-04
+
+Preparado localmente `pnpm run scrape:nc`, selección opcional
+`--stores=la-curacao,el-gallo,siman,walmart,maxipali`. Serial, navegador compartido,
+filas completas con país NC/moneda NIO, identidad e importes numéricos; continúa
+tras error por tienda y reporta cobertura verificada/acotada sin equipararlas.
+El piloto de cuatro tiendas conserva su CLI y ahora exporta una función reutilizable,
+sin iniciar Chromium al importar. Walmart informa «No disponible» ante falta de
+stock explícita. Build y 221/221 pruebas locales aprobadas; sintaxis de scripts
+e importación sin ejecución verificadas. Falta publicación y ejecución conjunta
+en Ubuntu. Salida completa sólo en consola; no activa NC ni persiste datos.
+Después de validar este ejecutor: preparar vista NC y revisar las compuertas
+pendientes para persistencia/exportación regional; no modificar PostgreSQL.
