@@ -205,13 +205,15 @@ def test_disabled_country_and_demoted_role_take_effect_on_next_request(api):
     assert client.get("/test/countries").json() == []
 
 
-def test_admin_requires_global_role_without_granting_country_catalog_access(api):
+def test_admin_has_global_enabled_country_access_from_account_level(api):
     client, provider, _, _ = api
     assert client.get("/test/admin").status_code == 403
-    provider.update_session(global_admin=True, grants=())
+    provider.update_session(global_admin=True, account_level="superadmin", grants=())
     assert client.get("/test/admin").json() == {"user_id": "ana"}
-    assert client.get("/test/GT/products").status_code == 403
-    provider.update_session(global_admin=False)
+    assert client.get("/test/GT/products").status_code == 200
+    assert client.get("/test/SV/products").status_code == 200
+    assert client.get("/test/NC/products").status_code == 403
+    provider.update_session(global_admin=False, account_level="usuario")
     assert client.get("/test/admin").status_code == 403
 
 

@@ -15,12 +15,12 @@ from typing import Any
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError, VerifyMismatchError
-from sqlalchemy import select, update
+from sqlalchemy import and_, delete, insert, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from .access.policy import AccessSnapshot, CountryGrant, CountryRole, CountryState, SessionState
-from .auth_models import sessions as session_table
+from .auth_models import admin_audit_events, sessions as session_table
 from .auth_models import user_country_roles, users
 from .db.country_models import countries
 
@@ -35,6 +35,10 @@ class InvalidCredentials(Exception):
 
 class InvalidCsrf(Exception):
     pass
+
+
+class AdminActorInvalid(Exception):
+    """El actor perdió su nivel o habilitación antes de confirmar la operación."""
 
 
 @dataclass(frozen=True)
@@ -105,19 +109,30 @@ class AuthRepository:
         return self._clock()
 
     def create_user(self, username: str, password: str, *,
-                    enabled: bool = True, global_admin: bool = False) -> str:
+                    enabled: bool = True, global_admin: bool = False,
+                    account_level: str | None = None,
+                    audit_actor_id: str | None = None) -> str:
         """Provisioning interno; no hay ruta HTTP de alta ni valores por defecto."""
         normalized = normalize_username(username)
         validate_new_password(password)
+        level = account_level or ("superadmin" if global_admin else "usuario")
+        if level not in {"superadmin", "admin", "usuario"}:
+            raise ValueError("Nivel de cuenta inválido")
         user_id = str(uuid.uuid4())
         try:
             with self._sessions.begin() as db:
                 db.execute(users.insert().values(
                     id=user_id, username=normalized,
                     password_hash=self._hasher.hash(password),
-                    enabled=enabled is True, global_admin=global_admin is True,
+                    enabled=enabled is True, global_admin=level in {"superadmin", "admin"},
+                    account_level=level,
                     created_at=self._clock(),
                 ))
+                if audit_actor_id is not None:
+                    self._record_admin_event(
+                        db, audit_actor_id, user_id, "usuario_creado",
+                        {"account_level": level}, superadmin_only=True,
+                    )
         except IntegrityError as error:
             raise ValueError("El usuario ya existe") from error
         return user_id
@@ -144,6 +159,212 @@ class AuthRepository:
                     user_country_roles.c.user_id == user_id,
                     user_country_roles.c.country_code == country_code,
                 ).values(role=role.value))
+
+    def list_users_for_admin(self) -> dict[str, list[dict[str, Any]]]:
+        """Return safe account/grant metadata and the full country catalog."""
+        with self._sessions() as db:
+            user_rows = db.execute(select(
+                users.c.id, users.c.username, users.c.enabled,
+                users.c.global_admin, users.c.account_level, users.c.created_at,
+            ).order_by(users.c.username, users.c.id)).mappings().all()
+            assignment_rows = db.execute(select(
+                user_country_roles.c.user_id,
+                user_country_roles.c.country_code,
+                user_country_roles.c.role,
+                countries.c.nombre,
+                countries.c.moneda,
+                countries.c.habilitado,
+            ).join(countries, countries.c.codigo == user_country_roles.c.country_code)
+             .order_by(user_country_roles.c.user_id, user_country_roles.c.country_code)
+            ).mappings().all()
+            country_rows = db.execute(select(
+                countries.c.codigo, countries.c.nombre, countries.c.moneda,
+                countries.c.habilitado,
+            ).order_by(countries.c.codigo)).mappings().all()
+
+        permissions: dict[str, list[dict[str, Any]]] = {}
+        for assignment in assignment_rows:
+            permissions.setdefault(assignment["user_id"], []).append({
+                "country_code": assignment["country_code"],
+                "country_name": assignment["nombre"],
+                "currency": assignment["moneda"],
+                "country_enabled": assignment["habilitado"] is True,
+                "role": assignment["role"],
+            })
+        return {
+            "users": [{
+                "id": row["id"],
+                "username": row["username"],
+                "enabled": row["enabled"] is True,
+                "global_admin": row["global_admin"] is True,
+                "account_level": row["account_level"],
+                "created_at": _as_utc(row["created_at"]).isoformat(),
+                "country_permissions": permissions.get(row["id"], []),
+            } for row in user_rows],
+            "countries": [{
+                "code": row["codigo"], "name": row["nombre"],
+                "currency": row["moneda"], "enabled": row["habilitado"] is True,
+            } for row in country_rows],
+        }
+
+    def replace_country_permissions(
+        self,
+        user_id: str,
+        assignments: list[tuple[str, CountryRole]],
+        *,
+        audit_actor_id: str | None = None,
+    ) -> None:
+        """Atomically replace only regional grants; never changes global-admin."""
+        if not isinstance(user_id, str) or not user_id.strip():
+            raise ValueError("Usuario desconocido")
+        if not isinstance(assignments, list):
+            raise ValueError("Permisos regionales inválidos")
+        normalized: list[dict[str, str]] = []
+        seen: set[str] = set()
+        for country_code, role in assignments:
+            if (not isinstance(country_code, str)
+                    or not re.fullmatch(r"[A-Z]{2}", country_code)
+                    or country_code in seen
+                    or not isinstance(role, CountryRole)):
+                raise ValueError("Permisos regionales inválidos")
+            seen.add(country_code)
+            normalized.append({"country_code": country_code, "role": role.value})
+        with self._sessions.begin() as db:
+            target = db.execute(select(users.c.id, users.c.account_level).where(
+                users.c.id == user_id,
+            )).mappings().one_or_none()
+            if target is None:
+                raise LookupError("Usuario desconocido")
+            if audit_actor_id is not None and target["account_level"] != "usuario":
+                actor_level = db.execute(select(users.c.account_level).where(
+                    users.c.id == audit_actor_id, users.c.enabled.is_(True),
+                )).scalar_one_or_none()
+                if actor_level != "superadmin":
+                    raise AdminActorInvalid
+            requested = {item["country_code"] for item in normalized}
+            known = set(db.execute(select(countries.c.codigo).where(
+                countries.c.codigo.in_(requested) if requested else countries.c.codigo == "",
+            )).scalars().all())
+            if requested != known:
+                raise ValueError("País desconocido")
+            db.execute(delete(user_country_roles).where(
+                user_country_roles.c.user_id == user_id,
+            ))
+            if normalized:
+                db.execute(insert(user_country_roles), [
+                    {"user_id": user_id, **item} for item in normalized
+                ])
+            if audit_actor_id is not None:
+                self._record_admin_event(
+                    db, audit_actor_id, user_id, "permisos_cambiados",
+                    {"permissions": normalized}, superadmin_only=False,
+                )
+
+    def change_account_level(self, user_id: str, account_level: str, *, audit_actor_id: str) -> None:
+        if account_level not in {"admin", "usuario"}:
+            raise ValueError("Nivel no permitido")
+        with self._sessions.begin() as db:
+            target_level = db.execute(select(users.c.account_level).where(
+                users.c.id == user_id,
+            )).scalar_one_or_none()
+            if target_level is None:
+                raise LookupError("Usuario desconocido")
+            if target_level == "superadmin" or user_id == audit_actor_id:
+                raise AdminActorInvalid
+            self._record_admin_event(db, audit_actor_id, user_id, "nivel_cambiado",
+                                     {"previous": target_level, "account_level": account_level},
+                                     superadmin_only=True)
+            db.execute(update(users).where(users.c.id == user_id).values(
+                account_level=account_level, global_admin=account_level == "admin",
+            ))
+            db.execute(update(session_table).where(
+                session_table.c.user_id == user_id, session_table.c.revoked_at.is_(None),
+            ).values(revoked_at=self._clock()))
+
+    def reset_user_password(self, user_id: str, password: str, *,
+                            audit_actor_id: str | None = None) -> None:
+        validate_new_password(password)
+        with self._sessions.begin() as db:
+            target_level = db.execute(select(users.c.account_level).where(
+                users.c.id == user_id,
+            )).scalar_one_or_none()
+            if target_level is None:
+                raise LookupError("Usuario desconocido")
+            if audit_actor_id is not None:
+                actor_level = db.execute(select(users.c.account_level).where(
+                    users.c.id == audit_actor_id, users.c.enabled.is_(True),
+                )).scalar_one_or_none()
+                if actor_level != "superadmin" and not (actor_level == "admin" and target_level == "usuario"):
+                    raise AdminActorInvalid
+                self._record_admin_event(
+                    db, audit_actor_id, user_id, "contrasena_restablecida", {},
+                    superadmin_only=False,
+                )
+            result = db.execute(update(users).where(users.c.id == user_id).values(
+                password_hash=self._hasher.hash(password),
+            ))
+            if result.rowcount != 1:
+                raise LookupError("Usuario desconocido")
+            db.execute(update(session_table).where(
+                session_table.c.user_id == user_id,
+                session_table.c.revoked_at.is_(None),
+            ).values(revoked_at=self._clock()))
+
+    def set_user_enabled(self, user_id: str, enabled: bool, *,
+                         audit_actor_id: str | None = None) -> str:
+        if enabled is not True and enabled is not False:
+            raise ValueError("Estado de cuenta inválido")
+        with self._sessions.begin() as db:
+            row = db.execute(select(users.c.account_level).where(
+                users.c.id == user_id,
+            )).scalar_one_or_none()
+            if row is None:
+                raise LookupError("Usuario desconocido")
+            if row == "superadmin":
+                raise ValueError("La cuenta superadmin está protegida")
+            if audit_actor_id is not None:
+                event_type = "cuenta_desbloqueada" if enabled else "cuenta_bloqueada"
+                self._record_admin_event(
+                    db, audit_actor_id, user_id, event_type, {"enabled": enabled},
+                    superadmin_only=True,
+                )
+            db.execute(update(users).where(users.c.id == user_id).values(enabled=enabled))
+            if not enabled:
+                db.execute(update(session_table).where(
+                    session_table.c.user_id == user_id,
+                    session_table.c.revoked_at.is_(None),
+                ).values(revoked_at=self._clock()))
+            return row
+
+    def _record_admin_event(self, db: Session, actor_id: str, target_id: str,
+                            event_type: str, details: dict[str, Any], *,
+                            superadmin_only: bool) -> None:
+        actor_level = db.execute(select(users.c.account_level).where(
+            users.c.id == actor_id, users.c.enabled.is_(True),
+        )).scalar_one_or_none()
+        allowed = {"superadmin"} if superadmin_only else {"superadmin", "admin"}
+        if actor_level not in allowed:
+            raise AdminActorInvalid
+        db.execute(admin_audit_events.insert().values(
+            id=str(uuid.uuid4()), actor_user_id=actor_id, target_user_id=target_id,
+            event_type=event_type, details=details, created_at=self._clock(),
+        ))
+
+    def list_admin_events(self, limit: int = 100) -> list[dict[str, Any]]:
+        if not isinstance(limit, int) or not 1 <= limit <= 500:
+            raise ValueError("Límite de auditoría inválido")
+        with self._sessions() as db:
+            rows = db.execute(select(
+                admin_audit_events.c.id, admin_audit_events.c.actor_user_id,
+                admin_audit_events.c.target_user_id, admin_audit_events.c.event_type,
+                admin_audit_events.c.details, admin_audit_events.c.created_at,
+            ).order_by(admin_audit_events.c.created_at.desc(),
+                       admin_audit_events.c.id.desc()).limit(limit)).mappings().all()
+        return [{
+            "id": row["id"], "actor_user_id": row["actor_user_id"],
+            "target_user_id": row["target_user_id"], "event_type": row["event_type"],
+            "details": row["details"], "created_at": _as_utc(row["created_at"]).isoformat(),
+        } for row in rows]
 
     def login(self, username: str, password: str) -> LoginSession:
         try:
@@ -203,7 +424,7 @@ class AuthRepository:
                 db.connection(execution_options={"isolation_level": "REPEATABLE READ"})
             joined = db.execute(select(
                 session_table.c.expires_at, session_table.c.revoked_at,
-                users.c.id, users.c.enabled, users.c.global_admin,
+                users.c.id, users.c.enabled, users.c.global_admin, users.c.account_level,
             ).join(users, users.c.id == session_table.c.user_id).where(
                 session_table.c.token_hash == token_hash,
             )).mappings().one_or_none()
@@ -213,24 +434,33 @@ class AuthRepository:
             countries_out: tuple[CountryState, ...] = ()
             expiry = _as_utc(joined["expires_at"])
             if joined["revoked_at"] is None and expiry > now:
-                rows = db.execute(select(
-                    user_country_roles.c.country_code,
+                rows = db.execute(
+                    select(
+                    countries.c.codigo.label("country_code"),
                     user_country_roles.c.role,
+                    countries.c.nombre,
                     countries.c.moneda,
                     countries.c.habilitado,
-                ).join(countries, countries.c.codigo == user_country_roles.c.country_code)
-                  .where(user_country_roles.c.user_id == joined["id"])
-                  .order_by(user_country_roles.c.country_code)).mappings().all()
+                    ).select_from(countries.outerjoin(user_country_roles, and_(
+                        countries.c.codigo == user_country_roles.c.country_code,
+                        user_country_roles.c.user_id == joined["id"],
+                    ))).order_by(countries.c.codigo)
+                ).mappings().all()
                 grants = tuple(CountryGrant(
                     row["country_code"], _ROLES.get(row["role"], row["role"]),
-                ) for row in rows)
+                ) for row in rows if row["role"] is not None)
                 countries_out = tuple(CountryState(
-                    row["country_code"], row["moneda"], row["habilitado"],
+                    row["country_code"], row["moneda"], row["habilitado"], row["nombre"],
                 ) for row in rows)
+        account_level = joined["account_level"]
+        # Interpretar datos pre-045 como superadmin hasta que corra el backfill.
+        if account_level == "usuario" and joined["global_admin"] is True:
+            account_level = "superadmin"
         return AccessSnapshot(SessionState(
             joined["id"], expiry, joined["enabled"] is True,
             joined["revoked_at"] is not None, grants,
             joined["global_admin"] is True,
+            account_level,
         ), countries_out)
 
     def logout(self, opaque_token: str | None, csrf_token: str | None) -> bool:
@@ -252,3 +482,26 @@ class AuthRepository:
                 session_table.c.revoked_at.is_(None),
             ).values(revoked_at=now))
         return True
+
+    def csrf_matches_session(self, opaque_token: str | None,
+                             csrf_token: str | None) -> bool:
+        """Comprueba el double-submit contra el hash de la sesión activa."""
+        if (not _valid_token(opaque_token) or not isinstance(csrf_token, str)
+                or not _valid_token(csrf_token)):
+            return False
+        now = self._clock()
+        token_hash = _digest(opaque_token)
+        with self._sessions() as db:
+            record = db.execute(select(
+                session_table.c.csrf_hash, session_table.c.expires_at,
+                session_table.c.revoked_at, users.c.enabled,
+            ).select_from(session_table.join(
+                users, users.c.id == session_table.c.user_id,
+            )).where(session_table.c.token_hash == token_hash)).mappings().one_or_none()
+        return bool(
+            record is not None
+            and record["revoked_at"] is None
+            and record["enabled"] is True
+            and _as_utc(record["expires_at"]) > now
+            and compare_digest(record["csrf_hash"], _digest(csrf_token))
+        )

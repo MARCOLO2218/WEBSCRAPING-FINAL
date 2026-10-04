@@ -40,6 +40,7 @@ class SessionState:
     revoked: bool
     grants: tuple[CountryGrant, ...]
     global_admin: bool = False
+    account_level: str = "usuario"
 
     def __post_init__(self):
         object.__setattr__(self, "grants", tuple(self.grants))
@@ -50,6 +51,7 @@ class CountryState:
     code: str
     currency: str
     enabled: bool
+    name: str = ""
 
 
 @dataclass(frozen=True)
@@ -97,15 +99,17 @@ def authorize_country(snapshot: AccessSnapshot | None, selected_country: str | N
 
     countries = [c for c in snapshot.countries if c.code == selected_country]
     grants = [g for g in session.grants if g.country_code == selected_country]
+    global_access = session.account_level in {"admin", "superadmin"}
     # Duplicados de catálogo/asignación no se resuelven tomando el más permisivo.
-    if len(countries) != 1 or len(grants) != 1:
+    if len(countries) != 1 or (not global_access and len(grants) != 1):
         raise AccessDenied(403, "acceso_denegado")
-    country, grant = countries[0], grants[0]
+    country = countries[0]
+    role = CountryRole.OPERATOR if global_access else grants[0].role
     if (country.enabled is not True
             or not re.fullmatch(r"[A-Z]{3}", country.currency)
-            or action not in _PERMISSIONS.get(grant.role, ())):
+            or action not in _PERMISSIONS.get(role, ())):
         raise AccessDenied(403, "acceso_denegado")
-    return CountryContext(session.user_id, country.code, country.currency, grant.role)
+    return CountryContext(session.user_id, country.code, country.currency, role)
 
 
 def available_countries(snapshot: AccessSnapshot | None,
@@ -122,7 +126,7 @@ def available_countries(snapshot: AccessSnapshot | None,
 
 def authorize_admin(snapshot: AccessSnapshot | None, now: datetime) -> str:
     session = authenticate(snapshot, now)
-    if session.global_admin is not True:
+    if session.account_level not in {"admin", "superadmin"}:
         raise AccessDenied(403, "acceso_denegado")
     return session.user_id
 

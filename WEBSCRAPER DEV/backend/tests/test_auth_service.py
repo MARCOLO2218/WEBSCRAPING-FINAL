@@ -127,6 +127,7 @@ def test_login_sets_secure_httponly_session_and_double_submit_csrf(store):
 
     response = login(client)
     assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
     data = response.json()
     assert data["user_id"] == user_id
     assert data["expires_at"].startswith("2026-09-23T14:00:00")
@@ -137,8 +138,10 @@ def test_login_sets_secure_httponly_session_and_double_submit_csrf(store):
     set_cookies = response.headers.get_list("set-cookie")
     auth_cookie = next(value for value in set_cookies if value.startswith(f"{SESSION_COOKIE}="))
     csrf_set_cookie = next(value for value in set_cookies if value.startswith(f"{CSRF_COOKIE}="))
+    assert SESSION_COOKIE.startswith("__Host-") and CSRF_COOKIE.startswith("__Host-")
     assert "httponly" in auth_cookie.lower() and "secure" in auth_cookie.lower()
     assert "samesite=lax" in auth_cookie.lower() and "path=/" in auth_cookie.lower()
+    assert "domain=" not in auth_cookie.lower() and "domain=" not in csrf_set_cookie.lower()
     assert "httponly" not in csrf_set_cookie.lower() and "secure" in csrf_set_cookie.lower()
 
     with factory() as db:
@@ -198,7 +201,7 @@ def test_session_provider_returns_only_current_assigned_enabled_countries(store)
         ("GT", "lector"), ("NC", "operador"), ("CR", "operador"),
     }
     assert {country.code: country.enabled for country in snapshot.countries} == {
-        "GT": True, "NC": False, "CR": True,
+        "GT": True, "HN": True, "NC": False, "SV": True, "CR": True,
     }
     assert repository.read_access(bruno_session.session_token).session.user_id == bruno
     assert repository.read_access("tampered-token") is None
@@ -213,7 +216,7 @@ def test_disabled_user_revoked_assignment_and_disabled_country_apply_on_next_rea
     with factory.begin() as db:
         db.execute(update(countries).where(countries.c.codigo == "GT").values(habilitado=False))
     snapshot = repository.read_access(token)
-    assert snapshot.countries[0].enabled is False
+    assert next(country for country in snapshot.countries if country.code == "GT").enabled is False
     assert available_countries(snapshot, repository.now()) == ()
     with factory.begin() as db:
         db.execute(update(countries).where(countries.c.codigo == "GT").values(habilitado=True))
@@ -258,6 +261,7 @@ def test_logout_revokes_server_session_and_deletes_both_cookies(store):
         "Origin": ALLOWED_ORIGIN, "X-CSRF-Token": csrf,
     })
     assert response.status_code == 204
+    assert response.headers["cache-control"] == "no-store"
     assert repository.read_access(token).session.revoked is True
     delete_cookies = response.headers.get_list("set-cookie")
     assert any(value.startswith(f"{SESSION_COOKIE}=") and "max-age=0" in value.lower()
@@ -272,12 +276,25 @@ def test_context_endpoint_never_selects_or_grants_a_country_implicitly(store):
     user_id = repository.create_user("ana", "Password_segura_2026!")
     client = make_client(repository)
     issued = login(client)
-    assert client.get("/auth/me").status_code == 200
-    assert client.get("/auth/me").json() == {"user_id": user_id, "countries": []}
+    me_response = client.get("/auth/me")
+    assert me_response.status_code == 200
+    assert me_response.headers["cache-control"] == "no-store"
+    context = me_response.json()
+    assert context["user_id"] == user_id
+    assert context["global_admin"] is False
+    assert len(context["countries"]) == 5
+    assert all(country["can_access"] is False and country["assigned"] is False
+               for country in context["countries"])
     client.cookies.update(issued.cookies)
     repository.assign_country(user_id, "HN", CountryRole.READER)
-    assert client.get("/auth/me").json()["countries"] == [{"code": "HN", "currency": "HNL"}]
-    # El endpoint da opciones, no selecciona un país ni crea acceso a otro.
+    context = client.get("/auth/me").json()
+    honduras = next(country for country in context["countries"] if country["code"] == "HN")
+    guatemala = next(country for country in context["countries"] if country["code"] == "GT")
+    assert honduras["assigned"] is True and honduras["can_access"] is True
+    assert honduras["role"] == "lector"
+    assert guatemala["assigned"] is False and guatemala["can_access"] is False
+    # El catálogo deja visibles los países sin asignar como bloqueados; una ruta
+    # de contenido sigue verificando permisos y los rechaza.
     assert repository.read_access(issued.cookies.get(SESSION_COOKIE)).session.user_id == user_id
 
 

@@ -129,17 +129,21 @@ def test_new_state_revokes_previously_granted_access():
     denied(lambda: authorize_country(revoked, "GT", Action.READ, NOW), 401, "sesion_no_valida")
 
 
-def test_global_admin_does_not_bypass_country_grants_or_reader_role():
+def test_superadmin_has_global_enabled_country_access_and_all_catalog_actions():
     state = snapshot()
-    admin = replace(state, session=replace(state.session, global_admin=True))
+    admin = replace(state, session=replace(state.session, global_admin=True,
+                                           account_level="superadmin"))
     assert authorize_admin(admin, NOW) == "ana"
     assert authorize_country(admin, "GT", Action.READ, NOW).country_code == "GT"
-    denied(lambda: authorize_country(admin, "GT", Action.UPLOAD_PRICES, NOW))
-    denied(lambda: authorize_country(admin, "SV", Action.READ, NOW))
+    assert authorize_country(admin, "GT", Action.UPLOAD_PRICES, NOW).country_code == "GT"
+    assert authorize_country(admin, "SV", Action.READ, NOW).country_code == "SV"
+    assert {item.country_code for item in available_countries(admin, NOW)} == {"GT", "SV"}
+    disabled = replace(admin, countries=(*admin.countries, CountryState("NC", "NIO", False)))
+    denied(lambda: authorize_country(disabled, "NC", Action.READ, NOW))
     no_grants = replace(admin, session=replace(admin.session, grants=()))
     assert authorize_admin(no_grants, NOW) == "ana"
-    assert available_countries(no_grants, NOW) == ()
-    denied(lambda: authorize_country(no_grants, "GT", Action.READ, NOW))
+    assert {item.country_code for item in available_countries(no_grants, NOW)} == {"GT", "SV"}
+    assert authorize_country(no_grants, "GT", Action.READ, NOW).country_code == "GT"
     denied(lambda: authorize_admin(state, NOW))
 
 

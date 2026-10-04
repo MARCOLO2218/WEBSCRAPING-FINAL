@@ -11,7 +11,7 @@ from .access.policy import AccessDenied, AccessSnapshot, available_countries, au
 from .auth import AuthRepository, InvalidCredentials
 from .auth_throttle import LoginThrottle, LoginThrottleUnavailable
 
-CSRF_COOKIE = "catalog_csrf"
+CSRF_COOKIE = "__Host-catalog_csrf"
 CSRF_HEADER = "X-CSRF-Token"
 
 
@@ -28,11 +28,18 @@ class LoginResponse(BaseModel):
 
 class CountryOption(BaseModel):
     code: str
+    name: str
     currency: str
+    enabled: bool
+    assigned: bool
+    role: str | None
+    can_access: bool
 
 
 class AuthContextResponse(BaseModel):
     user_id: str
+    global_admin: bool
+    account_level: str
     countries: list[CountryOption]
 
 
@@ -99,13 +106,14 @@ def create_auth_router(repository: AuthRepository, *, allowed_origins: Iterable[
             CSRF_COOKIE, issued.csrf_token, max_age=int(repository.session_ttl.total_seconds()),
             path="/", secure=True, httponly=False, samesite="lax",
         )
+        response.headers["Cache-Control"] = "no-store"
         return LoginResponse(
             user_id=issued.user_id, csrf_token=issued.csrf_token,
             expires_at=issued.expires_at.isoformat(),
         )
 
     @router.get("/me", response_model=AuthContextResponse)
-    def current_session(request: Request):
+    def current_session(request: Request, response: Response):
         token = request.cookies.get(SESSION_COOKIE)
         try:
             snapshot = repository.read_access(token or "")
@@ -114,12 +122,26 @@ def create_auth_router(repository: AuthRepository, *, allowed_origins: Iterable[
         now = repository.now()
         try:
             session = authenticate(snapshot, now)
-            options = available_countries(snapshot, now)
         except AccessDenied as error:
             raise HTTPException(error.status_code, detail={"code": error.code}) from None
+        granted_roles = {}
+        for grant in session.grants:
+            granted_roles.setdefault(grant.country_code, []).append(
+                getattr(grant.role, "value", "")
+            )
+        accessible = {context.country_code for context in available_countries(snapshot, now)}
+        response.headers["Cache-Control"] = "no-store"
         return AuthContextResponse(
-            user_id=session.user_id,
-            countries=[CountryOption(code=c.country_code, currency=c.currency) for c in options],
+            user_id=session.user_id, global_admin=session.global_admin,
+            account_level=session.account_level,
+            countries=[CountryOption(
+                code=country.code, currency=country.currency, enabled=country.enabled,
+                name=country.name,
+                assigned=len(granted_roles.get(country.code, [])) == 1,
+                role=(granted_roles[country.code][0]
+                      if len(granted_roles.get(country.code, [])) == 1 else None),
+                can_access=country.code in accessible,
+            ) for country in snapshot.countries],
         )
 
     @router.post("/logout", status_code=204)
@@ -132,6 +154,7 @@ def create_auth_router(repository: AuthRepository, *, allowed_origins: Iterable[
             raise HTTPException(403, detail={"code": "csrf_no_valido"})
         if not repository.logout(token, csrf_header):
             raise HTTPException(401, detail={"code": "sesion_no_valida"})
+        response.headers["Cache-Control"] = "no-store"
         response.delete_cookie(SESSION_COOKIE, path="/", secure=True,
                                httponly=True, samesite="lax")
         response.delete_cookie(CSRF_COOKIE, path="/", secure=True,

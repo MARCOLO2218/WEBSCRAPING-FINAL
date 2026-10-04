@@ -14,7 +14,7 @@ from .policy import (
     authorize_admin, authorize_country, available_countries,
 )
 
-SESSION_COOKIE = "catalog_session"
+SESSION_COOKIE = "__Host-catalog_session"
 
 
 class AccessProvider(Protocol):
@@ -56,13 +56,30 @@ def load_access_snapshot(request: Request,
     return snapshot
 
 
-def require_country(action: Action):
+def snapshot_dependency_for(provider_dependency):
+    """Build a request dependency around an explicitly injected access provider."""
+    if not callable(provider_dependency):
+        raise TypeError("Se requiere una dependencia de proveedor de acceso")
+    if provider_dependency is get_access_provider:
+        return load_access_snapshot
+
+    def load_injected_access(request: Request,
+                             provider=Depends(provider_dependency),
+                             now: datetime = Depends(access_clock)) -> AccessSnapshot:
+        return load_access_snapshot(request, provider, now)
+
+    return load_injected_access
+
+
+def require_country(action: Action, *, snapshot_dependency=load_access_snapshot):
     """El nombre del parámetro de ruta debe ser country_code; nunca usa query."""
     if not isinstance(action, Action):
         raise ValueError("Acción regional no reconocida")
+    if not callable(snapshot_dependency):
+        raise TypeError("Se requiere una dependencia de acceso")
 
     def dependency(request: Request,
-                   snapshot: AccessSnapshot = Depends(load_access_snapshot),
+                   snapshot: AccessSnapshot = Depends(snapshot_dependency),
                    now: datetime = Depends(access_clock)) -> CountryContext:
         try:
             return authorize_country(snapshot, request.path_params.get("country_code"), action, now)
