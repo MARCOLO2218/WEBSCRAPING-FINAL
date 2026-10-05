@@ -3,7 +3,7 @@ import argparse
 import getpass
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import stat
 
 from sqlalchemy import create_engine, text
@@ -22,14 +22,35 @@ def validate_origin(origin):
     return origin
 
 
+def systemd_credential_permissions(path, directory, mode, directory_mode, owner, directory_owner, uid):
+    if not directory:
+        return False
+    credential = PurePosixPath(str(path))
+    parent = PurePosixPath(directory)
+    return (credential.parent == parent and parent.parent == PurePosixPath('/run/credentials')
+            and '..' not in credential.parts and mode == 0o440
+            and directory_mode & 0o027 == 0
+            and owner in (0, uid) and directory_owner in (0, uid))
+
+
 def read_private_file(path: Path, maximum: int = 4096):
     if path.is_symlink():
         raise ValueError('La credencial no puede ser un enlace simbólico')
     descriptor = os.open(path, os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0))
     with os.fdopen(descriptor, 'rb') as source:
         info = os.fstat(source.fileno())
-        if not stat.S_ISREG(info.st_mode) or (os.name != 'nt' and info.st_mode & 0o077):
-            raise ValueError('La credencial debe ser un archivo regular y privado (0600 o 0400)')
+        private = os.name == 'nt' or info.st_mode & 0o077 == 0
+        if not private and os.name != 'nt':
+            directory = os.environ.get('CREDENTIALS_DIRECTORY')
+            # Excepción acotada al directorio privado entregado por systemd.
+            # No admite 0440 de archivos normales ni enlaces de directorio.
+            if directory and path.parent.as_posix() == directory and not path.parent.is_symlink():
+                parent_info = path.parent.stat()
+                private = systemd_credential_permissions(path.as_posix(), directory,
+                    stat.S_IMODE(info.st_mode), stat.S_IMODE(parent_info.st_mode),
+                    info.st_uid, parent_info.st_uid, os.geteuid())
+        if not stat.S_ISREG(info.st_mode) or not private:
+            raise ValueError('Credencial requiere permisos privados o directorio controlado por systemd')
         value = source.read(maximum + 1)
     if not value or len(value) > maximum:
         raise ValueError('Tamaño de credencial inválido')

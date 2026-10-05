@@ -51,3 +51,26 @@ def test_service_passes_only_file_references_not_password_environment():
     assert 'Restart=on-failure' in service
     assert 'PGPASSWORD' not in service
     assert 'DATABASE_URL' not in service
+
+
+def test_systemd_readonly_group_permissions_are_scoped_to_credential_directory():
+    directory = '/run/credentials/facenco-auth-dev.service'
+    path = directory + '/auth-hmac'
+    check = auth_runtime.systemd_credential_permissions
+    assert check(path, directory, 0o440, 0o750, 1000, 0, 1000)
+    assert check(path, directory, 0o440, 0o500, 0, 1000, 1000)
+    assert not check(path, None, 0o440, 0o750, 1000, 0, 1000)
+    assert not check('/home/user/key', '/home/user', 0o440, 0o700, 1000, 1000, 1000)
+    assert not check(path, directory, 0o444, 0o750, 1000, 0, 1000)
+    assert not check(path, directory, 0o440, 0o755, 1000, 0, 1000)
+    assert not check(path, directory, 0o440, 0o770, 1000, 0, 1000)
+    assert not check(path, directory, 0o440, 0o750, 2000, 0, 1000)
+    assert not check('/run/credentials/other.service/key', directory, 0o440, 0o750, 1000, 0, 1000)
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='Permisos POSIX')
+def test_normal_group_readable_file_still_rejected(tmp_path, monkeypatch):
+    path = private_file(tmp_path, b'password')
+    path.chmod(0o440)
+    monkeypatch.setenv('CREDENTIALS_DIRECTORY', str(tmp_path))
+    with pytest.raises(ValueError): auth_runtime.read_password(path)

@@ -2,6 +2,13 @@
 
 Preparación local SPEC-096. No instalada ni validada con systemd Ubuntu todavía.
 
+Actualización SPEC-097: usuario instaló unidad y systemd-analyze verify pasó.
+Backend no arrancó: LoadCredential entrega archivos 0440, rechazados por lector
+anterior. Usuario detuvo servicio. Corrección local acotada al directorio privado
+/run/credentials indicado por CREDENTIALS_DIRECTORY; no cambiar chmod de copias
+montadas ni recrear/rotar claves para resolverlo. Publicación y reinicio pendientes.
+11 pruebas Python aprobadas en Windows y 2 POSIX omitidas; validar en Ubuntu.
+
 ## Archivos preparados
 
 - deploy/ubuntu/facenco-auth-dev.service: backend loopback 8041, inicio al boot
