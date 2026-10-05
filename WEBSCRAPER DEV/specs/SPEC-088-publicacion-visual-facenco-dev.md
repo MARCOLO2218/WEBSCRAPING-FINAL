@@ -11,3 +11,8 @@ GT, PostgreSQL y PROD sin cambios. El portal principal sigue en su estado public
 
 Validación estática: todos los assets referenciados existen; HTML NC conserva
 IDs de los controles. Revisión visual Ubuntu pendiente por el usuario.
+
+Actualización 2026-10-05: por solicitud del usuario, el enlace NC se rotula
+«Ingresar a Nicaragua» en portal-facenco.html, index.html y la vista visual.
+Conserva /catalogo-nicaragua.html y la habilitación por permisos del servidor.
+Cambio de texto preparado localmente; publicación Ubuntu pendiente.
