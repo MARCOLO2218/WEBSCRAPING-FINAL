@@ -1,4 +1,4 @@
-﻿const state = {
+const state = {
   products: [],
   filtered: [],
   latestRun: null,
@@ -345,8 +345,8 @@ function render() {
 async function loadProducts() {
   try {
     const [response, latestRunResponse] = await Promise.all([
-      fetch('/api/products'),
-      fetch('/api/latest-run'),
+      window.catalogAccess.request('/api/products'),
+      window.catalogAccess.request('/api/latest-run'),
     ]);
     if (!response.ok) throw new Error('No se pudo cargar el catalogo.');
     state.latestRun = latestRunResponse.ok ? await latestRunResponse.json() : null;
@@ -405,7 +405,7 @@ async function fetchJsonWithTimeout(url, options = {}, timeoutMs = 15000) {
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(url, { ...options, signal: controller.signal });
+    const response = await window.catalogAccess.request(url, { ...options, signal: controller.signal });
     const data = await response.json().catch(() => ({}));
     return { response, data };
   } finally {

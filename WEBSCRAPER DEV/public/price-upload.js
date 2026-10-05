@@ -36,7 +36,7 @@
     confirm.hidden = true;
     status.textContent = save ? 'Guardando precios…' : 'Revisando archivo…';
     try {
-      const response = await fetch(`/api/facenco-prices?confirm=${save}`, {
+      const response = await window.catalogAccess.request(`/api/facenco-prices?confirm=${save}`, {
         method: 'POST', headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }, body: file,
       });
       const result = await response.json();

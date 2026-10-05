@@ -11,6 +11,7 @@ export type CatalogRouteDependencies = {
   outputCsv: string;
   scraperJobQueue: ReturnType<typeof createScraperJobQueue>;
   ncJobs?: (req: IncomingMessage, res: ServerResponse, url: URL) => Promise<void>;
+  accessGuard?: (req: IncomingMessage, res: ServerResponse, url: URL) => Promise<boolean>;
 };
 
 export function createCatalogRequestHandler(dependencies: CatalogRouteDependencies) {
@@ -18,7 +19,9 @@ export function createCatalogRequestHandler(dependencies: CatalogRouteDependenci
 
   return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     try {
-      const url = new URL(req.url || '/', `http://${req.headers.host}`);
+      const protocol = (req.socket as typeof req.socket & { encrypted?: boolean } | undefined)?.encrypted ? 'https' : 'http';
+      const url = new URL(req.url || '/', `${protocol}://${req.headers.host}`);
+      if (dependencies.accessGuard && !await dependencies.accessGuard(req, res, url)) return;
       if (url.pathname.startsWith('/api/nc/') && dependencies.ncJobs) {
         await dependencies.ncJobs(req, res, url);
         return;

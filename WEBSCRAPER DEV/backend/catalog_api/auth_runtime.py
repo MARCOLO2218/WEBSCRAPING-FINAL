@@ -22,14 +22,36 @@ def validate_origin(origin):
     return origin
 
 
+def read_private_file(path: Path, maximum: int = 4096):
+    if path.is_symlink():
+        raise ValueError('La credencial no puede ser un enlace simbólico')
+    descriptor = os.open(path, os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0))
+    with os.fdopen(descriptor, 'rb') as source:
+        info = os.fstat(source.fileno())
+        if not stat.S_ISREG(info.st_mode) or (os.name != 'nt' and info.st_mode & 0o077):
+            raise ValueError('La credencial debe ser un archivo regular y privado (0600 o 0400)')
+        value = source.read(maximum + 1)
+    if not value or len(value) > maximum:
+        raise ValueError('Tamaño de credencial inválido')
+    return value
+
+
 def read_key(path: Path):
-    info = path.stat()
-    if not stat.S_ISREG(info.st_mode) or (os.name != 'nt' and info.st_mode & 0o077):
-        raise ValueError('El archivo HMAC debe ser regular y privado (0600)')
-    value = path.read_bytes()
+    value = read_private_file(path)
     if not 32 <= len(value) <= 4096:
         raise ValueError('El archivo HMAC debe contener entre 32 y 4096 bytes')
     return value
+
+
+def read_password(path: Path):
+    value = read_private_file(path).decode('utf-8')
+    if '\x00' in value:
+        raise ValueError('Formato de credencial inválido')
+    return value
+
+
+def load_password(path: Path | None):
+    return read_password(path) if path is not None else getpass.getpass('Contraseña PostgreSQL webscraper_user: ')
 
 
 def check_destination(connection):
@@ -60,7 +82,11 @@ def main(argv=None):
     parser.add_argument('--check-only', action='store_true')
     parser.add_argument('--https-origin')
     parser.add_argument('--hmac-file', type=Path)
+    parser.add_argument('--password-file', type=Path,
+                        help='Credencial privada existente; omitir para pedir contraseña')
     parser.add_argument('--port', type=int, default=8041)
+    parser.add_argument('--trusted-local-proxy', action='store_true',
+                        help='Confiar sólo en cabeceras del proxy en 127.0.0.1')
     args = parser.parse_args(argv)
     if not 1 <= args.port <= 65535 or not 1 <= args.db_port <= 65535:
         parser.error('Puerto inválido')
@@ -72,7 +98,7 @@ def main(argv=None):
         if not args.check_only:
             validate_origin(args.https_origin)
             key = read_key(args.hmac_file)
-        password = getpass.getpass('Contraseña PostgreSQL webscraper_user: ')
+        password = load_password(args.password_file)
         engine = create_engine(URL.create('postgresql+psycopg', username='webscraper_user',
                                password=password, host=args.db_host, port=args.db_port,
                                database='webscraper_dev'), hide_parameters=True,
@@ -86,7 +112,8 @@ def main(argv=None):
             return 0
         import uvicorn
         uvicorn.run(compose(engine, args.https_origin, key), host='127.0.0.1',
-                    port=args.port, proxy_headers=False, access_log=False)
+                    port=args.port, proxy_headers=args.trusted_local_proxy,
+                    forwarded_allow_ips='127.0.0.1', access_log=False)
         return 0
     except Exception as error:
         print(json.dumps({'status': 'error', 'message': str(error) if isinstance(error, migration.Rejected)

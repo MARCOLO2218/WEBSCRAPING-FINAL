@@ -1,0 +1,30 @@
+[Unit]
+Description=Acceso Catalogo Comercial FACENCO DEV
+Wants=network-online.target
+After=network-online.target docker.service
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=administradorgt
+Group=administradorgt
+WorkingDirectory=/home/administradorgt/WEBSCRAPING-FINAL/WEBSCRAPER DEV/backend
+EnvironmentFile=/home/administradorgt/.config/facenco-dev/auth/runtime.env
+LoadCredential=postgres-password:/home/administradorgt/.config/facenco-dev/auth/postgres-password
+LoadCredential=auth-hmac:/home/administradorgt/.config/facenco-dev/auth/auth-hmac
+ExecStart="/home/administradorgt/WEBSCRAPING-FINAL/WEBSCRAPER DEV/backend/.venv/bin/python" -m catalog_api.auth_runtime --db-host ${AUTH_DB_HOST} --https-origin ${AUTH_HTTPS_ORIGIN} --password-file %d/postgres-password --hmac-file %d/auth-hmac --trusted-local-proxy --port 8041
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

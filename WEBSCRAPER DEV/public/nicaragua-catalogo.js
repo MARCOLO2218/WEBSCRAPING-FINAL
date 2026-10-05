@@ -37,7 +37,7 @@ function render() {
 async function load() {
   get('refresh').disabled = true; get('status').textContent = 'Cargando catálogo NC…';
   try {
-    const response = await fetch('/nicaragua-catalogo.json', { cache: 'no-store' });
+    const response = await window.catalogAccess.request('/nicaragua-catalogo.json', { cache: 'no-store' });
     if (!response.ok) throw new Error('Aún no hay catálogo NC generado en DEV.');
     const snapshot = await response.json();
     if (snapshot.version !== 1 || snapshot.country !== 'NC' || snapshot.currency !== 'NIO' || !Array.isArray(snapshot.products)) throw new Error('Formato de catálogo NC inválido.');
@@ -69,7 +69,7 @@ function busy(value) { get('run-all').disabled = value; get('run-selected').disa
 async function watch(id) {
   activeJob = id; busy(true);
   try {
-    const response = await fetch(`/api/nc/job?id=${encodeURIComponent(id)}`, { cache: 'no-store' });
+    const response = await window.catalogAccess.request(`/api/nc/job?id=${encodeURIComponent(id)}`, { cache: 'no-store' });
     if (!response.ok) throw new Error('No se pudo consultar el trabajo. Recargue la página para recuperar el estado.');
     const { job } = await response.json();
     let progress = {};
@@ -87,7 +87,7 @@ async function run(all) {
   if (!all && !stores.length) { get('job-status').textContent = 'Seleccione al menos una tienda.'; return; }
   busy(true);
   try {
-    const response = await fetch('/api/nc/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(all ? { mode: 'all' } : { stores }) });
+    const response = await window.catalogAccess.request('/api/nc/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(all ? { mode: 'all' } : { stores }) });
     const body = await response.json(); if (!response.ok) throw new Error(body.error || 'No se pudo iniciar la consulta.');
     watch(body.job.id);
   } catch (error) { busy(false); get('job-status').textContent = error.message; }
@@ -95,4 +95,4 @@ async function run(all) {
 get('run-all').addEventListener('click', () => run(true));
 get('run-selected').addEventListener('click', () => run(false));
 load();
-fetch('/api/nc/status', { cache: 'no-store' }).then(response => response.ok ? response.json() : null).then(status => { if (status?.currentJobId) watch(status.currentJobId); }).catch(() => {});
+window.catalogAccess.request('/api/nc/status', { cache: 'no-store' }).then(response => response.ok ? response.json() : null).then(status => { if (status?.currentJobId) watch(status.currentJobId); }).catch(() => {});

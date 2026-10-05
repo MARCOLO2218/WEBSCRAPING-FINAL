@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Acceso y selección de país del Catálogo Comercial Comparativo">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Catálogo Comercial | Facenco</title>
+  <style>
+    :root { color-scheme:light; --navy:#062f5f; --blue:#0b5794; --cyan:#5ec7ed; --ink:#17324d; --muted:#64788d; --line:#d9e4ee; --paper:#f3f8fc; --green:#18734c; --amber:#80530d; }
+    * { box-sizing:border-box; }
+    body { min-height:100vh; margin:0; background:radial-gradient(ellipse at 15% 0%,#d8f2fb 0,transparent 38%),var(--paper); color:var(--ink); font:15px/1.5 "Segoe UI",Arial,sans-serif; }
+    button,input { font:inherit; }
+    button,a { -webkit-tap-highlight-color:transparent; }
+    button { cursor:pointer; }
+    .banner { padding:9px 16px; background:#263d4c; color:#fff; text-align:center; font-size:12px; font-weight:750; letter-spacing:.04em; }
+    .shell { width:min(1080px,calc(100% - 32px)); margin:auto; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:15px; padding:24px 0; }
+    .brand { display:flex; align-items:center; gap:12px; }
+    .mark { display:grid; width:44px; height:44px; place-items:center; border-radius:13px; color:#fff; background:var(--navy); font-weight:850; }
+    .brand-title { font-weight:800; }
+    .brand-subtitle { color:var(--muted); font-size:12px; }
+    .tag { padding:6px 10px; border:1px solid #a9dff1; border-radius:99px; background:#e7f7fd; color:var(--navy); font-size:12px; font-weight:750; }
+    main { padding:8px 0 54px; }
+    .login-layout { display:grid; min-height:570px; grid-template-columns:1.05fr .95fr; overflow:hidden; border:1px solid var(--line); border-radius:22px; background:white; box-shadow:0 22px 70px #24405212; }
+    .welcome { display:flex; flex-direction:column; justify-content:space-between; padding:clamp(28px,5vw,60px); color:white; background:linear-gradient(145deg,#03264f,var(--navy) 68%,#0c568b); }
+    .eyebrow { margin:0 0 12px; color:#aee8fa; font-size:12px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+    h1,h2,p { margin-top:0; }
+    h1 { max-width:480px; margin-bottom:14px; font-size:clamp(34px,4.5vw,52px); line-height:1.05; letter-spacing:-.04em; }
+    .welcome-copy { max-width:430px; color:#e7f7fd; line-height:1.7; }
+    .flow { padding:14px 16px; border:1px solid #ffffff38; border-radius:13px; background:#ffffff12; font-size:13px; }
+    .card { display:flex; align-items:center; padding:clamp(26px,5vw,58px); }
+    .form { width:100%; max-width:380px; margin:auto; }
+    .form .eyebrow { color:var(--navy); }
+    .form h2 { margin-bottom:7px; font-size:27px; letter-spacing:-.03em; }
+    .intro { margin-bottom:24px; color:var(--muted); }
+    .field { display:block; margin:0 0 16px; color:#334b5b; font-size:13px; font-weight:700; }
+    .field input { width:100%; margin-top:7px; padding:12px 13px; border:1px solid #cdd9de; border-radius:9px; outline:none; }
+    .field input:focus,.field select:focus { border-color:var(--navy); box-shadow:0 0 0 3px #062f5f1c; }
+    .field select { width:100%; margin-top:7px; padding:12px 13px; border:1px solid #cdd9de; border-radius:9px; background:#fff; color:var(--ink); }
+    .primary,.secondary,.country-link { display:inline-flex; min-height:43px; align-items:center; justify-content:center; padding:0 16px; border:0; border-radius:9px; font-weight:750; text-decoration:none; }
+    .primary { color:white; background:var(--navy); }
+    .primary:hover { background:#03264f; }
+    .full { width:100%; }
+    .caption { margin:13px 0 0; color:#748491; font-size:12px; line-height:1.5; }
+    [hidden] { display:none !important; }
+    .heading { display:flex; align-items:end; justify-content:space-between; gap:16px; margin:28px 0 20px; }
+    .heading h1 { max-width:none; margin:0 0 5px; color:var(--ink); font-size:clamp(30px,4vw,42px); }
+    .heading p { margin:0; color:var(--muted); }
+    .secondary { border:1px solid var(--line); color:var(--navy); background:white; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+    .country { display:flex; min-height:220px; flex-direction:column; padding:22px; border:1px solid var(--line); border-radius:15px; background:white; box-shadow:0 8px 24px #2440520a; }
+    .country.disabled { background:#f8fafb; }
+    .country-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .code { display:grid; width:43px; height:43px; place-items:center; border-radius:12px; background:#e7f7fd; color:var(--navy); font-weight:850; }
+    .status { color:var(--green); font-size:12px; font-weight:750; }
+    .disabled .status { color:var(--amber); }
+    .country h2 { margin:15px 0 5px; font-size:20px; }
+    .country p { margin-bottom:15px; color:var(--muted); font-size:13px; }
+    .country-link { min-height:39px; align-self:flex-start; margin-top:auto; color:white; background:var(--navy); }
+    .country-link:hover { background:#03264f; }
+    .country-link.disabled-link { color:#788690; background:#e6ecee; cursor:not-allowed; }
+    .denied { display:inline-flex; min-height:39px; align-items:center; align-self:flex-start; margin-top:auto; padding:0 11px; border:1px solid #ead49c; border-radius:9px; color:#77500d; background:#fff7e5; font-size:12px; font-weight:750; }
+    .profile-summary { margin:-9px 0 17px; color:var(--muted); font-size:13px; }
+    .note { margin:17px 0 0; padding:13px 15px; border:1px solid #ead49c; border-radius:11px; color:#77500d; background:#fff7e5; font-size:13px; }
+    @media(max-width:720px) { header { padding:17px 0; } .login-layout { grid-template-columns:1fr; } .welcome { min-height:280px; } .card { padding:30px 23px; } .heading { align-items:flex-start; flex-direction:column; } }
+    @media(max-width:500px) { .shell { width:calc(100% - 22px); } .brand-subtitle { display:none; } .tag { font-size:11px; } .grid { grid-template-columns:1fr; } .welcome { padding:27px 23px; } }
+  </style>
+<link rel="stylesheet" href="/facenco-theme.css"><link rel="icon" href="/assets/facenco-icon-3d.png"><link rel="apple-touch-icon" href="/assets/facenco-icon-3d.png"></head>
+<body>
+  <div class="banner">Catálogo Comercial · Facenco</div>
+  <div class="shell">
+    <header>
+      <div class="brand"><img class="brand-icon" src="/assets/facenco-icon-3d.png" alt="Facenco"><div><div class="brand-title">Catálogo Comercial</div><div class="brand-subtitle">Acceso central · selección directa de país</div></div></div>
+      <span class="tag">Portal regional</span>
+    </header>
+    <main>
+      <section id="login" aria-labelledby="login-title">
+        <div class="login-layout">
+          <section class="welcome"><img class="brand-hero" src="/assets/facenco-brand-3d.png" alt="Facenco · La cama de tus sueños"><h1>Catálogo Comercial</h1></section>
+          <section class="card"><form id="login-form" class="form"><p class="eyebrow">Bienvenido</p><h2 id="login-title">Iniciar sesión</h2><p class="intro">Usa tu cuenta de trabajo para continuar.</p><label class="field">Correo o usuario<input name="username" autocomplete="username" type="text" placeholder="nombre@empresa.com" required></label><label class="field">Contraseña<input name="password" autocomplete="current-password" type="password" placeholder="Ingresa tu contraseña" required></label><button class="primary full" type="submit">Continuar</button><p class="caption">El acceso depende de los permisos asignados a tu cuenta.</p></form></section>
+        </div>
+      </section>
+      <section id="countries" hidden aria-labelledby="countries-title">
+        <div class="heading"><div><p class="eyebrow" style="color:var(--navy)">Elige tu destino</p><h1 id="countries-title">¿A qué país deseas ingresar?</h1><p>Selecciona un país para abrir directamente su espacio.</p></div><button class="secondary" id="logout" type="button">Salir</button></div>
+        <p id="profile-summary" class="profile-summary" role="status"></p>
+        <div class="grid">
+          <article class="country" data-country="GT"><div class="country-top"><span class="code">GT</span><span class="status">Catálogo disponible</span></div><h2>Guatemala</h2><p>Moneda GTQ · abre el catálogo comercial actual de Guatemala.</p><a class="country-link" data-country-link href="/catalogo-guatemala.html">Ingresar a Guatemala</a><span class="denied" data-denied hidden>Acceso denegado · país no asignado</span></article>
+          <article class="country disabled" data-country="HN"><div class="country-top"><span class="code">HN</span><span class="status">Piloto visual</span></div><h2>Honduras</h2><p>Moneda HNL · consulta la evidencia del piloto; aún no es un catálogo operativo.</p><a class="country-link" data-country-link href="/demo-acceso-pais.html#hnPreviewStage">Ver piloto de Honduras</a><span class="denied" data-denied hidden>Acceso denegado · país no asignado</span></article>
+          <article class="country disabled" data-country="NC"><div class="country-top"><span class="code">NC</span><span class="status">Piloto validado</span></div><h2>Nicaragua</h2><p>Moneda NIO · consulta resultados reales del ejecutor, actualizados manualmente.</p><a class="country-link" data-country-link href="/catalogo-nicaragua.html">Ver catálogo DEV de Nicaragua</a><span class="denied" data-denied hidden>Acceso denegado · país no asignado</span></article>
+          <article class="country disabled" data-country="SV"><div class="country-top"><span class="code">SV</span><span class="status">En preparación</span></div><h2>El Salvador</h2><p>Moneda USD · el espacio regional aún no está habilitado.</p><span class="country-link disabled-link" data-country-link aria-disabled="true">Acceso pendiente</span><span class="denied" data-denied hidden>Acceso denegado · país no asignado</span></article>
+        </div>
+        <p class="note">Sólo podrás ingresar a los países habilitados y autorizados para tu cuenta.</p><a id="manage-users" class="secondary" href="/admin-usuarios.html" hidden>Usuarios y permisos</a>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="/portal-access.js"></script>
+<script type="module" src="/catalog-menu.js"></script></body>
+</html>

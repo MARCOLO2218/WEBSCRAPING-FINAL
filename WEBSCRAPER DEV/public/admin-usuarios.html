@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Usuarios y permisos · Catálogo Comercial</title>
+  <style>
+    :root { color-scheme: light; --ink:#142f4d; --muted:#60738a; --line:#dce5ef; --blue:#1264a3; --pale:#edf5fb; --green:#18704a; --red:#a53939; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#f4f7fb; color:var(--ink); font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    header { background:linear-gradient(115deg,#0d2948,#145c91); color:white; padding:26px max(24px,calc((100vw - 1120px)/2)); }
+    header a { color:#d8edff; text-decoration:none; font-size:13px; }
+    h1 { margin:14px 0 4px; font-size:28px; letter-spacing:-.4px; }
+    header p { margin:0; color:#d4e5f3; }
+    main { max-width:1120px; margin:28px auto; padding:0 20px; }
+    .notice { padding:13px 16px; border:1px solid #c8dced; border-radius:10px; background:#eef7fd; color:#254b6b; margin-bottom:18px; }
+    .notice.error { border-color:#eccaca; background:#fff4f3; color:#823434; }
+    .notice.good { border-color:#c6e5d5; background:#f0faf5; color:#245b40; }
+    .panel { background:white; border:1px solid var(--line); border-radius:14px; box-shadow:0 5px 22px #1738580b; overflow:hidden; }
+    .panel-head { display:flex; justify-content:space-between; gap:14px; align-items:center; padding:18px 20px; border-bottom:1px solid var(--line); }
+    .panel-head h2 { margin:0; font-size:18px; }
+    .panel-head p { margin:3px 0 0; color:var(--muted); font-size:13px; }
+    button { border:0; border-radius:8px; background:var(--blue); color:white; padding:10px 15px; font-weight:650; cursor:pointer; }
+    button:hover { background:#0d548c; }
+    button:disabled { cursor:wait; opacity:.6; }
+    .secondary { background:#eaf1f7; color:#244562; }
+    .secondary:hover { background:#dce9f3; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; min-width:700px; }
+    th,td { padding:13px 18px; border-bottom:1px solid #edf1f5; text-align:left; vertical-align:top; }
+    th { color:#536980; font-size:12px; text-transform:uppercase; letter-spacing:.04em; background:#fbfcfe; }
+    tr:last-child td { border-bottom:0; }
+    .username { font-weight:700; }
+    .meta { color:var(--muted); font-size:12px; }
+    .pill { display:inline-block; border-radius:20px; padding:3px 9px; margin:2px 4px 2px 0; background:var(--pale); color:#24577d; font-size:12px; white-space:nowrap; }
+    .pill.admin { background:#fff2d5; color:#75510b; }
+    .pill.off { background:#f1f2f4; color:#697684; }
+    .empty { padding:34px; text-align:center; color:var(--muted); }
+    dialog { width:min(620px,calc(100vw - 28px)); border:0; border-radius:16px; padding:0; box-shadow:0 20px 70px #102b4770; color:var(--ink); }
+    dialog::backdrop { background:#0b2038a8; }
+    .dialog-head,.dialog-foot { padding:18px 22px; }
+    .dialog-head { border-bottom:1px solid var(--line); }
+    .dialog-head h2 { margin:0; font-size:20px; }
+    .dialog-head p { margin:4px 0 0; color:var(--muted); font-size:13px; }
+    .country-list { padding:6px 22px; max-height:55vh; overflow:auto; }
+    .country { display:grid; grid-template-columns:26px 1fr 145px; gap:10px; align-items:center; padding:13px 0; border-bottom:1px solid #edf1f5; }
+    .country:last-child { border-bottom:0; }
+    .country input { width:17px; height:17px; accent-color:var(--blue); }
+    .country-name { font-weight:650; }
+    .country-detail { color:var(--muted); font-size:12px; }
+    select { border:1px solid #cbd8e5; border-radius:7px; color:var(--ink); padding:8px; background:white; }
+    select:disabled { opacity:.55; background:#f3f5f7; }
+    .disabled-note { display:block; grid-column:2/4; color:#8a5b16; font-size:12px; margin-top:-8px; }
+    .dialog-foot { display:flex; justify-content:flex-end; gap:9px; border-top:1px solid var(--line); }
+    @media(max-width:620px) { header { padding:22px; } h1 { font-size:24px; } .panel-head { align-items:flex-start; flex-direction:column; } .country { grid-template-columns:24px 1fr 125px; } }
+  </style>
+<link rel="stylesheet" href="/facenco-theme.css"></head>
+<body>
+  <header>
+    <a href="/">← Volver al catálogo</a>
+    <h1>Usuarios y permisos</h1>
+    <p>Administra niveles globales, accesos por país y estado de las cuentas.</p>
+  </header>
+  <main>
+    <div id="notice" class="notice" role="status" aria-live="polite">Comprobando sesión administrativa…</div>
+    <section class="panel" aria-labelledby="users-title">
+      <div class="panel-head">
+        <div><h2 id="users-title">Cuentas registradas</h2><p>Admin y superadmin acceden a todos los países habilitados; usuario sólo a los asignados.</p></div>
+        <div><button id="create" data-admin-write type="button" hidden>Crear cuenta</button> <button id="refresh" class="secondary" type="button">Actualizar lista</button></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Usuario</th><th>Nivel global</th><th>Países asignados</th><th>Acción</th></tr></thead>
+          <tbody id="users"><tr><td colspan="4" class="empty">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+    <section id="audit-panel" class="panel" style="margin-top:18px" hidden aria-labelledby="audit-title">
+      <div class="panel-head">
+        <div><h2 id="audit-title">Actividad administrativa</h2><p>Últimas 100 acciones de cuentas y permisos.</p></div>
+        <button id="audit-refresh" class="secondary" type="button">Actualizar bitácora</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Fecha</th><th>Acción</th><th>Actor</th><th>Cuenta afectada</th><th>Detalle</th></tr></thead>
+        <tbody id="audit-events"><tr><td colspan="5" class="empty">Aún no se cargó la bitácora.</td></tr></tbody>
+      </table></div>
+    </section>
+  </main>
+  <dialog id="editor" aria-labelledby="editor-title">
+    <form id="permissions-form">
+      <div class="dialog-head"><h2 id="editor-title">Editar permisos</h2><p id="editor-user"></p></div>
+      <div id="country-list" class="country-list"></div>
+      <div class="dialog-foot">
+        <button id="cancel" class="secondary" type="button">Cancelar</button>
+        <button id="save" data-admin-write type="submit">Guardar permisos</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="create-dialog" aria-labelledby="create-title">
+    <form id="create-form">
+      <div class="dialog-head"><h2 id="create-title">Crear cuenta</h2><p>El superadmin puede crear administradores y usuarios.</p></div>
+      <div class="country-list">
+        <p><label>Usuario<br><input name="username" required maxlength="128" autocomplete="off"></label></p>
+        <p><label>Contraseña inicial (mínimo 12 caracteres)<br><input name="password" type="password" required minlength="12" autocomplete="new-password"></label></p>
+        <p><label>Nivel global<br><select name="account_level"><option value="usuario">Usuario</option><option value="admin">Administrador</option></select></label></p>
+      </div>
+      <div class="dialog-foot"><button id="create-cancel" class="secondary" type="button">Cancelar</button><button data-admin-write type="submit">Crear cuenta</button></div>
+    </form>
+  </dialog>
+  <script>
+    (() => {
+      const notice = document.querySelector('#notice');
+      const table = document.querySelector('#users');
+      const dialog = document.querySelector('#editor');
+      const form = document.querySelector('#permissions-form');
+      const save = document.querySelector('#save');
+      const createDialog = document.querySelector('#create-dialog');
+      const createForm = document.querySelector('#create-form');
+      const auditTable = document.querySelector('#audit-events');
+      let model = null;
+      let selectedUser = null;
+      let writeLockReason = null;
+      let writePending = false;
+
+      function syncWriteControls() {
+        const disabled = writeLockReason !== null || writePending;
+        document.querySelectorAll('[data-admin-write]').forEach(button => { button.disabled = disabled; });
+      }
+
+      function message(text, type = '') {
+        notice.textContent = text;
+        notice.className = `notice ${type}`.trim();
+      }
+
+      function element(tag, text, className) {
+        const node = document.createElement(tag);
+        if (text !== undefined) node.textContent = text;
+        if (className) node.className = className;
+        return node;
+      }
+
+      async function api(path, options = {}) {
+        const method = (options.method || 'GET').toUpperCase();
+        const isWrite = !['GET', 'HEAD', 'OPTIONS'].includes(method);
+        if (writeLockReason && isWrite) {
+          throw new Error(writeLockReason === 'session'
+            ? 'La sesión expiró. Inicia sesión de nuevo antes de realizar cambios.'
+            : 'El token de protección venció. Recarga la página e inicia sesión de nuevo.');
+        }
+        if (isWrite && writePending) throw new Error('Espera a que termine la operación actual.');
+        if (isWrite) { writePending = true; syncWriteControls(); }
+        try {
+          const response = await fetch(path, { credentials:'same-origin', cache:'no-store', ...options,
+            headers: { Accept:'application/json', ...(options.body ? {'Content-Type':'application/json'} : {}), ...options.headers } });
+          if (response.status === 401) { writeLockReason = 'session'; syncWriteControls(); }
+          if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            const code = body?.detail?.code;
+            if (response.status === 403 && code === 'csrf_no_valido') {
+              writeLockReason = 'csrf'; syncWriteControls();
+            }
+            if (response.status === 404) throw new Error('El módulo administrativo aún no está integrado en la API de esta aplicación.');
+            if (response.status === 401) throw new Error('La sesión expiró. Inicia sesión de nuevo antes de continuar.');
+            if (response.status === 403) {
+              const forbiddenMessages = {
+                accion_restringida_superadmin:'Esta acción sólo está disponible para el superadmin.',
+                acceso_denegado:'Tu cuenta no tiene permiso para realizar esta acción.',
+                origen_no_permitido:'La solicitud fue rechazada por el origen de la página.',
+                csrf_no_valido:'La protección de la sesión venció o no coincide. Recarga la página e inicia sesión de nuevo.',
+                proteccion_superadmin:'Las cuentas superadmin están protegidas y no se pueden cambiar aquí.',
+              };
+              throw new Error(forbiddenMessages[code] || 'No tienes permisos para realizar esta acción.');
+            }
+            throw new Error(code || `La solicitud falló (${response.status}).`);
+          }
+          return response.status === 204 ? null : response.json();
+        } finally {
+          if (isWrite) { writePending = false; syncWriteControls(); }
+        }
+      }
+
+      function renderUsers() {
+        table.replaceChildren();
+        if (!model.users.length) {
+          const row = element('tr');
+          row.append(element('td', 'No hay cuentas registradas.', 'empty'));
+          row.firstChild.colSpan = 4;
+          table.append(row);
+          return;
+        }
+        for (const user of model.users) {
+          const row = element('tr');
+          const nameCell = element('td');
+          nameCell.append(element('div', user.username, 'username'));
+          nameCell.append(element('div', `Creado ${new Date(user.created_at).toLocaleDateString('es-GT')}`, 'meta'));
+          const levelCell = element('td');
+          const levels = {superadmin:'Superadmin',admin:'Administrador',usuario:'Usuario'};
+          levelCell.append(element('span', levels[user.account_level] || 'Nivel desconocido', user.account_level === 'usuario' ? 'pill' : 'pill admin'));
+          if (!user.enabled) levelCell.append(element('span', 'Cuenta inactiva', 'pill off'));
+          const grantsCell = element('td');
+          if (user.country_permissions.length) {
+            for (const grant of user.country_permissions) {
+              const status = grant.country_enabled ? '' : ' · país apagado';
+              grantsCell.append(element('span', `${grant.country_code} · ${grant.role}${status}`, grant.country_enabled ? 'pill' : 'pill off'));
+            }
+          } else grantsCell.append(element('span', 'Sin países asignados', 'meta'));
+          const actionCell = element('td');
+          if (user.account_level === 'usuario' || model.account_level === 'superadmin') {
+            const edit = element('button', 'Países');
+            edit.type = 'button'; edit.className = 'secondary'; edit.dataset.adminWrite = '';
+            edit.addEventListener('click', () => openEditor(user));
+            actionCell.append(edit);
+          }
+          if ((model.account_level === 'superadmin' && user.account_level !== 'superadmin') || (model.account_level === 'admin' && user.account_level === 'usuario')) {
+            const reset = element('button', 'Restablecer contraseña');
+            reset.type = 'button'; reset.className = 'secondary'; reset.dataset.adminWrite = '';
+            reset.addEventListener('click', () => resetPassword(user));
+            actionCell.append(reset);
+          }
+          if (model.account_level === 'superadmin' && user.account_level !== 'superadmin') {
+            const level = element('button', user.account_level === 'admin' ? 'Cambiar a usuario' : 'Cambiar a admin');
+            level.type = 'button'; level.className = 'secondary'; level.dataset.adminWrite = '';
+            level.addEventListener('click', () => changeLevel(user));
+            actionCell.append(level);
+            const status = element('button', user.enabled ? 'Bloquear' : 'Desbloquear');
+            status.type = 'button'; status.className = user.enabled ? 'secondary' : ''; status.dataset.adminWrite = '';
+            status.addEventListener('click', () => setStatus(user, !user.enabled));
+            actionCell.append(status);
+          }
+          row.append(nameCell, levelCell, grantsCell, actionCell);
+          table.append(row);
+        }
+        syncWriteControls();
+      }
+
+      function openEditor(user) {
+        selectedUser = user;
+        document.querySelector('#editor-title').textContent = `Permisos de ${user.username}`;
+        document.querySelector('#editor-user').textContent = user.account_level !== 'usuario'
+          ? 'Cuenta administrativa: sólo el superadmin puede modificar sus asignaciones regionales.'
+          : 'Marca los países autorizados y el nivel de acceso para cada uno.';
+        const list = document.querySelector('#country-list');
+        list.replaceChildren();
+        const existing = new Map(user.country_permissions.map(item => [item.country_code, item.role]));
+        for (const country of model.countries) {
+          const row = element('label', undefined, 'country');
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.name = 'country';
+          checkbox.value = country.code;
+          checkbox.checked = existing.has(country.code);
+          const title = element('span', undefined);
+          title.append(element('span', `${country.name} · ${country.code}`, 'country-name'));
+          title.append(element('span', ` ${country.currency}${country.enabled ? '' : ' · deshabilitado'}`, 'country-detail'));
+          const role = document.createElement('select');
+          role.name = `role-${country.code}`;
+          for (const [value, label] of [['lector','Lector'], ['operador','Operador']]) {
+            const option = element('option', label);
+            option.value = value;
+            role.append(option);
+          }
+          role.value = existing.get(country.code) || 'lector';
+          role.disabled = !checkbox.checked;
+          checkbox.addEventListener('change', () => { role.disabled = !checkbox.checked; });
+          row.append(checkbox, title, role);
+          if (!country.enabled) row.append(element('span', 'Aunque se asigne un nivel, el país seguirá bloqueado hasta que se habilite.', 'disabled-note'));
+          list.append(row);
+        }
+        dialog.showModal();
+      }
+
+      document.querySelector('#cancel').addEventListener('click', () => dialog.close());
+      document.querySelector('#refresh').addEventListener('click', load);
+      document.querySelector('#create').addEventListener('click', () => createDialog.showModal());
+      document.querySelector('#audit-refresh').addEventListener('click', loadAudit);
+      document.querySelector('#create-cancel').addEventListener('click', () => createDialog.close());
+      createForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        const csrf = csrfToken();
+        if (!csrf) { message('La sesión no tiene token CSRF. Vuelve a iniciar sesión.', 'error'); return; }
+        const values = new FormData(createForm);
+        try {
+          await api('/auth/admin/users', {method:'POST', headers:writeHeaders(csrf), body:JSON.stringify({
+            username:values.get('username'), password:values.get('password'), account_level:values.get('account_level'),
+          })});
+          createForm.reset(); createDialog.close(); await load(); message('Cuenta creada.', 'good');
+        } catch (error) { message(error.message, 'error'); }
+      });
+      function csrfToken() {
+        return document.cookie.split('; ').find(value => value.startsWith('__Host-catalog_csrf='))?.split('=').slice(1).join('=');
+      }
+      function writeHeaders(csrf) { return {'X-CSRF-Token':decodeURIComponent(csrf)}; }
+      async function resetPassword(user) {
+        const password = window.prompt(`Nueva contraseña para ${user.username} (mínimo 12 caracteres):`);
+        if (password === null) return;
+        const csrf = csrfToken();
+        if (!csrf) { message('La sesión no tiene token CSRF. Vuelve a iniciar sesión.', 'error'); return; }
+        try {
+          await api(`/auth/admin/users/${encodeURIComponent(user.id)}/password`, {
+            method:'PUT', headers:writeHeaders(csrf), body:JSON.stringify({password}),
+          });
+          message('Contraseña restablecida y sesiones anteriores revocadas.', 'good');
+        } catch (error) { message(error.message, 'error'); }
+      }
+      async function changeLevel(user) {
+        const account_level = user.account_level === 'admin' ? 'usuario' : 'admin';
+        if (!window.confirm(`Cambiar ${user.username} a ${account_level}? Se cerrarán sus sesiones. Al pasar a usuario, sólo tendrá los países asignados.`)) return;
+        const csrf = csrfToken();
+        if (!csrf) { message('Vuelve a iniciar sesión.', 'error'); return; }
+        try {
+          await api(`/auth/admin/users/${encodeURIComponent(user.id)}/level`, {
+            method:'PUT', headers:writeHeaders(csrf), body:JSON.stringify({account_level}),
+          });
+          await load(); message('Nivel actualizado y sesiones revocadas.', 'good');
+        } catch (error) { message(error.message, 'error'); }
+      }
+      async function setStatus(user, enabled) {
+        if (!window.confirm(`${enabled ? 'Desbloquear' : 'Bloquear'} la cuenta ${user.username}?`)) return;
+        const csrf = csrfToken();
+        if (!csrf) { message('La sesión no tiene token CSRF. Vuelve a iniciar sesión.', 'error'); return; }
+        try {
+          await api(`/auth/admin/users/${encodeURIComponent(user.id)}/status`, {
+            method:'PATCH', headers:writeHeaders(csrf), body:JSON.stringify({enabled}),
+          });
+          await load(); message(enabled ? 'Cuenta habilitada.' : 'Cuenta bloqueada y sesiones revocadas.', 'good');
+        } catch (error) { message(error.message, 'error'); }
+      }
+      async function loadAudit() {
+        try {
+          const events = await api('/auth/admin/users/audit-events?limit=100');
+          auditTable.replaceChildren();
+          const labels = {usuario_creado:'Cuenta creada',permisos_cambiados:'Permisos cambiados',
+            contrasena_restablecida:'Contraseña restablecida',cuenta_bloqueada:'Cuenta bloqueada',
+            cuenta_desbloqueada:'Cuenta desbloqueada'};
+          for (const event of events) {
+            const row = element('tr');
+            row.append(element('td', new Date(event.created_at).toLocaleString('es-GT')),
+              element('td', labels[event.event_type] || event.event_type),
+              element('td', event.actor_user_id), element('td', event.target_user_id),
+              element('td', JSON.stringify(event.details)));
+            auditTable.append(row);
+          }
+          if (!events.length) {
+            const row = element('tr');
+            const cell = element('td', 'Todavía no hay acciones registradas.', 'empty');
+            cell.colSpan = 5; row.append(cell); auditTable.append(row);
+          }
+        } catch (error) { message(error.message, 'error'); }
+      }
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!selectedUser) return;
+        const permissions = [...form.querySelectorAll('input[name="country"]:checked')].map(input => ({
+          country_code: input.value,
+          role: form.querySelector(`select[name="role-${CSS.escape(input.value)}"]`).value,
+        }));
+        const csrf = document.cookie.split('; ').find(value => value.startsWith('__Host-catalog_csrf='))?.split('=').slice(1).join('=');
+        if (!csrf) { message('La sesión no tiene el token de protección CSRF. Vuelve a iniciar sesión.', 'error'); return; }
+        save.disabled = true;
+        try {
+          const updated = await api(`/auth/admin/users/${encodeURIComponent(selectedUser.id)}/country-permissions`, {
+            method:'PUT', headers:{'X-CSRF-Token':decodeURIComponent(csrf)},
+            body:JSON.stringify({permissions}),
+          });
+          model.users = model.users.map(user => user.id === updated.id ? updated : user);
+          renderUsers();
+          dialog.close();
+          message('Permisos guardados. El cambio se validará desde la siguiente petición del usuario.', 'good');
+        } catch (error) { message(error.message, 'error'); }
+        finally { syncWriteControls(); }
+      });
+
+      async function load() {
+        message('Comprobando sesión administrativa…');
+        try {
+          model = await api('/auth/admin/users');
+          const current = await api('/auth/me');
+          model.account_level = current.account_level;
+          document.querySelector('#create').hidden = model.account_level !== 'superadmin';
+          document.querySelector('#audit-panel').hidden = model.account_level !== 'superadmin';
+          renderUsers();
+          message('Lista actualizada. Los recursos regionales vuelven a validar permisos en el servidor.', 'good');
+        } catch (error) {
+          table.replaceChildren();
+          const row = element('tr');
+          const cell = element('td', error.message, 'empty');
+          cell.colSpan = 4;
+          row.append(cell);
+          table.append(row);
+          message(error.message, 'error');
+        }
+      }
+      load();
+    })();
+  </script>
+<script type="module" src="/catalog-menu.js"></script></body>
+</html>

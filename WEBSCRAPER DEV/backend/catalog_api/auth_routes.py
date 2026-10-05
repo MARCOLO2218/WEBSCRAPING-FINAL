@@ -144,6 +144,25 @@ def create_auth_router(repository: AuthRepository, *, allowed_origins: Iterable[
             ) for country in snapshot.countries],
         )
 
+    @router.post("/check-write", status_code=204)
+    def check_write(request: Request, response: Response):
+        require_origin(request)
+        csrf_cookie = request.cookies.get(CSRF_COOKIE)
+        csrf_header = request.headers.get(CSRF_HEADER)
+        if not csrf_cookie or not csrf_header or csrf_cookie != csrf_header:
+            raise HTTPException(403, detail={"code": "csrf_no_valido"})
+        try:
+            valid = repository.csrf_matches_session(
+                request.cookies.get(SESSION_COOKIE), csrf_header,
+            )
+        except Exception:
+            raise HTTPException(503, detail={"code": "acceso_no_disponible"}) from None
+        if not valid:
+            raise HTTPException(403, detail={"code": "csrf_no_valido"})
+        response.headers["Cache-Control"] = "no-store"
+        response.status_code = 204
+        return None
+
     @router.post("/logout", status_code=204)
     def logout(request: Request, response: Response):
         require_origin(request)
