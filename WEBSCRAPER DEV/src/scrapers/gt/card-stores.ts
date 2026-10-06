@@ -6,6 +6,12 @@ export const SLEEP_GALLERY_SOURCE_URL = 'https://sleepgalleryca.com/gt/';
 export const MATTRESS_SOURCE_URL = 'https://mattress.com.gt/';
 export const SERTA_GT_SOURCE_URL = 'https://sertacentroamerica.com/guatemala/catalogo/';
 
+function normalizeMattressPrice(value: string): string {
+  const amounts = [...value.matchAll(/(?:GTQ|Q)\s*[\d,]+(?:\.\d{1,2})?/gi)]
+    .map(([amount]) => amount.replace(/\s+/g, '').toUpperCase());
+  return [...new Set(amounts)].slice(0, 2).join(' - ');
+}
+
 export type CardStoreDependencies = {
   navigate: (page: Page, url: string) => Promise<void>;
   extractCards: (page: Page, sourceUrl: string, config: ProductSelectorConfig) => Promise<CsvProduct[]>;
@@ -115,6 +121,13 @@ async function scrapeSertaGt(page: Page, scrapedAt: string): Promise<CsvProduct[
 
 async function scrapeMattress(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
   await goto(page, MATTRESS_SOURCE_URL);
+  const siteStatus = await page.evaluate(() => ({
+    title: document.title,
+    text: (document.body?.innerText ?? '').slice(0, 800),
+  }));
+  if (/database error|error establishing a database connection/i.test(`${siteStatus.title} ${siteStatus.text}`)) {
+    throw new Error(`Mattress Guatemala publico una pagina de error: ${siteStatus.title}.`);
+  }
   const rows = await extractCardProducts(page, MATTRESS_SOURCE_URL, {
     sourceSite: 'Mattress Guatemala',
     brand: 'Mattress',
@@ -127,10 +140,13 @@ async function scrapeMattress(page: Page, scrapedAt: string): Promise<CsvProduct
     salePriceSelector: 'ins .woocommerce-Price-amount, ins',
     priceSelector: '.price',
     discountSelector: '.onsale, .nm-shop-loop-product-title-action',
+    includeLinkFallback: false,
   });
 
   return rows.map((row) => ({
     ...row,
+    regular_price: normalizeMattressPrice(row.regular_price),
+    sale_price: normalizeMattressPrice(row.sale_price),
     scraped_at: scrapedAt,
   }));
 }
