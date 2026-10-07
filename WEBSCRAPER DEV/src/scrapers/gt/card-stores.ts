@@ -6,7 +6,7 @@ export const SLEEP_GALLERY_SOURCE_URL = 'https://sleepgalleryca.com/gt/';
 export const MATTRESS_SOURCE_URL = 'https://mattress.com.gt/';
 export const SERTA_GT_SOURCE_URL = 'https://sertacentroamerica.com/guatemala/catalogo/';
 
-function normalizeMattressPrice(value: string): string {
+function normalizeCardStorePrice(value: string): string {
   const amounts = [...value.matchAll(/(?:GTQ|Q)\s*[\d,]+(?:\.\d{1,2})?/gi)]
     .map(([amount]) => amount.replace(/\s+/g, '').toUpperCase());
   return [...new Set(amounts)].slice(0, 2).join(' - ');
@@ -116,7 +116,11 @@ async function scrapeSertaGt(page: Page, scrapedAt: string): Promise<CsvProduct[
 
   const rows = Array.from(rowsByKey.values());
   console.log(`Serta Guatemala: ${rows.length} productos unicos encontrados en las lineas de camas.`);
-  return filterGuatemalaQuetzalRows(rows, 'Serta Guatemala');
+  return filterGuatemalaQuetzalRows(rows.map(row => ({
+    ...row,
+    regular_price: normalizeCardStorePrice(row.regular_price),
+    sale_price: normalizeCardStorePrice(row.sale_price),
+  })), 'Serta Guatemala');
 }
 
 async function scrapeMattress(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
@@ -145,8 +149,8 @@ async function scrapeMattress(page: Page, scrapedAt: string): Promise<CsvProduct
 
   return rows.map((row) => ({
     ...row,
-    regular_price: normalizeMattressPrice(row.regular_price),
-    sale_price: normalizeMattressPrice(row.sale_price),
+    regular_price: normalizeCardStorePrice(row.regular_price),
+    sale_price: normalizeCardStorePrice(row.sale_price),
     scraped_at: scrapedAt,
   }));
 }
