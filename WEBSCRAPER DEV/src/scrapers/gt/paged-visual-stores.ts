@@ -3,7 +3,8 @@ import { cleanProductText as cleanText, normalizeProductText as normalizeCatalog
 import type { VisualScraperEngine } from '../shared/visual-engine.js';
 
 export const DORMISUENOS_SOURCE_URL = 'https://tiendasdormisuenos.com/categoria-producto/camas/?product-page=1';
-export const BODEGANGAS_SOURCE_URL = 'https://bodegangasgts.com/?product_cat=0&s=camas&et_search=true&post_type=product';
+export const BODEGANGAS_SOURCE_URL = 'https://bodegangasgts.com/categoria-producto/dormitorio/camas/';
+export const BODEGANGAS_CARD_SELECTOR = '.product-grid-item, li.product, .etheme-product-grid-item';
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -113,31 +114,90 @@ async function scrapeDormisuenosGt(page: Page, scrapedAt: string): Promise<CsvPr
 }
 
 async function scrapeBodegangasGt(page: Page, scrapedAt: string): Promise<CsvProduct[]> {
-  const urls = [
-    BODEGANGAS_SOURCE_URL,
-    'https://bodegangasgts.com/?product_cat=camas&s=camas&et_search=true&post_type=product',
-    'https://bodegangasgts.com/product-category/camas/'
-  ];
   const rowsByKey = new Map<string, CsvProduct>();
+  const maxPages = 5;
+  let pageUrl = BODEGANGAS_SOURCE_URL;
+  const visited = new Set<string>();
 
-  for (const url of urls) {
-    const rows = await scrapePagedVisualProductGrid(page, scrapedAt, url, 'Bodegangas Guatemala', 'Bodegangas', 5);
+  for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
+    if (visited.has(pageUrl)) throw new Error('Bodegangas: paginación repetida; catálogo incompleto.');
+    visited.add(pageUrl);
+    await page.goto(pageUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+    await page.waitForLoadState('networkidle', { timeout: 30_000 }).catch(() => undefined);
+    const pageStatus = await page.evaluate(() => `${document.title} ${(document.body?.innerText ?? '').slice(0, 800)}`);
+    if (/checking your browser|verify you are human|captcha|access denied/i.test(pageStatus)) {
+      throw new Error(`Bodegangas: protección anti-bot en página ${pageNumber}; catálogo incompleto.`);
+    }
+
+    const rows = await page.evaluate(({ pageUrl, scrapedAt, cardSelector }) => {
+      const clean = (value: string | null | undefined) => (value ?? '').replace(/\s+/g, ' ').trim();
+      const absolute = (value: string) => {
+        try { return new URL(value, pageUrl).toString(); } catch { return ''; }
+      };
+      return Array.from(document.querySelectorAll<HTMLElement>(cardSelector))
+        .map((card): CsvProduct | null => {
+          const productAnchor = card.querySelector<HTMLAnchorElement>('a[href*="/producto/"], a[href*="/product/"]');
+          const image = card.querySelector<HTMLImageElement>('img');
+          const title = clean(card.querySelector('.woocommerce-loop-product__title, .wd-entities-title, h1,h2,h3,h4,[class*="title"],[class*="name"]')?.textContent)
+            || clean(productAnchor?.getAttribute('title'))
+            || clean(image?.getAttribute('alt'));
+          const productUrl = absolute(productAnchor?.getAttribute('href') ?? '');
+          if (!title || !productUrl) return null;
+
+          const text = clean(card.innerText);
+          const amounts = (root: Element | null) => [...new Set(
+            Array.from(root?.querySelectorAll('.woocommerce-Price-amount') ?? [])
+              .flatMap(element => clean(element.textContent).match(/Q\s*[\d,]+(?:\.\d{2})?/gi) ?? [])
+              .map(amount => amount.replace(/\s+/g, ''))
+          )].slice(0, 2).join(' - ');
+          const price = card.querySelector('.price');
+          const struckPrice = amounts(price?.querySelector('del') ?? null);
+          const salePrice = amounts(price?.querySelector('ins') ?? null);
+          const listedPrice = amounts(price);
+          const brandAnchor = card.querySelector<HTMLAnchorElement>('a[href*="/marcas/"]');
+          const imageUrl = absolute(image?.currentSrc || image?.getAttribute('data-src') || image?.getAttribute('src') || '');
+          return {
+            source_site: 'Bodegangas Guatemala',
+            brand: clean(brandAnchor?.textContent) || 'Bodegangas',
+            line: '',
+            category: 'Camas',
+            product_name: title,
+            availability: /agotado|out of stock/i.test(text) ? 'Agotado' : 'Listado en tienda online',
+            regular_price: struckPrice || (salePrice ? '' : listedPrice),
+            sale_price: salePrice,
+            discount: clean(card.querySelector('.onsale,[class*="onsale"],[class*="badge"]')?.textContent),
+            installment: '',
+            product_url: productUrl,
+            source_url: pageUrl,
+            headline: title,
+            description: '',
+            warranty: '',
+            benefits: '',
+            image_url: imageUrl,
+            image_alt: clean(image?.getAttribute('alt')),
+            scraped_at: scrapedAt,
+          };
+        })
+        .filter((row): row is CsvProduct => row !== null);
+    }, { pageUrl, scrapedAt, cardSelector: BODEGANGAS_CARD_SELECTOR });
+
     for (const row of rows) {
       const key = row.product_url || `${row.product_name}|${row.regular_price}|${row.sale_price}`;
-      if (!rowsByKey.has(key)) {
-        rowsByKey.set(key, {
-          ...row,
-          source_url: BODEGANGAS_SOURCE_URL,
-        });
-      }
+      if (!rowsByKey.has(key)) rowsByKey.set(key, row);
     }
 
-    if (rowsByKey.size >= 20) {
-      break;
+    if (rows.length === 0) throw new Error(`Bodegangas: página ${pageNumber} sin tarjetas; revisar estructura o acceso.`);
+    const nextHref = await page.locator('a.next.page-numbers').first().getAttribute('href').catch(() => null);
+    if (!nextHref) return Array.from(rowsByKey.values());
+    const nextUrl = new URL(nextHref, pageUrl);
+    if (nextUrl.origin !== new URL(BODEGANGAS_SOURCE_URL).origin
+      || !nextUrl.pathname.startsWith(new URL(BODEGANGAS_SOURCE_URL).pathname)) {
+      throw new Error('Bodegangas: siguiente página fuera de la categoría autorizada.');
     }
+    pageUrl = nextUrl.toString();
   }
 
-  return Array.from(rowsByKey.values());
+  throw new Error('Bodegangas: límite de páginas alcanzado; catálogo incompleto.');
 }
 
   return { dormisuenos: scrapeDormisuenosGt, bodegangas: scrapeBodegangasGt };
