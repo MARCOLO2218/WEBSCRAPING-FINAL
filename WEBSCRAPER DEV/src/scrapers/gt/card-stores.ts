@@ -38,6 +38,7 @@ async function scrapeSleepGallery(page: Page, scrapedAt: string): Promise<CsvPro
     salePriceSelector: '.sg-price-new',
     priceSelector: '.sg-card-price',
     discountSelector: '.sg-badge',
+    includeLinkFallback: false,
   });
 
   return rows.map((row) => ({
