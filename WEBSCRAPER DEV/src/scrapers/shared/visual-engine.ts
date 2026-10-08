@@ -3,6 +3,12 @@ import type { CsvProduct } from '../../domain/product.js';
 import type { ProductSelectorConfig } from '../types.js';
 import { scrapeCemacoCatalog } from '../gt/cemaco.js';
 
+function normalizeCuracaoPrice(value: string): string {
+  const amounts = [...value.matchAll(/(?:GTQ|Q)\s*[\d,]+(?:\.\d{1,2})?/gi)]
+    .map(([amount]) => amount.replace(/\s+/g, '').toUpperCase());
+  return [...new Set(amounts)].slice(0, 2).join(' - ');
+}
+
 export type VisualScraperEngineDependencies = {
   navigate: (page: Page, url: string) => Promise<void>;
   filterGuatemalaRows: (rows: CsvProduct[], sourceSite?: string) => CsvProduct[];
@@ -94,6 +100,10 @@ async function scrapeGenericGuatemalaStore(
 
   return filterGuatemalaQuetzalRows(rows, sourceSite).map((row) => ({
     ...row,
+    ...(sourceSite === 'La Curacao Guatemala' ? {
+      regular_price: normalizeCuracaoPrice(row.regular_price),
+      sale_price: normalizeCuracaoPrice(row.sale_price),
+    } : {}),
     scraped_at: scrapedAt,
   }));
 }

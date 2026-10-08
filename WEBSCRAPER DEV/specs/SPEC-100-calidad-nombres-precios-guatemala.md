@@ -1,6 +1,6 @@
 # SPEC-100: Calidad de nombres y precios Guatemala
 
-Estado: En progreso; correcciones Serta y Siman locales, validación Ubuntu pendiente.
+Estado: En progreso; Serta y Siman validadas en Ubuntu, Curacao local pendiente.
 
 ## Evidencia Ubuntu 2026-10-07
 
@@ -30,3 +30,18 @@ productListPrice .price; oferta en productSellingPriceDiscount .price, descuento
 en productDiscountTag. El lector usa estas tarjetas y campos solo para Siman,
 sin fallback de enlaces generales. Conserva cuotas fuera del nombre y porcentaje
 fuera del precio. Los selectores genéricos preparados previamente se conservan.
+
+## Validación Ubuntu ace6c53 — 2026-10-07
+
+TypeScript compiló. Serta: 14 productos con nombre/precio/URL, rangos sin
+leyendas repetidas. Siman: ocho páginas, 147 productos únicos con nombre,
+precio y URL; muestras de nombres limpios y ofertas Q3,519/Q3,189/Q6,044.
+Cero fallos. La auditoría no publicó datos ni escribió PostgreSQL.
+
+## Curacao preparada
+
+Normaliza únicamente los campos regular_price/sale_price de La Curacao GT,
+extrayendo importes Q/GTQ y conservando hasta dos importes únicos para rangos.
+Elimina Precio especial y porcentaje del campo precio; conserva descuento
+por separado. No cambia nombres, tarjetas, filtros ni otros comercios.
+Validación Ubuntu pendiente.
