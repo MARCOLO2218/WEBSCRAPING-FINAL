@@ -322,6 +322,8 @@ def main(argv=None):
     parser.add_argument("--expected-plan-sha256")
     args = parser.parse_args(argv)
     try:
+        if rules.RULE_VERSION != '038-origin-v3':
+            raise ValueError('Esta fase requiere 038-origin-v3; actualizar reglas antes de generar o aplicar el plan')
         nc, nc_sha = snapshot(args.nc_snapshot, args.expected_nc_sha256)
         state = inspect_target()
         if not state["fase_identidad"] or state["objetos_pais"]:

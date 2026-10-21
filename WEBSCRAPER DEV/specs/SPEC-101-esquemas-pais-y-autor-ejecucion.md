@@ -13,6 +13,13 @@ reservados vacíos; la aplicación sigue operativa sobre sus fuentes originales.
 
 ## Fase comercial preparada (sin aplicar)
 
+Primer plan NAS b5c352c rechazado para aplicación: usó 038-origin-v2,
+plan_sha256 93a4353ec241a0d8835e0395ef1551485427007c63d5152a44b02dfc6ff78836.
+El clasificador v3 existía localmente pero todavía no se había publicado.
+Publicar su corrección acotada: prioridad C$/NIO antes de $/USD, versión v3.
+El comando ahora exige v3 antes de leer/clasificar/aplicar; regenerar el plan.
+No hubo DDL comercial ni cambios en la aplicación por el plan anterior.
+
 backend/catalog_api/db/country_rehearsal.py lee únicamente el ensayo comercial
 y un snapshot NC respaldado con SHA256 explícito. Sin --apply sólo consulta y
 clasifica por reglas 038-origin-v3; informa conteos, huella por contenido y plan

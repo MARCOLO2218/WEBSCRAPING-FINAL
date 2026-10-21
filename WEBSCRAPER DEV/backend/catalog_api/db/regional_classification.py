@@ -4,7 +4,7 @@ from urllib.parse import urlsplit, unquote
 import re
 import unicodedata
 
-RULE_VERSION = '038-origin-v2'
+RULE_VERSION = '038-origin-v3'
 MONEY = {'GT': 'GTQ', 'SV': 'USD', 'HN': 'HNL', 'NC': 'NIO'}
 # Pares observados en el informe y configuración de extractores GT.
 GENERIC_GT = {
@@ -63,8 +63,9 @@ def price_currency(value):
     value = str(value or '').strip()
     if not value:
         return None
+    # C$ must be checked before bare $, or córdobas are misread as USD.
     for pattern, currency in ((r'(?:GTQ|Q)\s*[\d,.]', 'GTQ'),
-            (r'(?:USD|\$)\s*[\d,.]', 'USD'), (r'(?:NIO|C\$)\s*[\d,.]', 'NIO'),
+            (r'(?:NIO|C\$)\s*[\d,.]', 'NIO'), (r'(?:USD|\$)\s*[\d,.]', 'USD'),
             (r'(?:HNL|L)\s*[\d,.]', 'HNL')):
         if re.search(pattern, value, re.I):
             return currency
