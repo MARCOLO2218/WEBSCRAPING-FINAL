@@ -2,6 +2,38 @@
 
 Estado: En progreso. Inventario preparado; migración y conexión operativa pendientes.
 
+## Fase local de administración preparada
+
+backend/catalog_api/db/administration_rehearsal.py: plan por defecto; origen
+fijo catalogocomercial_identidad_101, destino fijo catalogocomercial_ensayo_101,
+ambos dentro de tickets_it_db. Usa sudo -n y psql sin abrir acceso externo.
+Sólo --apply --confirm-rehearsal con SHA256 de identidad exacto aplica DDL.
+Copiar seis tablas administrativas con PK/FK/checks/índices de modelos actuales,
+preservando ID, hash, niveles, grants, sesiones, intentos y auditoría; recrear
+triggers append-only. Las FK se reescriben a administracion, no a catalogo.
+No copiar tablas comerciales del snapshot de identidad sobre el ensayo actual.
+Reservar schemas guatemala/nicaragua vacíos; no afirmar que ya hay tablas ni
+productos separados. Rechazar cualquier esquema destino preexistente; una sola
+transacción con lock_timeout/advisory lock, conteos de ensayo y sin reemplazos.
+El SQL con hashes no se guarda ni imprime: viaja por stdin a psql.
+Crear administracion.migraciones_ensayo como registro separado: no alterar la
+revisión Alembic comercial ni declarar migrado el runtime auth 047.
+Validación local: sintaxis Python; ejecución del plan y ensayo PostgreSQL pendientes.
+
+## Respaldos identidad/NC confirmados por el usuario
+
+- identidad-101-xQbBaObl/identidad_dev.dump, SHA256
+  97e25a83aa962f1771d13fac17fe802a6ee3c2082425cdf5cd61cf717452c5ae.
+- Restauración catalogocomercial_identidad_101: revisión 047, cinco cuentas,
+  doce asignaciones. admin=superadmin; cramos/mloarca=admin;
+  evaldez/lbarrientos=usuario. Los grants no habilitan países deshabilitados.
+- nicaragua-101-Yor0gMCo/nicaragua-catalogo.json, SHA256
+  647295e87a9b88e34aae2f048df9aa88aa6408dc781012f2198d9e2635ff7e76.
+- Snapshot NC versión 1, NIO, 2026-10-21T15:45:47.079Z: 339 productos;
+  Curacao 65, Gallo 39, Siman 77, Walmart 152, Maxi Pali 6.
+  Con precio: 310; sin precio: 29. Conservar todos y origen/fecha por tienda.
+  Este JSON no identifica al usuario que inició el scraping.
+
 ## Solicitud y destino
 
 Una base webscraper_dev en catalogocomercial-dev-db (FACENCOADDONS,
@@ -48,6 +80,26 @@ argumento ni log; elimina ese archivo al salir normalmente. Inventario legible
 y SHA256 no sustituyen una restauración de ensayo. Ejecución NAS pendiente.
 
 ## Contrato de destino
+
+### Ensayo comercial y equivalencia histórica recibidos
+
+Respaldo comercial NAS: comercial-dev-o2fT1z/comercial_dev.dump,
+SHA256 b04988f5695b7c6c2792388d2264df7895ca91698aa6c3861001e8802fb679b3.
+Restaurado por el usuario en tickets_it_db/catalogocomercial_ensayo_101:
+189328 productos, 255 runs, 19 publicaciones y run máximo 256.
+El cluster no tiene rol postgres; primera restauración revirtió por propietario.
+Reintento con --no-owner --no-privileges --single-transaction --exit-on-error
+terminó correctamente. Conservar este tratamiento sólo para ensayo; permisos
+de destino requieren configuración explícita posterior.
+
+Comparación sobre el mismo cluster, runs id <= 246 y productos con run_id <= 246
+o nulo, to_jsonb de fila completa ordenado por id:
+- 245 runs: MD5 agregado 2b0e5c546a4ceaacfe2090e90f7cf083 en ambas bases.
+- 180382 productos: MD5 agregado dae522a8f8973fa6c92f715b20be1661 en ambas.
+Evidencia de equivalencia del contenido histórico compartido, no huella
+criptográfica de seguridad. Extensión comercial observada: 10 runs y 8946 filas.
+La identidad/permisos actuales y JSON NC necesitan respaldo propio antes de
+combinar fuentes en scratch. Las bases operativas no se alteraron.
 
 ### Inventario NAS recibido (consulta read-only)
 

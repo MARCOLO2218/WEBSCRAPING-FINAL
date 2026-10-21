@@ -38,6 +38,41 @@ o archivar carpetas. No confundir inventario legible con restore de ensayo.
 
 ## Orden de incorporación
 
+### Administración de ensayo (primera fase preparada)
+
+Ya restaurada por el usuario catalogocomercial_identidad_101 en tickets_it_db:
+5 usuarios, 12 asignaciones, revisión 047. Respaldo identidad:
+identidad-101-xQbBaObl/identidad_dev.dump,
+SHA256 97e25a83aa962f1771d13fac17fe802a6ee3c2082425cdf5cd61cf717452c5ae.
+Snapshot NC guardado en nicaragua-101-Yor0gMCo/nicaragua-catalogo.json,
+SHA256 647295e87a9b88e34aae2f048df9aa88aa6408dc781012f2198d9e2635ff7e76:
+339 productos, cinco tiendas, 310 con precio, fecha 2026-10-21T15:45:47.079Z.
+
+Desde backend del NAS, tras publicar y descargar el módulo nuevo:
+
+    sudo -v
+    .venv/bin/python -m catalog_api.db.administration_rehearsal
+
+El plan sólo lee ambas bases de ensayo y compila el DDL. Muestra conteos y
+identity_sha256; nunca hashes de contraseña ni tokens. Conservar salida para
+aplicación posterior mediante --apply --confirm-rehearsal y
+--expected-identity-sha256 con la huella exacta. No ejecutar apply antes de
+revisar el plan real.
+
+La fase crea administracion con tablas y copia identidad/permisos/auditoría;
+reserva guatemala/nicaragua vacíos. Todavía no mueve los productos ni conecta
+auth/API/workers. Rechaza esquemas preexistentes, no repite ni hace DROP CASCADE.
+No cambia la revisión Alembic legacy; registra su fase en migraciones_ensayo.
+El runtime operativo conserva sus conexiones y tablas anteriores.
+
+Ensayo comercial confirmado: catalogocomercial_ensayo_101 en tickets_it_db,
+189328 productos, 255 runs, 19 publicaciones, run máximo 256. Restauración
+--no-owner --no-privileges: no existe rol postgres en ese cluster.
+Historial hasta run 246 coincide con webscraper_dev: 245 runs y 180382 productos,
+comparados por huellas MD5 de filas completas ordenadas por ID. Diferencia
+posterior: 10 runs y 8946 productos. No activar el catálogo sobre esta base:
+todavía no contiene identidad regional ni datos NC ni la separación solicitada.
+
 1. Respaldo de ambas fuentes y copia de snapshots NC/Excel con fechas y hashes.
 2. Restaurar respaldo comercial en scratch separado. Comparar identidad y
    contenido de runs/productos compartidos con la fotografía 042.
