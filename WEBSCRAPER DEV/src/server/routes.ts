@@ -9,6 +9,7 @@ import { authenticatedExecutionActor } from './access-guard.js';
 import type { RegionalCatalogReader } from './regional-catalog-reader.js';
 
 export type CatalogRouteDependencies = {
+  priceUpload?: typeof handlePriceUpload;
   regionalReader?: RegionalCatalogReader;
   publicDir: string;
   outputCsv: string;
@@ -59,7 +60,7 @@ export function createCatalogRequestHandler(dependencies: CatalogRouteDependenci
       }
 
       if (url.pathname === '/api/facenco-prices') {
-        await handlePriceUpload(req, res, url.searchParams.get('confirm') === 'true');
+        await (dependencies.priceUpload ?? handlePriceUpload)(req, res, url.searchParams.get('confirm') === 'true');
         return;
       }
 

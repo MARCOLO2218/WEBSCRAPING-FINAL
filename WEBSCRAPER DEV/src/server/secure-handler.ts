@@ -13,9 +13,12 @@ export function canonicalHttpsOrigin(value: string): URL {
 }
 
 export function createSecureHandler(origin: string, dependencies: CatalogRouteDependencies,
-  transport: typeof fetch = fetch) {
+  transport: typeof fetch = fetch, options: { authBase?: string } = {}) {
   const allowed = canonicalHttpsOrigin(origin);
-  const authBase = 'http://127.0.0.1:8041';
+  const authBase = options.authBase ?? 'http://127.0.0.1:8041';
+  if (!['http://127.0.0.1:8041', 'http://127.0.0.1:8042'].includes(authBase)) {
+    throw new Error('Servicio de autenticación local no permitido.');
+  }
   const catalog = createCatalogRequestHandler({ ...dependencies,
     accessGuard: createAccessGuard(createHttpAccessProvider(authBase, transport)) });
   return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {

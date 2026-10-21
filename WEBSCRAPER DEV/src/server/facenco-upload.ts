@@ -122,8 +122,9 @@ export function createPriceUpload(target = resolve('data/precios_facenco.xlsx'))
   };
 }
 
-const savePrices = createPriceUpload();
-export async function handlePriceUpload(req: IncomingMessage, res: ServerResponse, confirm: boolean) {
+export function createPriceUploadHandler(target?: string) {
+ const savePrices = createPriceUpload(target);
+ return async (req: IncomingMessage, res: ServerResponse, confirm: boolean) => {
   try {
     if (req.method !== 'POST') throw new UploadError('Método no permitido.', 405);
     const origin = req.headers.origin;
@@ -143,4 +144,6 @@ export async function handlePriceUpload(req: IncomingMessage, res: ServerRespons
     res.writeHead(error instanceof UploadError ? error.status : 500, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ ok: false, error: error instanceof UploadError ? error.message : 'No se pudo guardar. El archivo vigente se conserva; revisa permisos del servidor.' }));
   }
+ };
 }
+export const handlePriceUpload = createPriceUploadHandler();

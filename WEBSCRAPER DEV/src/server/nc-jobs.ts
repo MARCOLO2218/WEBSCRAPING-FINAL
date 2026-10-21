@@ -4,6 +4,7 @@ import { NC_EXECUTION_STORES } from '../scrapers/nc/execution.js';
 import { createScraperJobQueue, type RunScraper } from './scraper-job-queue.js';
 import { authenticatedExecutionActor } from './access-guard.js';
 import { executionWorkerEnvironment, type ExecutionPersistence } from './execution-attribution.js';
+import { registerRegionalWorker } from './regional-workers.js';
 
 export const runNcProcess: RunScraper = (stores = [], onProgress, attribution) => new Promise(resolve => {
   const states: Record<string, unknown> = Object.fromEntries(stores.map(store => [store, { store, status: 'queued' }]));
@@ -12,6 +13,7 @@ export const runNcProcess: RunScraper = (stores = [], onProgress, attribution) =
   const output = () => JSON.stringify({ stores: Object.values(states), message });
   const child = spawn(process.execPath, ['scripts/scrape-nicaragua.mjs', '--publish-preview', '--summary', '--web-job', `--stores=${stores.join(',')}`], {
     cwd: process.cwd(), windowsHide: true, env: executionWorkerEnvironment(process.env, attribution) });
+  registerRegionalWorker(child, attribution);
   child.stdout.on('data', chunk => {
     pending += String(chunk);
     const lines = pending.split('\n'); pending = lines.pop()!.slice(-16000);
@@ -37,7 +39,7 @@ export const runNcProcess: RunScraper = (stores = [], onProgress, attribution) =
 export function createNcJobs(runScraper: RunScraper = runNcProcess, persistence?: ExecutionPersistence) {
   if (persistence && persistence.country !== 'NC') throw new Error('La cola NC no acepta otro país.');
   const queue = createScraperJobQueue({ runScraper, persistence, maxQueueSize: 5 });
-  return async (req: IncomingMessage, res: ServerResponse, url: URL) => {
+  const handler = async (req: IncomingMessage, res: ServerResponse, url: URL) => {
     const reply = (status: number, body: unknown) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(body)); };
     if (queue.requiresAuthenticatedActor) {
       try { await queue.ready(); }
@@ -67,4 +69,5 @@ export function createNcJobs(runScraper: RunScraper = runNcProcess, persistence?
       } catch { reply(503, { error: 'No se pudo registrar la solicitud de ejecución.' }); }
     } catch { reply(400, { error: 'Solicitud NC inválida.' }); }
   };
+  return Object.assign(handler, { ready: queue.ready });
 }

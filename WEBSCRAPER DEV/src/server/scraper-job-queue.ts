@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { executionWorkerEnvironment, type ExecutionAttribution, type ExecutionPersistence } from './execution-attribution.js';
+import { registerRegionalWorker } from './regional-workers.js';
 
 const LOG_DIR = resolve('logs');
 const SCRAPER_LOG = resolve(LOG_DIR, 'ultimo_scraper.log');
@@ -77,8 +78,9 @@ export function summarizeScraperOutput(output: string, ok: boolean): string {
 }
 
 async function writeScraperLog(output: string): Promise<void> {
-  await mkdir(LOG_DIR, { recursive: true });
-  await writeFile(SCRAPER_LOG, output, 'utf8');
+  const directory = process.env.CATALOG_WORKER_LOG_DIR ? resolve(process.env.CATALOG_WORKER_LOG_DIR) : LOG_DIR;
+  await mkdir(directory, { recursive: true });
+  await writeFile(directory === LOG_DIR ? SCRAPER_LOG : resolve(directory, 'ultimo_scraper.log'), output, 'utf8');
 }
 
 export function runScraperProcess(
@@ -100,6 +102,7 @@ export function runScraperProcess(
       env: executionWorkerEnvironment(process.env, attribution),
       windowsHide: true,
     });
+    registerRegionalWorker(child, attribution);
 
     let output = '';
     let settled = false;

@@ -33,7 +33,7 @@ function product(row: DbProduct): DbProduct {
   return result;
 }
 
-export function createRegionalCatalogReader(pool: Pool): RegionalCatalogReader {
+export function createRegionalCatalogReader(pool: Pool, options: { priceFile?: string } = {}): RegionalCatalogReader {
   const read = async <T>(operation: (client: PoolClient) => Promise<T>): Promise<T> => {
     const client = await pool.connect();
     try {
@@ -77,7 +77,7 @@ export function createRegionalCatalogReader(pool: Pool): RegionalCatalogReader {
           ON s.store_key=p.store_key AND s.ejecucion_uuid=p.ejecucion_uuid
         WHERE p.pais_codigo='GT' AND p.moneda='GTQ'
         ${filters.length ? `AND ${filters.join(' AND ')}` : ''} ORDER BY p.id`, values)).rows.map(product));
-      return withPriceComparison(mergeFacencoExcelRows(rows, await loadFacencoPriceRows(rows)));
+      return withPriceComparison(mergeFacencoExcelRows(rows, await loadFacencoPriceRows(rows, options.priceFile)));
     },
     async latestRun() {
       return read(async client => (await client.query(`

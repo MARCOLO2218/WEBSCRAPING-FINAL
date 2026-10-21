@@ -623,7 +623,7 @@ function makeFinalDedupKey(row: CsvProduct): string {
 // FIN FIX FILTRO FINAL POR TIENDA
 async function main(): Promise<void> {
   const envFile = existsSync('.env') ? '.env' : undefined;
-  if (envFile) {
+  if (envFile && process.env.CATALOG_REGIONAL_WRITES !== '1') {
     loadEnv({ path: envFile });
   }
 
