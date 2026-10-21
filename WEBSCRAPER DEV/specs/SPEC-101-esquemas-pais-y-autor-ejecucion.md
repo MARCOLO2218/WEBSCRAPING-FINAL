@@ -2,6 +2,17 @@
 
 Estado: En progreso. Inventario preparado; migración y conexión operativa pendientes.
 
+## Separación comercial verificada en ensayo
+
+101_comercial registrada por usuario el 2026-10-21 18:05:22.647763+00.
+Conteos posteriores: legado 189328, GT 181160, NC 339, usuarios 5, permisos 12.
+Vistas: 254 ejecuciones GT/historico y cinco NC/importacion_snapshot, autor NULL
+en todas, como corresponde. El intento posterior --apply rechazó la repetición
+porque los objetos ya existían; no es evidencia de pérdida ni de rollback de la
+fase que ya quedó confirmada. No repetir ni borrar el ensayo.
+La preparación de identidad en cola y auth por administracion continúa en
+SPEC-102; captura operativa de autores y conexión de aplicación aún pendientes.
+
 ## Fase de administración aplicada en ensayo
 
 Usuario confirmó 101_administracion en catalogocomercial_ensayo_101:

@@ -2,13 +2,16 @@ import { spawn } from 'node:child_process';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { NC_EXECUTION_STORES } from '../scrapers/nc/execution.js';
 import { createScraperJobQueue, type RunScraper } from './scraper-job-queue.js';
+import { authenticatedExecutionActor } from './access-guard.js';
+import { executionWorkerEnvironment, type ExecutionPersistence } from './execution-attribution.js';
 
-export const runNcProcess: RunScraper = (stores = [], onProgress) => new Promise(resolve => {
+export const runNcProcess: RunScraper = (stores = [], onProgress, attribution) => new Promise(resolve => {
   const states: Record<string, unknown> = Object.fromEntries(stores.map(store => [store, { store, status: 'queued' }]));
   let pending = '';
   let message = '';
   const output = () => JSON.stringify({ stores: Object.values(states), message });
-  const child = spawn(process.execPath, ['scripts/scrape-nicaragua.mjs', '--publish-preview', '--summary', '--web-job', `--stores=${stores.join(',')}`], { cwd: process.cwd(), windowsHide: true });
+  const child = spawn(process.execPath, ['scripts/scrape-nicaragua.mjs', '--publish-preview', '--summary', '--web-job', `--stores=${stores.join(',')}`], {
+    cwd: process.cwd(), windowsHide: true, env: executionWorkerEnvironment(process.env, attribution) });
   child.stdout.on('data', chunk => {
     pending += String(chunk);
     const lines = pending.split('\n'); pending = lines.pop()!.slice(-16000);
@@ -31,8 +34,9 @@ export const runNcProcess: RunScraper = (stores = [], onProgress) => new Promise
   });
 });
 
-export function createNcJobs(runScraper: RunScraper = runNcProcess) {
-  const queue = createScraperJobQueue({ runScraper });
+export function createNcJobs(runScraper: RunScraper = runNcProcess, persistence?: ExecutionPersistence) {
+  if (persistence && persistence.country !== 'NC') throw new Error('La cola NC no acepta otro país.');
+  const queue = createScraperJobQueue({ runScraper, persistence, maxQueueSize: 5 });
   return async (req: IncomingMessage, res: ServerResponse, url: URL) => {
     const reply = (status: number, body: unknown) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(body)); };
     if (url.pathname === '/api/nc/status' && req.method === 'GET') return reply(200, queue.getStatus());
@@ -50,7 +54,13 @@ export function createNcJobs(runScraper: RunScraper = runNcProcess) {
       const stores = body.mode === 'all' && body.stores === undefined ? Object.keys(NC_EXECUTION_STORES) : body.stores;
       if (!Array.isArray(stores) || !stores.length || stores.length > 5 || new Set(stores).size !== stores.length || stores.some(store => typeof store !== 'string' || !Object.hasOwn(NC_EXECUTION_STORES, store))) return reply(400, { error: 'Seleccione tiendas NC válidas.' });
       if (queue.getStatus().queueSize >= 5) return reply(409, { error: 'La cola NC está llena. Espere al trabajo actual.' });
-      reply(202, { job: queue.enqueue(stores) });
+      const actor = authenticatedExecutionActor(req);
+      if (queue.requiresAuthenticatedActor && !actor) return reply(401, { error: 'Sesión autenticada requerida para ejecutar.' });
+      try {
+        const job = queue.requiresAuthenticatedActor
+          ? await queue.enqueueAuthenticated(stores, actor!.userId) : queue.enqueue(stores);
+        reply(202, { job });
+      } catch { reply(503, { error: 'No se pudo registrar la solicitud de ejecución.' }); }
     } catch { reply(400, { error: 'Solicitud NC inválida.' }); }
   };
 }

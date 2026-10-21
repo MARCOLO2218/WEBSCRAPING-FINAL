@@ -1,6 +1,8 @@
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { executionWorkerEnvironment, type ExecutionAttribution, type ExecutionPersistence } from './execution-attribution.js';
 
 const LOG_DIR = resolve('logs');
 const SCRAPER_LOG = resolve(LOG_DIR, 'ultimo_scraper.log');
@@ -12,6 +14,8 @@ const MAX_SCRAPER_JOB_HISTORY = 50;
 
 export type ScraperJob = {
   id: string;
+  actorUserId?: string;
+  country?: 'GT' | 'NC';
   status: 'queued' | 'running' | 'done' | 'error';
   createdAt: string;
   startedAt?: string;
@@ -25,6 +29,7 @@ export type PublicScraperJob = ScraperJob & { queuePosition: number };
 export type RunScraper = (
   stores?: string[],
   onProgress?: (output: string) => void,
+  attribution?: ExecutionAttribution,
 ) => Promise<{ ok: boolean; output: string }>;
 
 function cleanScraperLine(line: string): string | null {
@@ -79,6 +84,7 @@ async function writeScraperLog(output: string): Promise<void> {
 export function runScraperProcess(
   stores: string[] = [],
   onProgress?: (output: string) => void,
+  attribution?: ExecutionAttribution,
 ): Promise<{ ok: boolean; output: string }> {
   return new Promise((resolveRun) => {
     const jobTimeoutMs = stores.length
@@ -91,7 +97,7 @@ export function runScraperProcess(
 
     const child = spawn(process.execPath, args, {
       cwd: process.cwd(),
-      env: process.env,
+      env: executionWorkerEnvironment(process.env, attribution),
       windowsHide: true,
     });
 
@@ -142,10 +148,15 @@ export function createScraperJobQueue(options: {
   runScraper?: RunScraper;
   now?: () => Date;
   createId?: () => string;
+  persistence?: ExecutionPersistence;
+  maxQueueSize?: number;
 } = {}) {
   const runScraper = options.runScraper ?? runScraperProcess;
   const now = options.now ?? (() => new Date());
   const createId = options.createId ?? (() => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+  let pendingReservations = 0;
+  const attribution = (job: ScraperJob): ExecutionAttribution | undefined =>
+    job.actorUserId && job.country ? Object.freeze({ executionId: job.id, userId: job.actorUserId, country: job.country }) : undefined;
   const jobs = new Map<string, ScraperJob>();
   const queue: ScraperJob[] = [];
   let processing = false;
@@ -156,6 +167,7 @@ export function createScraperJobQueue(options: {
     const queueIndex = queue.findIndex((item) => item.id === job.id);
     return {
       ...job,
+      ...(job.stores ? { stores: [...job.stores] } : {}),
       queuePosition: job.status === 'queued' && queueIndex >= 0 ? queueIndex + 1 : 0,
     };
   };
@@ -184,9 +196,10 @@ export function createScraperJobQueue(options: {
         job.startedAt = now().toISOString();
 
         try {
+          if (options.persistence) await options.persistence.start(job);
           const result = await runScraper(job.stores || [], (progress) => {
             job.output = progress;
-          });
+          }, attribution(job));
           job.ok = result.ok;
           job.output = result.output;
           job.status = result.ok ? 'done' : 'error';
@@ -196,6 +209,13 @@ export function createScraperJobQueue(options: {
           job.status = 'error';
         } finally {
           job.finishedAt = now().toISOString();
+          try {
+            if (options.persistence) await options.persistence.finish(job);
+          } catch {
+            job.ok = false;
+            job.status = 'error';
+            job.output = 'No se pudo confirmar el cierre de la ejecución en PostgreSQL.';
+          }
           lastFinishedJob = job;
           currentJob = null;
           cleanupJobs();
@@ -207,6 +227,7 @@ export function createScraperJobQueue(options: {
   };
 
   const enqueue = (stores: string[] = []): PublicScraperJob => {
+    if (options.persistence) throw new Error('La cola persistente requiere usuario autenticado.');
     const job: ScraperJob = {
       id: createId(),
       status: 'queued',
@@ -217,6 +238,25 @@ export function createScraperJobQueue(options: {
     queue.push(job);
     processQueue();
     return publicJob(job);
+  };
+
+  const enqueueAuthenticated = async (stores: string[], userId: string): Promise<PublicScraperJob> => {
+    if (!options.persistence || !/^[A-Za-z0-9_-]{1,36}$/.test(userId)) throw new Error('Contexto de ejecución no disponible.');
+    if (options.maxQueueSize && queue.length + Number(currentJob !== null) + pendingReservations >= options.maxQueueSize) {
+      throw new Error('La cola está llena.');
+    }
+    pendingReservations += 1;
+    const job: ScraperJob = { id: options.createId ? createId() : randomUUID(), actorUserId: userId, country: options.persistence.country,
+      status: 'queued', createdAt: now().toISOString(), stores: [...stores] };
+    try {
+      // Confirmar el autor y la solicitud antes de aceptar o arrancar un worker.
+      await options.persistence.create(job);
+      jobs.set(job.id, job);
+      queue.push(job);
+    } finally { pendingReservations -= 1; }
+    const accepted = publicJob(job);
+    processQueue();
+    return accepted;
   };
 
   const getJob = (id: string): PublicScraperJob | undefined => {
@@ -231,7 +271,7 @@ export function createScraperJobQueue(options: {
     ];
     return {
       running: currentJob !== null,
-      queueSize: queue.length + (currentJob ? 1 : 0),
+      queueSize: queue.length + (currentJob ? 1 : 0) + pendingReservations,
       currentJobId: currentJob?.id || null,
       currentJob: currentJob ? publicJob(currentJob) : null,
       queuedJobs: queue.map(publicJob),
@@ -240,5 +280,5 @@ export function createScraperJobQueue(options: {
     };
   };
 
-  return { enqueue, getJob, getStatus };
+  return { enqueue, enqueueAuthenticated, requiresAuthenticatedActor: Boolean(options.persistence), getJob, getStatus };
 }

@@ -25,6 +25,7 @@ export function createHttpAccessProvider(baseUrl: string, transport: typeof fetc
       if (response.status !== 200) throw new Error('Acceso no disponible.');
       const data = await response.json() as AccessContext;
       if (!data || !['usuario', 'admin', 'superadmin'].includes(data.account_level)
+        || typeof data.user_id !== 'string' || !/^[A-Za-z0-9_-]{1,36}$/.test(data.user_id)
         || !Array.isArray(data.countries) || data.countries.length > 100
         || data.countries.some(country => !country || !/^[A-Z]{2}$/.test(country.code)
           || typeof country.enabled !== 'boolean' || typeof country.can_access !== 'boolean'

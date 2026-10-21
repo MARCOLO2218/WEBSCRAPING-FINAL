@@ -5,6 +5,7 @@ import { getDbPool, getProducts, toCsv } from './catalog-service.js';
 import { proxyImage, readJsonBody, sendJson, serveStatic } from './http.js';
 import type { createScraperJobQueue } from './scraper-job-queue.js';
 import { handlePriceUpload } from './facenco-upload.js';
+import { authenticatedExecutionActor } from './access-guard.js';
 
 export type CatalogRouteDependencies = {
   publicDir: string;
@@ -59,7 +60,15 @@ export function createCatalogRequestHandler(dependencies: CatalogRouteDependenci
       if (url.pathname === '/api/run-scraper' && req.method === 'POST') {
         const body = await readJsonBody(req);
         const stores = sanitizeStoreSelection(body.stores);
-        const job = scraperJobQueue.enqueue(stores);
+        const actor = authenticatedExecutionActor(req);
+        if (scraperJobQueue.requiresAuthenticatedActor && !actor) {
+          res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+          res.end(JSON.stringify({ error: 'Sesión autenticada requerida para ejecutar.' }));
+          return;
+        }
+        const job = scraperJobQueue.requiresAuthenticatedActor
+          ? await scraperJobQueue.enqueueAuthenticated(stores, actor!.userId)
+          : scraperJobQueue.enqueue(stores);
         res.writeHead(202, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ ok: true, accepted: true, job }));
         return;

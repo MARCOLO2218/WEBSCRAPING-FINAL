@@ -1,9 +1,14 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
 export type AccessContext = {
+  user_id?: string;
   account_level: 'superadmin' | 'admin' | 'usuario';
   countries: { code: string; enabled: boolean; can_access: boolean; role: string | null }[];
 };
+const authenticatedActors = new WeakMap<IncomingMessage, Readonly<{ userId: string }>>();
+export function authenticatedExecutionActor(req: IncomingMessage) {
+  return authenticatedActors.get(req);
+}
 export type AccessProvider = {
   readSession: (req: IncomingMessage) => Promise<AccessContext | null>;
   validateWrite: (req: IncomingMessage) => Promise<boolean>;
@@ -25,6 +30,7 @@ export function accessRequirement(path: string): { country?: string; write?: boo
 
 export function createAccessGuard(provider: AccessProvider) {
   return async (req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> => {
+    authenticatedActors.delete(req);
     const reject = (status: number, error: string) => {
       res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(JSON.stringify({ error })); return false;
@@ -44,6 +50,10 @@ export function createAccessGuard(provider: AccessProvider) {
         if (requirement.operator && !administrative && country.role !== 'operador') return reject(403, 'Permiso de operador requerido.');
       }
       if (requirement.write && !await provider.validateWrite(req)) return reject(403, 'Solicitud de escritura no válida.');
+      // Sólo contexto de sesión recibido del proveedor, nunca body/cabeceras del cliente.
+      if (typeof context.user_id === 'string' && /^[A-Za-z0-9_-]{1,36}$/.test(context.user_id)) {
+        authenticatedActors.set(req, Object.freeze({ userId: context.user_id }));
+      }
       res.setHeader('Cache-Control', 'no-store');
       return true;
     } catch { return reject(503, 'Servicio de acceso no disponible.'); }

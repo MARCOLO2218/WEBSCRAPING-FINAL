@@ -2,6 +2,29 @@
 
 Estado: preparación SPEC-101; no ejecutar DDL sobre el origen operativo.
 
+## Ensayo regional verificado y preparación de aplicación
+
+Usuario confirmó 101_comercial (2026-10-21 18:05:22 UTC) y consultó:
+legado 189328, guatemala.productos 181160, nicaragua.productos 339,
+administracion.usuarios 5 y usuario_paises 12. Vistas de ejecuciones: 254 GT
+historico y cinco NC importacion_snapshot, todas sin autor identificado.
+No repetir fases 101 ni borrar esquemas al recibir error de esquemas no vacíos.
+
+SPEC-102 prepara identidad de sesión -> cola -> repositorio regional y contexto
+privado por worker, con inyección explícita todavía ausente del arranque actual.
+El repositorio confirma la solicitud antes de ejecutarla y no declara completo
+un worker que no confirmó productos regionales en su transacción. No habilitarlo
+antes de conectar los escritores nuevos. Recuperación de cola tras reinicio y
+conexión de lecturas quedan pendientes.
+
+Nuevo módulo auth_regional_runtime aislado: --database catalogocomercial_ensayo_101,
+--db-host explícito y --password-file privado existente; --check-only sólo lectura.
+Requiere grants a webscraper_user sobre administracion y validación de las fases
+101 antes de poder entrar. No correr todavía sobre un rol sin preparar permisos;
+no cambiar facenco-auth-dev ni PM2. La futura API usa puerto loopback 8042.
+Un puerto HTTPS diferente en la misma IP no aísla cookies por host: definir
+origen de ensayo o usar cliente separado antes de probar login en navegador.
+
 ## Tres fuentes, una futura base
 
 | Fuente actual | Contenido | Evidencia |
