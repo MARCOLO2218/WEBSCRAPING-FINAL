@@ -39,6 +39,10 @@ export function createNcJobs(runScraper: RunScraper = runNcProcess, persistence?
   const queue = createScraperJobQueue({ runScraper, persistence, maxQueueSize: 5 });
   return async (req: IncomingMessage, res: ServerResponse, url: URL) => {
     const reply = (status: number, body: unknown) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(body)); };
+    if (queue.requiresAuthenticatedActor) {
+      try { await queue.ready(); }
+      catch { return reply(503, { error: 'La cola NC regional no está disponible.' }); }
+    }
     if (url.pathname === '/api/nc/status' && req.method === 'GET') return reply(200, queue.getStatus());
     if (url.pathname === '/api/nc/job' && req.method === 'GET') {
       const job = queue.getJob(url.searchParams.get('id') || '');

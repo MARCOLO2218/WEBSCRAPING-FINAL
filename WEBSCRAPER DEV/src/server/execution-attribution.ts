@@ -20,6 +20,10 @@ export type PersistedExecutionJob = {
 // Composición explícita: no se configura ni conecta PostgreSQL al importar.
 export type ExecutionPersistence = {
   country: ExecutionCountry;
+  checkAvailable?: () => void;
+  initialize?: () => Promise<Array<PersistedExecutionJob & {
+    status: 'queued' | 'done' | 'error'; output?: string;
+  }>>;
   create: (job: PersistedExecutionJob) => Promise<void>;
   start: (job: PersistedExecutionJob) => Promise<void>;
   finish: (job: PersistedExecutionJob) => Promise<void>;

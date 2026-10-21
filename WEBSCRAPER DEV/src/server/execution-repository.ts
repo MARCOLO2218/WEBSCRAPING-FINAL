@@ -5,7 +5,9 @@ const SCHEMAS = { GT: 'guatemala', NC: 'nicaragua' } as const;
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 
 // No construye pools ni lee .env: el futuro servidor regional debe inyectar su conexión.
-export function createPostgresExecutionPersistence(pool: Pool, country: ExecutionCountry): ExecutionPersistence {
+export function createPostgresExecutionPersistence(pool: Pool, country: ExecutionCountry,
+  assertOwnership: () => void = () => {},
+  verifyOwnership?: (client: PoolClient) => Promise<void>): ExecutionPersistence {
   const schema = SCHEMAS[country];
   if (!schema) throw new Error('País de ejecución no soportado.');
 
@@ -26,10 +28,12 @@ export function createPostgresExecutionPersistence(pool: Pool, country: Executio
   };
 
   const transaction = async <T>(operation: (client: PoolClient) => Promise<T>): Promise<T> => {
+    assertOwnership();
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query("SET LOCAL lock_timeout='10s'");
+      await verifyOwnership?.(client);
       const identity = await client.query<{ database: string }>('SELECT current_database() AS database');
       if (!['webscraper_dev', 'catalogocomercial_ensayo_101'].includes(identity.rows[0]?.database)) {
         throw new Error('La persistencia regional requiere una base DEV migrada.');
@@ -38,6 +42,7 @@ export function createPostgresExecutionPersistence(pool: Pool, country: Executio
         WHERE fase IN ('101_administracion','101_comercial')`);
       if (phases.rowCount !== 2) throw new Error('Fases regionales incompletas.');
       const result = await operation(client);
+      assertOwnership();
       await client.query('COMMIT');
       return result;
     } catch (error) {

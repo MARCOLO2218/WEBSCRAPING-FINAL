@@ -30,6 +30,15 @@ export function createCatalogRequestHandler(dependencies: CatalogRouteDependenci
       const protocol = (req.socket as typeof req.socket & { encrypted?: boolean } | undefined)?.encrypted ? 'https' : 'http';
       const url = new URL(req.url || '/', `${protocol}://${req.headers.host}`);
       if (dependencies.accessGuard && !await dependencies.accessGuard(req, res, url)) return;
+      if (scraperJobQueue.requiresAuthenticatedActor
+        && ['/api/run-scraper', '/api/scraper-job', '/api/scraper-status'].includes(url.pathname)) {
+        try { await scraperJobQueue.ready(); }
+        catch {
+          res.writeHead(503, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+          res.end(JSON.stringify({ error: 'La cola regional no está disponible.' }));
+          return;
+        }
+      }
       if (dependencies.regionalReader) {
         res.setHeader('Cache-Control', 'no-store');
         if (url.pathname === '/nicaragua-catalogo.json') {
@@ -91,9 +100,16 @@ export function createCatalogRequestHandler(dependencies: CatalogRouteDependenci
           res.end(JSON.stringify({ error: 'Sesión autenticada requerida para ejecutar.' }));
           return;
         }
-        const job = scraperJobQueue.requiresAuthenticatedActor
-          ? await scraperJobQueue.enqueueAuthenticated(stores, actor!.userId)
-          : scraperJobQueue.enqueue(stores);
+        let job;
+        try {
+          job = scraperJobQueue.requiresAuthenticatedActor
+            ? await scraperJobQueue.enqueueAuthenticated(stores, actor!.userId)
+            : scraperJobQueue.enqueue(stores);
+        } catch {
+          res.writeHead(503, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+          res.end(JSON.stringify({ error: 'No se pudo registrar la solicitud de ejecución.' }));
+          return;
+        }
         res.writeHead(202, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ ok: true, accepted: true, job }));
         return;

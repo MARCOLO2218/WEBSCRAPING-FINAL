@@ -188,6 +188,8 @@ export function createScraperJobQueue(options: {
 
     void (async () => {
       while (queue.length) {
+        try { options.persistence?.checkAvailable?.(); }
+        catch { break; }
         const job = queue.shift();
         if (!job) continue;
 
@@ -226,6 +228,24 @@ export function createScraperJobQueue(options: {
     })();
   };
 
+  let readiness: Promise<void> | undefined;
+  const ready = async () => {
+    readiness ??= (async () => {
+      const recovered = await options.persistence?.initialize?.() ?? [];
+      for (const job of recovered) {
+        if (jobs.has(job.id)) throw new Error('Solicitud recuperada duplicada.');
+        const restored: ScraperJob = { ...job, stores: job.stores ? [...job.stores] : undefined };
+        jobs.set(restored.id, restored);
+        if (restored.status === 'queued') queue.push(restored);
+        else lastFinishedJob = restored;
+      }
+      cleanupJobs();
+    })();
+    await readiness;
+    options.persistence?.checkAvailable?.();
+    processQueue();
+  };
+
   const enqueue = (stores: string[] = []): PublicScraperJob => {
     if (options.persistence) throw new Error('La cola persistente requiere usuario autenticado.');
     const job: ScraperJob = {
@@ -242,6 +262,7 @@ export function createScraperJobQueue(options: {
 
   const enqueueAuthenticated = async (stores: string[], userId: string): Promise<PublicScraperJob> => {
     if (!options.persistence || !/^[A-Za-z0-9_-]{1,36}$/.test(userId)) throw new Error('Contexto de ejecución no disponible.');
+    await ready();
     if (options.maxQueueSize && queue.length + Number(currentJob !== null) + pendingReservations >= options.maxQueueSize) {
       throw new Error('La cola está llena.');
     }
@@ -280,5 +301,5 @@ export function createScraperJobQueue(options: {
     };
   };
 
-  return { enqueue, enqueueAuthenticated, requiresAuthenticatedActor: Boolean(options.persistence), getJob, getStatus };
+  return { enqueue, enqueueAuthenticated, ready, requiresAuthenticatedActor: Boolean(options.persistence), getJob, getStatus };
 }
