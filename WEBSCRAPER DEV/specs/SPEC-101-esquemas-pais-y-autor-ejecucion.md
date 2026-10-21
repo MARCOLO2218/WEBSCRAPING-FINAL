@@ -2,6 +2,55 @@
 
 Estado: En progreso. Inventario preparado; migración y conexión operativa pendientes.
 
+## Fase de administración aplicada en ensayo
+
+Usuario confirmó 101_administracion en catalogocomercial_ensayo_101:
+2026-10-21 17:51:05.198126+00, huella de identidad
+8c87563d66784034addec68b49aa17aecb0500fd4979e8810fb636fe6c86b365.
+Cinco usuarios, doce asignaciones, 35 sesiones, cinco contadores y 19 eventos.
+Roles y habilitación consultados tras aplicar. Esquemas guatemala/nicaragua
+reservados vacíos; la aplicación sigue operativa sobre sus fuentes originales.
+
+## Fase comercial preparada (sin aplicar)
+
+backend/catalog_api/db/country_rehearsal.py lee únicamente el ensayo comercial
+y un snapshot NC respaldado con SHA256 explícito. Sin --apply sólo consulta y
+clasifica por reglas 038-origin-v3; informa conteos, huella por contenido y plan
+ligado al código/regla/snapshot/identidad/runs/publicaciones. Clasifica en streaming
+para no acumular los payloads de 189328 productos en memoria.
+
+Aplicación sólo en catalogocomercial_ensayo_101, tras fase 101_administracion,
+con esquemas comerciales vacíos, --confirm-rehearsal y SHA256 exacto del plan.
+Una transacción, bloqueo de escrituras legacy del ensayo y verificación de cada
+fila por ID/huella antes de copiar. No borra ni modifica catalogo ni public.
+Conserva ledger de clasificación de todas las filas: SV/HN/NC histórico y filas
+revision/no_producto quedan íntegros en legado, no se fuerzan a GT.
+
+Cada esquema tiene tiendas, ejecuciones, productos y publicaciones. GT copia
+sólo asignados GT, preserva IDs/UUID/campos originales/importes numéricos y
+secuencia independiente. Autor histórico NULL; inicio_original no adquiere zona
+horaria ficticia. Totales por ejecución GT se recalculan por país, conservando
+el total original aparte. Las publicaciones copiadas conservan bloqueo y conteo
+original, y registran conteo realmente migrado; legado conserva todas.
+
+NC valida cinco tiendas/status/conteos, host/ruta y moneda NIO, precios texto y
+numérico concordantes, fechas con zona, URLs únicas por tienda y SHA256 del JSON.
+Importa todos los productos, incluidos sin precio. Cada lote de tienda se marca
+importacion_snapshot/importada, nunca scrapeo autenticado histórico. Autor NULL;
+UUID deterministas desde SHA256/tienda/URL, fecha observada del snapshot, sin
+inicio/fin de scraping inventados. Los precios no se convierten a GTQ.
+
+Las nuevas ejecuciones manual/programado exigen usuario_id varchar(36) con FK
+a administracion.usuarios ON DELETE RESTRICT. Esta restricción prepara el modelo,
+pero todavía falta conectar API/cola/workers para registrar usuarios nuevos.
+Vistas v_productos_cubo/v_ejecuciones_cubo por país y UNION ALL administrativo,
+sin hashes/contraseñas/tokens. Los cubos de ejecuciones no multiplican métricas
+por unión con productos. No otorgar permisos de consulta pública ni conectar el
+portal sobre el ensayo sin completar lectores/escritores/auth.
+
+Validación local realizada: compilación sintáctica Python. Plan PostgreSQL,
+aplicación/consultas de reconciliación y conexión operativa siguen pendientes.
+
 ## Fase local de administración preparada
 
 backend/catalog_api/db/administration_rehearsal.py: plan por defecto; origen

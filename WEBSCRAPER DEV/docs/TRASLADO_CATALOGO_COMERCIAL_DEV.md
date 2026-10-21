@@ -38,6 +38,36 @@ o archivar carpetas. No confundir inventario legible con restore de ensayo.
 
 ## Orden de incorporación
 
+### Separación comercial de ensayo (preparada, no aplicada)
+
+101_administracion confirmado por el usuario en ensayo el 2026-10-21
+17:51:05 UTC: cinco usuarios y doce asignaciones verificadas. Origen y portal
+no cambiaron. Continuar desde backend del NAS tras publicar country_rehearsal:
+
+    sudo -v
+    .venv/bin/python -m catalog_api.db.country_rehearsal \
+      --nc-snapshot /home/administradorgt/backups/webscraper/nicaragua-101-Yor0gMCo/nicaragua-catalogo.json \
+      --expected-nc-sha256 647295e87a9b88e34aae2f048df9aa88aa6408dc781012f2198d9e2635ff7e76
+
+Leer el plan real antes de aplicar con --apply --confirm-rehearsal y
+--expected-plan-sha256. El plan no escribe ni migra tablas. Si la fase ya se
+aplicó, no repetir ni borrar esquemas para evitar su rechazo: reconciliar primero.
+
+Destino físico comercial guatemala/nicaragua: tiendas, ejecuciones, productos
+y publicaciones. Guatemala copia sólo productos asignados GT por reglas v3,
+dejando el legado original completo. El resto de países y pendientes permanecen
+en catalogo con ledger de clasificación: nada se elimina ni reasigna por defecto.
+Nicaragua importa los 339 productos del respaldo; no inventa usuario ni historia
+de scraping: cada tienda se etiqueta importacion_snapshot. Fechas/monedas/precios
+se conservan con validación. Las publicaciones GT del ensayo son derivadas; no
+activar el portal hasta comprobar equivalencia, conteos y reglas de publicación.
+
+Vistas administrativas v_productos_cubo y v_ejecuciones_cubo unen GT/NC con
+usuario y país. Histórico sin autor = Sin usuario registrado; no atribuirlo a
+admin. Las ejecuciones futuras manual/programado requieren FK a usuario real.
+La captura del usuario en servidor y persistencia desde cola/worker aún está
+pendiente: no afirmar que el catálogo operativo ya registra ese dato.
+
 ### Administración de ensayo (primera fase preparada)
 
 Ya restaurada por el usuario catalogocomercial_identidad_101 en tickets_it_db:
