@@ -6,8 +6,10 @@ import { proxyImage, readJsonBody, sendJson, serveStatic } from './http.js';
 import type { createScraperJobQueue } from './scraper-job-queue.js';
 import { handlePriceUpload } from './facenco-upload.js';
 import { authenticatedExecutionActor } from './access-guard.js';
+import type { RegionalCatalogReader } from './regional-catalog-reader.js';
 
 export type CatalogRouteDependencies = {
+  regionalReader?: RegionalCatalogReader;
   publicDir: string;
   outputCsv: string;
   scraperJobQueue: ReturnType<typeof createScraperJobQueue>;
@@ -16,13 +18,32 @@ export type CatalogRouteDependencies = {
 };
 
 export function createCatalogRequestHandler(dependencies: CatalogRouteDependencies) {
+  if (dependencies.regionalReader && !dependencies.accessGuard) {
+    throw new Error('El lector regional requiere guardia de acceso por país.');
+  }
   const { publicDir, outputCsv, scraperJobQueue } = dependencies;
+  const readProducts = dependencies.regionalReader
+    ? dependencies.regionalReader.getProducts.bind(dependencies.regionalReader) : getProducts;
 
   return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     try {
       const protocol = (req.socket as typeof req.socket & { encrypted?: boolean } | undefined)?.encrypted ? 'https' : 'http';
       const url = new URL(req.url || '/', `${protocol}://${req.headers.host}`);
       if (dependencies.accessGuard && !await dependencies.accessGuard(req, res, url)) return;
+      if (dependencies.regionalReader) {
+        res.setHeader('Cache-Control', 'no-store');
+        if (url.pathname === '/nicaragua-catalogo.json') {
+          sendJson(res, await dependencies.regionalReader.ncSnapshot());
+          return;
+        }
+        if (url.pathname === '/output/comparacion_colchones.csv') {
+          const products = await readProducts(new URLSearchParams());
+          res.writeHead(200, { 'Content-Type': 'text/csv; charset=utf-8',
+            'Content-Disposition': 'attachment; filename="comparacion_colchones.csv"' });
+          res.end(toCsv(products));
+          return;
+        }
+      }
       if (url.pathname.startsWith('/api/nc/') && dependencies.ncJobs) {
         await dependencies.ncJobs(req, res, url);
         return;
@@ -34,12 +55,16 @@ export function createCatalogRequestHandler(dependencies: CatalogRouteDependenci
       }
 
       if (url.pathname === '/api/products') {
-        const products = await getProducts(url.searchParams);
+        const products = await readProducts(url.searchParams);
         sendJson(res, products);
         return;
       }
 
       if (url.pathname === '/api/latest-run') {
+        if (dependencies.regionalReader) {
+          sendJson(res, await dependencies.regionalReader.latestRun());
+          return;
+        }
         const pool = getDbPool();
         const schema = process.env.PGSCHEMA || 'catalogo';
         const result = await pool.query(`
@@ -92,7 +117,7 @@ export function createCatalogRequestHandler(dependencies: CatalogRouteDependenci
       }
 
       if (url.pathname === '/api/summary') {
-        const products = await getProducts(url.searchParams);
+        const products = await readProducts(url.searchParams);
         const prices = products.map((product) => product.precio_numero).filter((value): value is number => value !== null);
         const cheaper = products.filter((product) => product.etiqueta_diferencia === 'Mas barato').length;
         const expensive = products.filter((product) => product.etiqueta_diferencia === 'Mas caro').length;
@@ -109,7 +134,7 @@ export function createCatalogRequestHandler(dependencies: CatalogRouteDependenci
       }
 
       if (url.pathname === '/api/export.csv') {
-        const products = await getProducts(url.searchParams);
+        const products = await readProducts(url.searchParams);
         res.writeHead(200, {
           'Content-Type': 'text/csv; charset=utf-8',
           'Content-Disposition': 'attachment; filename="catalogo_comercial_comparativo.csv"',
