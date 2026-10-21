@@ -4,6 +4,9 @@ import { LA_CURACAO_NC, collectCuracaoNcPages, readCuracaoNcDom } from '../dist/
 import { runNicaraguaPilots } from './nicaragua-stores-pilot.mjs';
 import { publishNcPreviewSnapshot } from './nc-preview-snapshot.mjs';
 import { fileURLToPath } from 'node:url';
+import { regionalExecutionContext, saveRegionalProducts } from '../dist/persistence/regional-products.js';
+
+const regional = regionalExecutionContext('NC');
 
 const summaryOnly = process.argv.includes('--summary');
 const publishPreview = process.argv.includes('--publish-preview');
@@ -49,13 +52,20 @@ try {
     } finally { await page.close(); }
   }]));
   const report = await executeNcReadOnly(requested, runners, webJob ? event => console.log(`NC_PROGRESS ${JSON.stringify(event)}`) : undefined);
-  if (publishPreview) {
+  if (regional) {
+    const result = await saveRegionalProducts(regional, report.stores.flatMap(store => store.products || []), {
+      attemptedStores: report.stores.map(store => store.store),
+      failedStores: report.stores.filter(store => store.status !== 'ok').map(store => store.store),
+    });
+    console.log(`Catálogo NC guardado en PostgreSQL: ${result.products} productos; ejecución ${result.executionId}`);
+    if (result.partial) process.exitCode = 1;
+  } else if (publishPreview) {
     const target = await publishNcPreviewSnapshot(report, scrapedAt, fileURLToPath(new URL('../public/', import.meta.url)));
     console.log(`Vista NC actualizada: ${target}`);
   }
   const visibleReport = summaryOnly ? { ...report, stores: report.stores.map(({ products, diagnostics, ...store }) => ({
     ...store, sample: products.slice(0, 3),
   })) } : report;
-  console.log(JSON.stringify({ scrapedAt, ...visibleReport }, null, 2));
+  console.log(JSON.stringify({ scrapedAt, ...visibleReport, databaseWrites: Boolean(regional) }, null, 2));
   if (report.status !== 'ok') process.exitCode = 1;
 } finally { await browser.close(); }

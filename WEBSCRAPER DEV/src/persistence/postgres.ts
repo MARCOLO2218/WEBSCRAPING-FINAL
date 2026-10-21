@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Pool, type PoolClient } from 'pg';
 import { toNullableProductText as toDbNullable, type CsvProduct } from '../domain/product.js';
+import { regionalExecutionContext, saveRegionalProducts, type RegionalWorkerOutcome } from './regional-products.js';
 
 export type DbConfig = {
   enabled: boolean;
@@ -132,7 +133,17 @@ async function ensurePostgresTables(client: PoolClient, schema: string): Promise
   await client.query(`CREATE INDEX IF NOT EXISTS ix_productos_catalogo_producto ON ${schema}.productos_catalogo (producto)`);
 }
 
-export async function saveProductsToPostgres(rows: CsvProduct[]): Promise<void> {
+export async function saveProductsToPostgres(rows: CsvProduct[], outcome?: RegionalWorkerOutcome): Promise<void> {
+  const context = regionalExecutionContext('GT');
+  if (context) {
+    if (!outcome) throw new Error('El worker GT debe informar las tiendas intentadas.');
+    const result = await saveRegionalProducts(context, rows, outcome);
+    console.log(`UUID de ejecución regional: ${result.executionId}`);
+    console.log(`PostgreSQL actualizado: ${result.products} productos insertados.`);
+    console.log(`Publicaciones regionales actualizadas: ${result.stores.filter(store => store.published).length}`);
+    if (result.partial) process.exitCode = 1;
+    return;
+  }
   const config = getDbConfig();
 
   if (!config.enabled) {

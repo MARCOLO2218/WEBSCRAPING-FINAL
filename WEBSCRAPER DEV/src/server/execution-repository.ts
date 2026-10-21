@@ -86,16 +86,17 @@ export function createPostgresExecutionPersistence(pool: Pool, country: Executio
         if (!row || !['encolada', 'ejecutando'].includes(row.estado)) throw new Error('Ejecución no disponible para cerrar.');
         // Un exit code 0 no prueba que el worker haya guardado productos en esta ejecución.
         const committed = row.source_payload?.result_committed === true;
-        const ok = job.ok === true && committed;
+        const resultState = row.source_payload?.result_state;
+        const ok = job.ok === true && committed && resultState === 'completada';
         await client.query(`UPDATE ${schema}.ejecuciones SET
           estado=$3,fin=CASE WHEN inicio IS NULL THEN NULL ELSE $4::timestamptz END,
           total_productos=(SELECT count(*)::integer FROM ${schema}.productos WHERE ejecucion_uuid=$1::uuid),
           source_payload=source_payload || $5::jsonb
           WHERE id=$1::uuid AND usuario_id=$2`, [job.id, job.actorUserId,
-          ok ? 'completada' : committed ? 'parcial' : 'fallida', job.finishedAt,
+          ok ? 'completada' : committed && resultState !== 'fallida' ? 'parcial' : 'fallida', job.finishedAt,
           JSON.stringify({ worker_ok: job.ok === true, closed_at: job.finishedAt,
             missing_result_commit: job.ok === true && !committed })]);
-        return job.ok !== true || committed;
+        return job.ok !== true || (committed && resultState === 'completada');
       });
       if (!confirmed) throw new Error('El worker no confirmó persistencia regional de resultados.');
     },

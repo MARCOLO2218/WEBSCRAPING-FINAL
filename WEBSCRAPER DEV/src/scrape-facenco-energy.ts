@@ -14,6 +14,7 @@ import {
   type CsvProduct,
 } from './domain/product.js';
 import { saveProductsToPostgres } from './persistence/postgres.js';
+import { regionalExecutionContext } from './persistence/regional-products.js';
 import { createGuatemalaScraperRegistry } from './scrapers/gt/registry.js';
 import { scrapeAmericana2000Gt, scrapeSuenaCenterGt } from './scrapers/gt/api-stores.js';
 import { createGuatemalaPagedVisualStores } from './scrapers/gt/paged-visual-stores.js';
@@ -626,6 +627,7 @@ async function main(): Promise<void> {
     loadEnv({ path: envFile });
   }
 
+  const regional = regionalExecutionContext('GT');
   const browser = await chromium.launch({ headless: true });
   const storeTimeoutMs = Math.max(
     30_000,
@@ -785,10 +787,15 @@ async function main(): Promise<void> {
       throw new Error(`No se pudo generar informacion util. Se eliminaron productos fuera de cama o con precios en dolares. ${failures.join(' | ')}`);
     }
 
-    await mkdir(dirname(OUTPUT_FILE), { recursive: true });
-    await writeFile(OUTPUT_FILE, toCsv(filteredRows), 'utf8');
-    await writeExcel(filteredRows, OUTPUT_XLSX_FILE);
-    await saveProductsToPostgres(filteredRows);
+    if (!regional) {
+      await mkdir(dirname(OUTPUT_FILE), { recursive: true });
+      await writeFile(OUTPUT_FILE, toCsv(filteredRows), 'utf8');
+      await writeExcel(filteredRows, OUTPUT_XLSX_FILE);
+    }
+    await saveProductsToPostgres(filteredRows, {
+      attemptedStores: storesToRun.map(store => store.name),
+      warningCount: failures.length + qualityWarnings.length,
+    });
 
     console.log(`Productos extraidos antes de filtro: ${rows.length}`);
     console.log(`Productos guardados despues de filtro: ${filteredRows.length}`);
@@ -799,8 +806,10 @@ async function main(): Promise<void> {
         console.log(`ADVERTENCIA: ${warning}`);
       }
     }
-    console.log(`CSV generado: ${OUTPUT_FILE}`);
-    console.log(`Excel generado: ${OUTPUT_XLSX_FILE}`);
+    if (!regional) {
+      console.log(`CSV generado: ${OUTPUT_FILE}`);
+      console.log(`Excel generado: ${OUTPUT_XLSX_FILE}`);
+    }
   } finally {
     await browser.close();
   }
