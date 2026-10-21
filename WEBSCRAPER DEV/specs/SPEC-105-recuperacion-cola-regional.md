@@ -46,3 +46,14 @@ revocación de acceso y rechazo de un worker antiguo antes de activación.
 Compilación TypeScript correcta y revisión de formato del diff. No se ejecutaron
 tests ni se conectó el entorno local a la base. El entry point actual no inyecta
 esta persistencia recuperable; no se reiniciaron servicios.
+
+## Corrección posterior al primer ensayo
+
+La exclusión de segunda instancia y liberación/reobtención del lock se validaron
+en PostgreSQL del NAS sin scrapers. El ensayo posterior de creación/recuperación
+falló con `inconsistent types deduced for parameter $2`. La creación reutiliza
+el parámetro del usuario en INSERT SELECT y en la autorización. Se fijan casts
+text explícitos en ambas posiciones y en las comparaciones de inicio/cierre;
+el código de país también declara su tipo. Compilar no verifica el análisis SQL
+de PostgreSQL: repetir el ensayo real después de publicar esta corrección y
+revisar los registros manuales de prueba que pudieran haber quedado.
